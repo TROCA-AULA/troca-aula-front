@@ -355,7 +355,7 @@ export default function Home() {
         } else if (user.profileId === 2 && user.schoolId) {
             api.get(`/schools/${user.schoolId}`).then((data) => {
                 setSchool(data?.data)
-                setSelectedSchoolId(user.schoolId)
+                setSelectedSchoolId(user.schoolId ?? null)
             }).catch(() => {})
         }
     }, [user]);

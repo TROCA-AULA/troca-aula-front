@@ -1,108 +1,80 @@
-# Troca-Aula - Documentação
+# Troca-Aula — Documentação do Frontend
 
-Bem-vindo à documentação do projeto Troca-Aula. Aqui você encontrará todas as informações necessárias para entender, desenvolver e contribuir com o projeto.
+Bem-vindo à documentação técnica do **Troca-Aula Frontend**. Este índice organiza toda a documentação do projeto, que cobre visão de produto, guias de desenvolvimento, arquitetura, módulos, referência técnica e o status atual.
 
 ## Estrutura da Documentação
 
-```mermaid
-graph TB
-    Docs[Docs] --> Intro[Introdução]
-    Docs --> Tech[Tecnologia]
-    Docs --> Guides[Guias]
-    Docs --> Status[Status]
-    
-    Intro --> P1[product-vision.md]
-    Intro --> P2[business-rules.md]
-    Tech --> T1[tech-stack.md]
-    Tech --> T2[architecture.md]
-    Tech --> T3[integration.md]
-    Tech --> T4[data-model.md]
-    Guides --> G1[getting-started.md]
-    Guides --> G2[contributing.md]
-    Guides --> G3[setup.md]
-    Status --> S1[current-status.md]
-    Status --> S2[roadmap.md]
-    Status --> S3[pendencias.md]
+```
+docs/
+├── README.md                        # Este índice
+├── 01-visao-geral/                  # Visão do produto e regras
+│   ├── visao-do-produto.md          # Propósito, personas, diferenciais
+│   ├── regras-de-negocio.md         # Regras R001-R014 e casos de erro
+│   └── perfis-e-permissoes.md       # Perfis de usuário e matriz de acesso
+├── 02-guia-desenvolvimento/         # Como desenvolver
+│   ├── setup.md                     # Setup do ambiente
+│   ├── convencoes.md                # Convenções de código
+│   └── testes.md                    # Testes automatizados
+├── 03-arquitetura/                  # Arquitetura técnica
+│   ├── arquitetura.md               # Visão geral e padrões
+│   ├── autenticacao.md              # Login, JWT, Gov.br e middleware
+│   ├── integracao-backend.md        # Comunicação com o backend NestJS
+│   └── modelo-de-dados.md           # Entidades e relacionamentos
+├── 04-modulos/                      # Módulos/funcionalidades
+│   ├── autenticacao.md              # Login, cadastro e Gov.br
+│   ├── dashboard-aulas.md           # Aulas, candidaturas e minhas aulas
+│   ├── area-master.md               # Área administrativa (Master)
+│   └── limite-substituicoes.md      # Teto de substituições por semestre
+├── 05-referencia/                   # Referência de código
+│   ├── servicos.md                  # Serviços de API
+│   ├── hooks.md                     # Hooks de lógica
+│   ├── componentes.md               # Componentes compartilhados
+│   ├── tipos.md                     # Tipos TypeScript
+│   ├── rotas-api.md                 # Rotas do Next.js (API Routes)
+│   └── variaveis-ambiente.md        # Variáveis de ambiente
+└── 06-status/                       # Status do projeto
+    ├── estado-atual.md              # O que está pronto
+    ├── roadmap.md                   # Próximos passos
+    └── problemas-conhecidos.md      # Problemas e dívidas técnicas
 ```
 
 ## Navegação Rápida
 
-### Para Novos Membros
+| Público | Comece por |
+|---------|------------|
+| **Novos membros** | [Visão do Produto](./01-visao-geral/visao-do-produto.md) → [Setup](./02-guia-desenvolvimento/setup.md) |
+| **Desenvolvedores** | [Arquitetura](./03-arquitetura/arquitetura.md) → [Integração Backend](./03-arquitetura/integracao-backend.md) → [Referência](./05-referencia/servicos.md) |
+| **QA / Testadores** | [Testes](./02-guia-desenvolvimento/testes.md) → [Estado Atual](./06-status/estado-atual.md) → [Problemas Conhecidos](./06-status/problemas-conhecidos.md) |
+| **Gestores** | [Visão do Produto](./01-visao-geral/visao-do-produto.md) → [Estado Atual](./06-status/estado-atual.md) → [Roadmap](./06-status/roadmap.md) |
 
-1. **[Visão do Produto](./intro/product-vision.md)** - Entenda o que é o Troca-Aula
-2. **[Stack Tecnológica](./tech/tech-stack.md)** - Tecnologias utilizadas
-3. **[Getting Started](./guides/getting-started.md)** - Primeiros passos
-4. **[Como Contribuir](./guides/contributing.md)** - Guia de contribuição
+## Stack Resumida
 
-### Para Desenvolvedores
+| Camada | Tecnologia |
+|--------|------------|
+| Framework | Next.js 15.3.2 (App Router, Turbopack) |
+| UI | React 19 + styled-components 6 |
+| Formulários | react-hook-form + Yup |
+| HTTP | Axios |
+| Autenticação | JWT (jose), cookie httpOnly, Gov.br OAuth2 |
+| Testes | Vitest + Testing Library + MSW |
+| Package Manager | pnpm 10 |
 
-1. **[Arquitetura](./tech/architecture.md)** - Diagramas e estrutura
-2. **[Stack](./tech/tech-stack.md)** - Detalhes técnicos
-3. **[Integração Frontend-Backend](./tech/integration.md)** - Comunicação entre camadas
-4. **[Estado Atual](./status/current-status.md)** - O que está pronto
-5. **[Roadmap](./status/roadmap.md)** - Próximas tarefas
-
-### Para Gestores
-
-1. **[Visão do Produto](./intro/product-vision.md)** - Objetivos e métricas
-2. **[Estado Atual](./status/current-status.md)** - Status do projeto
-3. **[Roadmap](./status/roadmap.md)** - Plano de evolução
-
-## Arquitetura do Sistema
-
-```mermaid
-graph TB
-    subgraphFrontend[Frontend]
-        F1[Next.js 15]
-    end
-    
-    subgraphBackend[Backend]
-        B1[NestJS API]
-        B2[Prisma ORM]
-        B3[PostgreSQL]
-    end
-    
-    subgraphExternal[Externos]
-        E1[Gov.br API]
-    end
-    
-    F1 -->|HTTP| B1
-    B1 --> B2
-    B2 --> B3
-    B1 -.->|OAuth2| E1
-```
-
-## Repositórios
+## Repositórios Relacionados
 
 | Repositório | Descrição |
 |-------------|-----------|
-| [troca-aula-front](https://github.com/TROCA-AULA/troca-aula-front) | Frontend (Next.js 15) |
-| [troca-aula-backend](https://github.com/TROCA-AULA/troca-aula-backend) | Backend (NestJS) |
+| [troca-aula-front](https://github.com/TROCA-AULA/troca-aula-front) | Este projeto |
+| [troca-aula-backend](https://github.com/TROCA-AULA/troca-aula-backend) | Backend NestJS + Prisma + PostgreSQL |
 
-## Links Úteis
+## Atualização da Documentação
 
-- **Video de Apresentação**: [YouTube](https://www.youtube.com/watch?v=xWZov3HvWgw)
-- **Constituição do Projeto**: [.specify/memory/constitution.md](../.specify/memory/constitution.md)
-
-## Quick Links
-
-| Tópico | Arquivo |
-|--------|---------|
-| O que é o projeto | [product-vision.md](./intro/product-vision.md) |
-| Regras de negócio | [business-rules.md](./intro/business-rules.md) |
-| Stack completa | [tech-stack.md](./tech/tech-stack.md) |
-| Arquitetura com diagramas | [architecture.md](./tech/architecture.md) |
-| Modelo de dados | [data-model.md](./tech/data-model.md) |
-| Integração Frontend-Backend | [integration.md](./tech/integration.md) |
-| Como começar | [getting-started.md](./guides/getting-started.md) |
-| Setup e configuração | [setup.md](./guides/setup.md) |
-| Onde estamos | [current-status.md](./status/current-status.md) |
-| Próximos passos | [roadmap.md](./status/roadmap.md) |
-| **Pendências do Frontend** | [pendencias.md](./status/pendencias.md) |
-| **Prompts de Implementação** | [prompts-pendencias.md](./prompts-pendencias.md) |
+- Documentação em **português (pt-BR)**
+- Sempre que alterar uma funcionalidade, atualize a doc do módulo correspondente em `04-modulos/`
+- Novas APIs/serviços devem ser refletidos em `05-referencia/servicos.md`
+- Mudanças de infraestrutura/arquitetura devem ser refletidas em `03-arquitetura/`
 
 ---
 
-**Última atualização**: 2026-05-16  
+**Última atualização**: 2026-08-18  
 **Versão do projeto**: 0.1.0  
-**Stack**: Next.js 15 + React 19 + NestJS + PostgreSQL
+**Stack**: Next.js 15 + React 19 + styled-components + NestJS + PostgreSQL

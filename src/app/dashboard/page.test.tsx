@@ -18,7 +18,7 @@ vi.mock('@/api.service', () => ({
 }));
 
 vi.mock('axios', () => {
-    const mockAxios = {
+    const mockAxios: Record<string, any> = {
         get: vi.fn(),
         patch: vi.fn(),
         delete: vi.fn(),

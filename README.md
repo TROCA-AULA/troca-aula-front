@@ -35,6 +35,10 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Documentação
 Consulte a documentação completa na pasta `docs/`:
-- [docs/documentacao-central-troca-aula.md](docs/documentacao-central-troca-aula.md) - Documentação central
-- [docs/tutorial-teste-local-fluxos.md](docs/tutorial-teste-local-fluxos.md) - Tutorial de teste local
-- [docs/checklist-qa-fluxos-locais.md](docs/checklist-qa-fluxos-locais.md) - Checklist QA
+- [docs/README.md](docs/README.md) - Índice da documentação
+- [docs/01-visao-geral/](docs/01-visao-geral/) - Visão do produto, regras de negócio e perfis
+- [docs/02-guia-desenvolvimento/](docs/02-guia-desenvolvimento/) - Setup, convenções e testes
+- [docs/03-arquitetura/](docs/03-arquitetura/) - Arquitetura, autenticação e integração
+- [docs/04-modulos/](docs/04-modulos/) - Módulos do sistema
+- [docs/05-referencia/](docs/05-referencia/) - Referência de código (serviços, hooks, componentes, tipos, rotas, env)
+- [docs/06-status/](docs/06-status/) - Estado atual, roadmap e problemas conhecidos

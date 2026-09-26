@@ -20,10 +20,15 @@ describe('Route Protection - US1', () => {
     vi.clearAllMocks();
   });
 
+  const mockLogout = vi.fn();
+  const mockRefreshUserData = vi.fn();
+
   it('should allow access when user profileId is 1 (Master)', () => {
     vi.mocked(useUserHook).mockReturnValue({
-      user: { profileId: 1, name: 'Master User' },
+      user: { id: 1, email: 'master@test.com', profileId: 1, name: 'Master User' },
       isLoading: false,
+      logout: mockLogout,
+      refreshUserData: mockRefreshUserData,
     });
 
     const { result } = renderHook(() => useMaster());
@@ -33,8 +38,10 @@ describe('Route Protection - US1', () => {
 
   it('should block access when user profileId is 2 (Diretor)', () => {
     vi.mocked(useUserHook).mockReturnValue({
-      user: { profileId: 2, name: 'Diretor' },
+      user: { id: 2, email: 'diretor@test.com', profileId: 2, name: 'Diretor' },
       isLoading: false,
+      logout: mockLogout,
+      refreshUserData: mockRefreshUserData,
     });
 
     const { result } = renderHook(() => useMaster());
@@ -44,8 +51,10 @@ describe('Route Protection - US1', () => {
 
   it('should block access when user profileId is 3 (Admin)', () => {
     vi.mocked(useUserHook).mockReturnValue({
-      user: { profileId: 3, name: 'Admin' },
+      user: { id: 3, email: 'admin@test.com', profileId: 3, name: 'Admin' },
       isLoading: false,
+      logout: mockLogout,
+      refreshUserData: mockRefreshUserData,
     });
 
     const { result } = renderHook(() => useMaster());
@@ -55,8 +64,10 @@ describe('Route Protection - US1', () => {
 
   it('should block access when user profileId is 4 (Professor)', () => {
     vi.mocked(useUserHook).mockReturnValue({
-      user: { profileId: 4, name: 'Professor' },
+      user: { id: 4, email: 'professor@test.com', profileId: 4, name: 'Professor' },
       isLoading: false,
+      logout: mockLogout,
+      refreshUserData: mockRefreshUserData,
     });
 
     const { result } = renderHook(() => useMaster());
@@ -68,6 +79,8 @@ describe('Route Protection - US1', () => {
     vi.mocked(useUserHook).mockReturnValue({
       user: null,
       isLoading: false,
+      logout: mockLogout,
+      refreshUserData: mockRefreshUserData,
     });
 
     const { result } = renderHook(() => useMaster());
@@ -79,6 +92,8 @@ describe('Route Protection - US1', () => {
     vi.mocked(useUserHook).mockReturnValue({
       user: null,
       isLoading: true,
+      logout: mockLogout,
+      refreshUserData: mockRefreshUserData,
     });
 
     const { result } = renderHook(() => useMaster());
