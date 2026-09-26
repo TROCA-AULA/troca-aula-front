@@ -16,11 +16,10 @@ Lista consolidada de problemas identificados na análise do frontend.
 - Criado `src/constants/profile.ts` (`PROFILE.DIRETOR/AUXILIAR_ADMIN/PROFESSOR/MASTER`) como fonte única de verdade; todos os números mágicos substituídos (dashboard legado, guard da área master, `useMaster`, `useUsers`, `teacher.service`, `UserForm` de diretores/administradores, `types/master.ts`).
 - **Arquivos**: ver diff completo na branch `v2` — praticamente todo arquivo que comparava `profileId` a um número literal foi tocado.
 
-### P2 — Sessão Gov.br divergente
-- Login tradicional: token no cookie httpOnly `token` (middleware reconhece)
-- Login Gov.br: token e usuário no `localStorage` (`auth_token`, `user`)
-- **Impacto**: após login Gov.br, o middleware não reconhece a sessão e redireciona para `/`; há dois mecanismos de sessão convivendo
-- **Arquivos**: `src/hooks/useGovbrAuth.ts`, `src/middleware.ts`
+### P2 — Sessão Gov.br divergente — ✅ Corrigido
+- Antes: login tradicional gravava o token em cookie httpOnly (middleware reconhecia); login Gov.br gravava em `localStorage` (`auth_token`, `user`), que o middleware não reconhecia — usuário caía num loop de redirecionamento para `/` após autenticar via Gov.br.
+- Correção: nova rota `POST /api/auth/govbr-session` (mesmo padrão de `/api/auth/login`) grava o JWT retornado pelo backend como cookie httpOnly. `useGovbrAuth.loginWithGovbr` chama essa rota em vez de escrever em `localStorage`; `logout` agora chama `POST /api/auth/logout` (mesma rota do login tradicional) em vez de limpar `localStorage`. Os dois fluxos de login passam a usar exatamente o mesmo mecanismo de sessão, lido por `/api/auth/me`/`SchoolContext` de forma idêntica.
+- **Arquivos**: `src/app/api/auth/govbr-session/route.ts` (novo), `src/hooks/useGovbrAuth.ts`, `tests/unit/useGovbrAuth.test.tsx`
 
 ### P3 — Senha com hash SHA1 (Base64) no cliente
 - A senha é enviada como `Base64(SHA1(senha))` em vez de usar hash seguro (ex.: bcrypt no servidor)
@@ -44,9 +43,10 @@ Lista consolidada de problemas identificados na análise do frontend.
 - `/classes`, `/minhas-aulas` e o layout master redirecionam para `/login`, mas o login vive em `/`
 - **Impacto**: redirect cai em 404 (o middleware também não trata `/login` como pública)
 
-### P6 — Middleware não valida o JWT
-- `src/middleware.ts` verifica apenas a **presença** do cookie `token`
-- **Impacto**: cookie inválido/expirado passa pelo middleware; só `/api/auth/me` valida de fato
+### P6 — Middleware não valida o JWT — ✅ Corrigido
+- Antes: `src/middleware.ts` verificava apenas a **presença** do cookie `token`; cookie inválido/expirado passava pelo middleware e só era barrado em `/api/auth/me`.
+- Correção: middleware agora assíncrono, valida assinatura e expiração do JWT com `jose.jwtVerify` (biblioteca já usada em `/api/auth/me`, compatível com o Edge Runtime — `jsonwebtoken` não funcionaria aqui). Mesmo segredo/fallback de `/api/auth/me` (`process.env.SECRET`, já configurado). Token inválido/expirado agora redireciona para `/` E remove o cookie (evita loop de redirecionamento).
+- **Arquivos**: `src/middleware.ts`, `src/middleware.test.ts`
 
 ## Médio (dívidas técnicas)
 
@@ -87,11 +87,11 @@ Lista consolidada de problemas identificados na análise do frontend.
 |----|-----------|---------|------|--------|
 | P0 | Crítico | Alto | Multi-tenant/arquitetura | ✅ Corrigido (Fase 3) |
 | P1 | Crítico | Médio | Perfis/permissoes | ✅ Corrigido (Fase 3) |
-| P2 | Crítico | Médio | Autenticação | Pendente |
+| P2 | Crítico | Médio | Autenticação | ✅ Corrigido |
 | P3 | Crítico | Baixo | Segurança | Pendente |
 | P4 | Alto | Baixo | Cadastro/master | ✅ Corrigido (Fase 3) |
 | P5 | Alto | Baixo | Navegação | Pendente |
-| P6 | Alto | Médio | Segurança | Pendente |
+| P6 | Alto | Médio | Segurança | ✅ Corrigido |
 | P7 | Médio | Médio | Tipos | Pendente |
 | P8 | Médio | Médio | Qualidade | Pendente |
 | P9 | Médio | Baixo | Arquitetura | Pendente |

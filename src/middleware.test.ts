@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { middleware } from './middleware';
 import { NextRequest, NextResponse } from 'next/server';
 import { parse } from 'cookie';
+import { jwtVerify } from 'jose';
 
 vi.mock('next/server', () => ({
     NextResponse: {
@@ -14,7 +15,18 @@ vi.mock('cookie', () => ({
     parse: vi.fn(),
 }));
 
+vi.mock('jose', () => ({
+    jwtVerify: vi.fn(),
+}));
+
 describe('Middleware', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        (NextResponse.redirect as any).mockReturnValue({
+            cookies: { delete: vi.fn() },
+        });
+    });
+
     const createRequest = (pathname: string, cookieHeader = '') => {
         return {
             nextUrl: { pathname },
@@ -25,37 +37,50 @@ describe('Middleware', () => {
         } as unknown as NextRequest;
     };
 
-    it('allows public paths', () => {
+    it('allows public paths', async () => {
         const req = createRequest('/');
-        middleware(req);
+        await middleware(req);
         expect(NextResponse.next).toHaveBeenCalled();
     });
 
-    it('allows /cadastro', () => {
+    it('allows /cadastro', async () => {
         const req = createRequest('/cadastro');
-        middleware(req);
+        await middleware(req);
         expect(NextResponse.next).toHaveBeenCalled();
     });
 
-    it('redirects to / if token is missing on private path', () => {
+    it('redirects to / if token is missing on private path', async () => {
         const req = createRequest('/dashboard');
         (parse as any).mockReturnValue({});
-        
-        middleware(req);
-        
+
+        await middleware(req);
+
         expect(NextResponse.redirect).toHaveBeenCalledWith(new URL('/', 'http://localhost/dashboard'));
     });
 
-    it('allows access if token is present', () => {
+    it('allows access if token is present and valid', async () => {
         const req = createRequest('/dashboard', 'token=valid');
         (parse as any).mockReturnValue({ token: 'valid' });
-        
-        middleware(req);
-        
+        (jwtVerify as any).mockResolvedValue({ payload: { sub: { id: 1 } } });
+
+        await middleware(req);
+
+        expect((jwtVerify as any).mock.calls[0][0]).toBe('valid');
         expect(NextResponse.next).toHaveBeenCalled();
     });
 
-    it('handles empty cookie header', () => {
+    it('redirects and clears cookie if token is present but invalid/expired', async () => {
+        const req = createRequest('/dashboard', 'token=tampered');
+        (parse as any).mockReturnValue({ token: 'tampered' });
+        (jwtVerify as any).mockRejectedValue(new Error('signature verification failed'));
+
+        const result = await middleware(req);
+
+        expect(NextResponse.redirect).toHaveBeenCalledWith(new URL('/', 'http://localhost/dashboard'));
+        expect((result as any).cookies.delete).toHaveBeenCalledWith('token');
+    });
+
+    it('handles empty cookie header', async () => {
         const req = {
             nextUrl: { pathname: '/dashboard' },
             headers: {
@@ -63,11 +88,11 @@ describe('Middleware', () => {
             },
             url: 'http://localhost/dashboard',
         } as unknown as NextRequest;
-        
+
         (parse as any).mockReturnValue({});
-        
-        middleware(req);
-        
+
+        await middleware(req);
+
         expect(NextResponse.redirect).toHaveBeenCalled();
     });
 });

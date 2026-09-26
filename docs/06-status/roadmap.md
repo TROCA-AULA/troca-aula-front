@@ -11,18 +11,18 @@
 - [x] Atualizar `user.types.tsx` / `/api/auth/me` para expor perfil consistente (e todos os vínculos do usuário, `schoolLinks`)
 - [x] Atualizar guards (`/classes`, `/minhas-aulas`, `/master`) — corrigido bug real: `/master` liberava DIRETOR e bloqueava MASTER
 
-### 2. Corrigir Sessão Gov.br (Alta prioridade)
+### 2. Corrigir Sessão Gov.br (Alta prioridade) — ✅ Concluído
 
-- [ ] Unificar persistência de token (cookie httpOnly vs localStorage)
-- [ ] Fazer o middleware reconhecer sessões Gov.br
-- [ ] Unificar `useUserHook` e `useGovbrAuth`
+- [x] Unificar persistência de token (cookie httpOnly vs localStorage) — nova rota `POST /api/auth/govbr-session` grava o JWT do Gov.br como cookie httpOnly, igual ao login tradicional
+- [x] Fazer o middleware reconhecer sessões Gov.br — automático, já que agora é o mesmo cookie
+- [ ] Unificar `useUserHook` e `useGovbrAuth` de fato em um único hook (ficaram unificados na fonte de sessão, mas ainda são dois hooks distintos — refatoração de conveniência, não bloqueia nada)
 
 ### 3. Remover Valores Hardcoded — ✅ Concluído (Fase 3)
 
 - [x] Cadastro: `profileId`/`schoolId` removidos do payload (o backend real não aceita esses campos em `POST /users`)
 - [x] `/master/professores`: `schoolId='school-1'` substituído pela escola ativa do `SchoolContext`
 - [x] Dashboard: mapeamento legado de perfis substituído por `src/constants/profile.ts`
-- [ ] **Novo achado (P15 em problemas-conhecidos.md)**: módulo de vínculo/criação de professores (`teacher.service.tsx`, `master.service.tsx`) usa um contrato de API que o backend atual não implementa mais — precisa de redesenho (dois passos: `POST /users` + `POST /users/:id/assign-profile`)
+- [x] **P15** (era achado novo, agora corrigido): módulo de vínculo/criação de professores reescrito em dois passos (`POST /users` + `assign-profile`/`unassign-profile`) — ver `problemas-conhecidos.md`
 
 ### 4. Testes
 
@@ -69,8 +69,8 @@
 
 ### Segurança e Conformidade
 - [ ] Substituir hash SHA1 por algoritmo seguro (ex.: bcrypt no backend)
-- [ ] Validar JWT no middleware (hoje verifica apenas presença)
-- [ ] Remover `console.log` do payload do token em `/api/auth/me`
+- [x] Validar JWT no middleware — `jose.jwtVerify`, cookie inválido/expirado agora é barrado na borda (P6)
+- [x] Remover `console.log` do payload do token em `/api/auth/me` — já removido junto do P0 (ver problemas-conhecidos.md)
 
 ### Mobile
 - [ ] Aplicativo React Native consumindo a mesma API
@@ -88,8 +88,9 @@ quadrantChart
     x-axis Baixa Complexidade --> Alta Complexidade
     y-axis Baixo Impacto --> Alto Impacto
 
-    "Unificar perfis": [0.5, 0.9]
-    "Sessão Gov.br": [0.6, 0.9]
+    "Unificar perfis (concluido)": [0.5, 0.9]
+    "Sessao Gov.br (concluido)": [0.6, 0.9]
+    "JWT no middleware (concluido)": [0.3, 0.8]
     "Remover hardcodes": [0.4, 0.7]
     "Testes novos": [0.5, 0.7]
     "Rota /login": [0.3, 0.6]
