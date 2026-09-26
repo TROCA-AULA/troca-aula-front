@@ -4,6 +4,7 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { useUsers } from '@/hooks/useUsers';
 import { useSchools } from '@/hooks/useSchools';
+import { PROFILE } from '@/constants/profile';
 import { UserForm } from './components/UserForm';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import type { User } from '@/types/master';
@@ -107,7 +108,7 @@ const LoadingState = styled.div`
 `;
 
 export default function DiretoresPage() {
-  const { users, loading, unlinkUser } = useUsers(2);
+  const { users, loading, unlinkUser } = useUsers(PROFILE.DIRETOR);
   const { schools } = useSchools();
   const [formOpen, setFormOpen] = useState(false);
   const [unlinkConfirm, setUnlinkConfirm] = useState<User | null>(null);
@@ -122,7 +123,7 @@ export default function DiretoresPage() {
 
   const confirmUnlink = async () => {
     if (unlinkConfirm) {
-      await unlinkUser(unlinkConfirm.id);
+      await unlinkUser(unlinkConfirm.id, unlinkConfirm.profileId, unlinkConfirm.schoolId!);
       setUnlinkConfirm(null);
     }
   };
@@ -180,7 +181,7 @@ export default function DiretoresPage() {
 
       <UserForm
         open={formOpen}
-        profileId={2}
+        profileId={PROFILE.DIRETOR}
         schools={schools}
         onClose={() => setFormOpen(false)}
       />

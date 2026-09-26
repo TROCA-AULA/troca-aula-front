@@ -15,6 +15,14 @@ export interface User {
   createdAt: string;
 }
 
+// Retornado só pelo fluxo de criação (masterService.createUser) — o backend
+// não tem convite/definição de senha por e-mail hoje, então uma senha
+// temporária é gerada no cliente e precisa ser repassada manualmente pelo
+// Master a quem foi cadastrado. Ver P15 em problemas-conhecidos.md.
+export interface CreatedUser extends User {
+  tempPassword: string;
+}
+
 export interface CreateSchoolRequest {
   name: string;
   substitutionLimitPerSemester?: number;
@@ -56,7 +64,9 @@ export interface UsersPageState {
   loading: boolean;
   error: string | null;
   filters: {
-    profileId: 2 | 3;
+    // Correção: era 2|3 (mapeamento antigo, incompatível com o backend real);
+    // ver src/constants/profile.ts (DIRETOR=1, AUXILIAR_ADMIN=2).
+    profileId: 1 | 2;
     schoolId?: number;
   };
   formModal: {

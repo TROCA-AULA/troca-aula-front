@@ -105,10 +105,7 @@ describe('useTeachers Hook - US1', () => {
   });
 
   it('should unlink a teacher from school', async () => {
-    vi.mocked(teacherService.unlinkTeacher).mockResolvedValue({
-      id: 'user-1',
-      schoolId: null,
-    } as any);
+    vi.mocked(teacherService.unlinkTeacher).mockResolvedValue(undefined);
     vi.mocked(teacherService.getLinkedTeachers).mockResolvedValue([]);
     vi.mocked(teacherService.getAvailableTeachers).mockResolvedValue(
       mockAvailableTeachers
@@ -120,7 +117,13 @@ describe('useTeachers Hook - US1', () => {
       await result.current.unlinkTeacher('user-1');
     });
 
-    expect(teacherService.unlinkTeacher).toHaveBeenCalledWith('user-1');
+    // useTeachers já conhece o schoolId (veio do parâmetro do hook) e o
+    // injeta automaticamente — o backend real exige profileId+schoolId no
+    // corpo do unassign-profile (ver P15 em problemas-conhecidos.md).
+    expect(teacherService.unlinkTeacher).toHaveBeenCalledWith(
+      'user-1',
+      'school-1'
+    );
   });
 
   it('should handle loading state', () => {

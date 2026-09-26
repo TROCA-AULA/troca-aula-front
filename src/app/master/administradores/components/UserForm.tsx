@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import styled from 'styled-components';
 import { useUsers } from '@/hooks/useUsers';
+import { PROFILE } from '@/constants/profile';
 import type { School, CreateUserRequest } from '@/types/master';
 
 const Overlay = styled.div`
@@ -133,7 +134,10 @@ const SubmitButton = styled(Button)`
 
 interface UserFormProps {
   open: boolean;
-  profileId: 2 | 3;
+  // Correção: 2|3 era o mapeamento próprio deste módulo (2=Diretor,
+  // 3=Administrador), que não batia com o valor real do backend
+  // (DIRETOR=1, AUXILIAR_ADMIN=2). Ver src/constants/profile.ts.
+  profileId: typeof PROFILE.DIRETOR | typeof PROFILE.AUXILIAR_ADMIN;
   schools: School[];
   onClose: () => void;
 }
@@ -199,7 +203,7 @@ export function UserForm({ open, profileId, schools, onClose }: UserFormProps) {
   return (
     <Overlay onClick={onClose}>
       <Modal onClick={(e) => e.stopPropagation()}>
-        <Title>Novo {profileId === 2 ? 'Diretor' : 'Administrador'}</Title>
+        <Title>Novo {profileId === PROFILE.DIRETOR ? 'Diretor' : 'Administrador'}</Title>
         <Form onSubmit={handleSubmit(onSubmit)}>
           <FormGroup>
             <Label htmlFor="name">Nome *</Label>

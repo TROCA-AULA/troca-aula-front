@@ -49,7 +49,7 @@ export function useTeachers(schoolId: string): UseTeachersReturn {
     setLoading(true);
     setError(null);
     try {
-      const data = await teacherService.getAvailableTeachers();
+      const data = await teacherService.getAvailableTeachers(schoolId);
       setAvailableTeachers(data);
     } catch (err: unknown) {
       const message =
@@ -60,7 +60,7 @@ export function useTeachers(schoolId: string): UseTeachersReturn {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [schoolId]);
 
   const fetchEnrollmentRequests = useCallback(
     async (status?: string) => {
@@ -109,7 +109,7 @@ export function useTeachers(schoolId: string): UseTeachersReturn {
       setLoading(true);
       setError(null);
       try {
-        await teacherService.unlinkTeacher(userId);
+        await teacherService.unlinkTeacher(userId, schoolId);
         await fetchLinkedTeachers();
         await fetchAvailableTeachers();
       } catch (err: unknown) {
@@ -120,7 +120,7 @@ export function useTeachers(schoolId: string): UseTeachersReturn {
         setLoading(false);
       }
     },
-    [fetchLinkedTeachers, fetchAvailableTeachers]
+    [schoolId, fetchLinkedTeachers, fetchAvailableTeachers]
   );
 
   const updateEnrollmentStatus = useCallback(

@@ -1,13 +1,15 @@
 # Roadmap — Próximos Passos
 
+> **Evolução Multi-Tenant:** ver [`design-doc-evolucao-multi-tenant.md`](../../../docs/design-doc-evolucao-multi-tenant.md) na raiz do projeto. Fase 3 (frontend: `SchoolContext`, seletor de escola ativa, correção do mapeamento de perfis, remoção de hardcodes) **implementada** — ver seção "Multi-Tenant" abaixo.
+
 ## Curto Prazo (1-3 meses)
 
-### 1. Unificar Perfis de Usuário (Alta prioridade)
+### 1. Unificar Perfis de Usuário (Alta prioridade) — ✅ Concluído (Fase 3)
 
-- [ ] Definir um único mapeamento `profileId` (1=master, 2=diretor, 3=admin, 4=professor)
-- [ ] Migrar o dashboard legado para o novo mapeamento
-- [ ] Atualizar `user.types.tsx` / `/api/auth/me` para expor perfil consistente
-- [ ] Atualizar guards (`/classes`, `/minhas-aulas`, `/master`)
+- [x] Definir um único mapeamento `profileId` em `src/constants/profile.ts` — valor REAL confirmado contra o backend: `DIRETOR=1, AUXILIAR_ADMIN=2, PROFESSOR=3, MASTER=4` (o mapeamento antigo planejado aqui, `1=master,2=diretor,3=admin,4=professor`, também estava errado)
+- [x] Migrar o dashboard legado para o novo mapeamento
+- [x] Atualizar `user.types.tsx` / `/api/auth/me` para expor perfil consistente (e todos os vínculos do usuário, `schoolLinks`)
+- [x] Atualizar guards (`/classes`, `/minhas-aulas`, `/master`) — corrigido bug real: `/master` liberava DIRETOR e bloqueava MASTER
 
 ### 2. Corrigir Sessão Gov.br (Alta prioridade)
 
@@ -15,11 +17,12 @@
 - [ ] Fazer o middleware reconhecer sessões Gov.br
 - [ ] Unificar `useUserHook` e `useGovbrAuth`
 
-### 3. Remover Valores Hardcoded
+### 3. Remover Valores Hardcoded — ✅ Concluído (Fase 3)
 
-- [ ] Cadastro: usar `profileId` e `schoolId` reais (hoje `3` e `1` fixos)
-- [ ] `/master/professores`: substituir `schoolId='school-1'` pela sessão
-- [ ] Dashboard: substituir mapeamento legado de perfis
+- [x] Cadastro: `profileId`/`schoolId` removidos do payload (o backend real não aceita esses campos em `POST /users`)
+- [x] `/master/professores`: `schoolId='school-1'` substituído pela escola ativa do `SchoolContext`
+- [x] Dashboard: mapeamento legado de perfis substituído por `src/constants/profile.ts`
+- [ ] **Novo achado (P15 em problemas-conhecidos.md)**: módulo de vínculo/criação de professores (`teacher.service.tsx`, `master.service.tsx`) usa um contrato de API que o backend atual não implementa mais — precisa de redesenho (dois passos: `POST /users` + `POST /users/:id/assign-profile`)
 
 ### 4. Testes
 
@@ -34,6 +37,11 @@
 - [ ] Usar `MasterHeader` no layout master (hoje não importado)
 
 ## Médio Prazo (3-6 meses)
+
+### Multi-Tenant (Fase 3 do Design Doc) — ✅ Concluído nesta rodada
+- [x] `SchoolContext` (estado global de sessão, substitui fetch repetido do `useUserHook`)
+- [x] Seletor de escola ativa persistente (`SchoolSelector`, oculto quando só há um vínculo)
+- [ ] Consumir o claim de `networkId` (Rede de Ensino) quando o backend expuser esse campo no JWT/`/auth/me` (depende da Fase 2 do Design Doc já ter `Networks` no schema — falta o claim chegar ao token)
 
 ### UX/UI
 - [ ] Biblioteca de componentes reutilizáveis
@@ -88,6 +96,7 @@ quadrantChart
     "Relatórios": [0.6, 0.5]
     "Notificações": [0.6, 0.5]
     "Mobile": [0.8, 0.4]
+    "Multi-Tenant (NetworkContext)": [0.7, 0.95]
 ```
 
 ## Como Contribuir
