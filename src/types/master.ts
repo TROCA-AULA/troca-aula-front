@@ -1,7 +1,20 @@
 export interface School {
   id: number;
   name: string;
+  networkId: number;
+  // Legado (Prisma): coluna ainda existe no banco, mas não é mais aceita
+  // por CreateSchoolDto/UpdateSchoolDto — o limite real de carga horária
+  // agora vem de WorkloadPolicies por rede (Design Doc, Fase 2). Continua
+  // no tipo só para exibição (dado histórico), nunca enviado nas requests.
   substitutionLimitPerSemester: number | null;
+  createdAt: string;
+}
+
+// Rede de Ensino (tenant real, Design Doc ADR-004) — sem tela própria ainda,
+// só consumida aqui para popular o seletor do formulário de escola.
+export interface Network {
+  id: number;
+  name: string;
   createdAt: string;
 }
 
@@ -25,12 +38,12 @@ export interface CreatedUser extends User {
 
 export interface CreateSchoolRequest {
   name: string;
-  substitutionLimitPerSemester?: number;
+  networkId: number;
 }
 
 export interface UpdateSchoolRequest {
   name?: string;
-  substitutionLimitPerSemester?: number;
+  networkId?: number;
 }
 
 export interface CreateUserRequest {

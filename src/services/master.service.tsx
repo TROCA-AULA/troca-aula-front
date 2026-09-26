@@ -1,6 +1,7 @@
 import api from '@/api.service';
 import type {
   School,
+  Network,
   User,
   CreatedUser,
   CreateSchoolRequest,
@@ -67,6 +68,13 @@ export const masterService = {
 
   getSchool: async (id: number): Promise<School> => {
     const response = await api.get(`/schools/${id}`);
+    return response.data?.data ?? response.data;
+  },
+
+  // Rede é o tenant real (Design Doc ADR-004); ainda sem tela própria, só
+  // usada aqui para popular o seletor no formulário de criação de escola.
+  getNetworks: async (): Promise<Network[]> => {
+    const response = await api.get('/networks');
     return response.data?.data ?? response.data;
   },
 

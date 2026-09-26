@@ -20,8 +20,8 @@ vi.mock('react-toastify', () => ({
 }));
 
 const mockSchools = [
-  { id: 1, name: 'Escola A', substitutionLimitPerSemester: 10, createdAt: '2026-01-01' },
-  { id: 2, name: 'Escola B', substitutionLimitPerSemester: 5, createdAt: '2026-01-02' },
+  { id: 1, name: 'Escola A', networkId: 1, substitutionLimitPerSemester: 10, createdAt: '2026-01-01' },
+  { id: 2, name: 'Escola B', networkId: 1, substitutionLimitPerSemester: 5, createdAt: '2026-01-02' },
 ];
 
 describe('useSchools Hook - US2', () => {
@@ -39,10 +39,11 @@ describe('useSchools Hook - US2', () => {
   });
 
   it('should create a new school', async () => {
-    const newSchool = { name: 'Escola C', substitutionLimitPerSemester: 8 };
+    const newSchool = { name: 'Escola C', networkId: 1 };
     vi.mocked(masterService.createSchool).mockResolvedValue({
       id: 3,
       ...newSchool,
+      substitutionLimitPerSemester: null,
       createdAt: '2026-01-03',
     });
 
@@ -60,6 +61,7 @@ describe('useSchools Hook - US2', () => {
     vi.mocked(masterService.updateSchool).mockResolvedValue({
       id: 1,
       ...updateData,
+      networkId: 1,
       substitutionLimitPerSemester: 10,
       createdAt: '2026-01-01',
     });

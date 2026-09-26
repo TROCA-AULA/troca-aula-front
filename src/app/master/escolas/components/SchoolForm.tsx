@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import styled from 'styled-components';
 import { useSchools } from '@/hooks/useSchools';
+import { useNetworks } from '@/hooks/useNetworks';
 import type { School } from '@/types/master';
 
 const Overlay = styled.div`
@@ -58,6 +59,20 @@ const Input = styled.input`
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
+
+  &:focus {
+    outline: none;
+    border-color: #1e3a5f;
+    box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.1);
+  }
+`;
+
+const Select = styled.select`
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
 
   &:focus {
     outline: none;
@@ -126,11 +141,12 @@ interface SchoolFormProps {
 
 interface FormData {
   name: string;
-  substitutionLimitPerSemester?: number;
+  networkId: number;
 }
 
 export function SchoolForm({ open, mode, initialData, onClose }: SchoolFormProps) {
   const { createSchool, updateSchool } = useSchools();
+  const { networks, loading: networksLoading } = useNetworks();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -140,32 +156,30 @@ export function SchoolForm({ open, mode, initialData, onClose }: SchoolFormProps
     formState: { errors },
     reset,
   } = useForm<FormData>({
-    defaultValues: initialData ? { 
-      name: initialData.name, 
-      substitutionLimitPerSemester: initialData.substitutionLimitPerSemester ?? undefined 
-    } : { name: '', substitutionLimitPerSemester: undefined },
+    defaultValues: initialData
+      ? { name: initialData.name, networkId: initialData.networkId }
+      : { name: '', networkId: undefined },
   });
 
   const onSubmit = async (data: FormData) => {
     setError(null);
-    
+
     if (!data.name || data.name.trim().length < 2) {
       setError('Nome é obrigatório e deve ter no mínimo 2 caracteres');
+      return;
+    }
+
+    if (!data.networkId) {
+      setError('Rede é obrigatória');
       return;
     }
 
     setSubmitting(true);
     try {
       if (mode === 'create') {
-        await createSchool({ 
-          name: data.name, 
-          substitutionLimitPerSemester: data.substitutionLimitPerSemester 
-        });
+        await createSchool({ name: data.name, networkId: Number(data.networkId) });
       } else if (initialData) {
-        await updateSchool(initialData.id, { 
-          name: data.name, 
-          substitutionLimitPerSemester: data.substitutionLimitPerSemester 
-        });
+        await updateSchool(initialData.id, { name: data.name, networkId: Number(data.networkId) });
       }
       onClose();
       reset();
@@ -188,13 +202,20 @@ export function SchoolForm({ open, mode, initialData, onClose }: SchoolFormProps
           </FormGroup>
 
           <FormGroup>
-            <Label htmlFor="limit">Limite de substituições por semestre</Label>
-            <Input
-              id="limit"
-              type="number"
-              {...register('substitutionLimitPerSemester', { valueAsNumber: true })}
-              placeholder="Opcional"
-            />
+            <Label htmlFor="networkId">Rede de Ensino *</Label>
+            <Select
+              id="networkId"
+              {...register('networkId', { valueAsNumber: true, required: true })}
+              disabled={networksLoading}
+            >
+              <option value="">Selecione uma rede...</option>
+              {networks.map((network) => (
+                <option key={network.id} value={network.id}>
+                  {network.name}
+                </option>
+              ))}
+            </Select>
+            {errors.networkId && <ErrorText>Selecione uma rede</ErrorText>}
           </FormGroup>
 
           {error && <ErrorText>{error}</ErrorText>}

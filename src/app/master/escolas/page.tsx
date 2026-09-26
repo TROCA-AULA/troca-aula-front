@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import { useSchools } from '@/hooks/useSchools';
+import { useNetworks } from '@/hooks/useNetworks';
 import { SchoolForm } from './components/SchoolForm';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import type { School } from '@/types/master';
@@ -117,6 +118,9 @@ const LoadingState = styled.div`
 
 export default function EscolasPage() {
   const { schools, loading, deleteSchool } = useSchools();
+  const { networks } = useNetworks();
+  const networkName = (networkId: number) =>
+    networks.find((n) => n.id === networkId)?.name ?? `Rede #${networkId}`;
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -171,7 +175,7 @@ export default function EscolasPage() {
             <tr>
               <Th>ID</Th>
               <Th>Nome</Th>
-              <Th>Limite por Semestre</Th>
+              <Th>Rede</Th>
               <Th>Criado em</Th>
               <Th>Ações</Th>
             </tr>
@@ -181,7 +185,7 @@ export default function EscolasPage() {
               <tr key={school.id}>
                 <Td>{school.id}</Td>
                 <Td>{school.name}</Td>
-                <Td>{school.substitutionLimitPerSemester ?? '-'}</Td>
+                <Td>{networkName(school.networkId)}</Td>
                 <Td>{new Date(school.createdAt).toLocaleDateString('pt-BR')}</Td>
                 <Td>
                   <EditButton onClick={() => handleEdit(school)}>Editar</EditButton>
