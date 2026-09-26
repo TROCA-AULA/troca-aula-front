@@ -6,7 +6,11 @@ import { jwtVerify } from 'jose';
 // continuar em sincronia com o SECRET do backend (troca-aula-backend/.env).
 const secret = new TextEncoder().encode(process?.env?.SECRET ?? 's0//P4$$w0rD');
 
-export async function middleware(req: NextRequest) {
+// Renomeado de `middleware` para `proxy` (Next.js 16 — o nome/arquivo
+// `middleware` foi descontinuado). O runtime deixou de ser configurável
+// como Edge (proxy roda sempre em Node.js no Next 16); `jose` funciona
+// igual nos dois runtimes, então a validação do JWT abaixo não muda.
+export async function proxy(req: NextRequest) {
     const { pathname } = req.nextUrl;
 
     const publicPaths = ['/', '/cadastro', '/api/login', '/api/auth/me', '/api/auth/logout', '/api/classes'];
@@ -23,8 +27,7 @@ export async function middleware(req: NextRequest) {
     }
 
     try {
-        // Valida assinatura e expiração do JWT (jose é compatível com o
-        // Edge Runtime, ao contrário de jsonwebtoken). Antes desta correção,
+        // Valida assinatura e expiração do JWT. Antes desta correção (P6),
         // o middleware só checava a presença do cookie, deixando passar
         // tokens adulterados/expirados até serem barrados em /api/auth/me.
         await jwtVerify(token, secret);

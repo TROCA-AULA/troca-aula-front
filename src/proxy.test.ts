@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { middleware } from './middleware';
+import { proxy } from './proxy';
 import { NextRequest, NextResponse } from 'next/server';
 import { parse } from 'cookie';
 import { jwtVerify } from 'jose';
@@ -19,7 +19,7 @@ vi.mock('jose', () => ({
     jwtVerify: vi.fn(),
 }));
 
-describe('Middleware', () => {
+describe('Proxy (ex-Middleware)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         (NextResponse.redirect as any).mockReturnValue({
@@ -39,13 +39,13 @@ describe('Middleware', () => {
 
     it('allows public paths', async () => {
         const req = createRequest('/');
-        await middleware(req);
+        await proxy(req);
         expect(NextResponse.next).toHaveBeenCalled();
     });
 
     it('allows /cadastro', async () => {
         const req = createRequest('/cadastro');
-        await middleware(req);
+        await proxy(req);
         expect(NextResponse.next).toHaveBeenCalled();
     });
 
@@ -53,7 +53,7 @@ describe('Middleware', () => {
         const req = createRequest('/dashboard');
         (parse as any).mockReturnValue({});
 
-        await middleware(req);
+        await proxy(req);
 
         expect(NextResponse.redirect).toHaveBeenCalledWith(new URL('/', 'http://localhost/dashboard'));
     });
@@ -63,7 +63,7 @@ describe('Middleware', () => {
         (parse as any).mockReturnValue({ token: 'valid' });
         (jwtVerify as any).mockResolvedValue({ payload: { sub: { id: 1 } } });
 
-        await middleware(req);
+        await proxy(req);
 
         expect((jwtVerify as any).mock.calls[0][0]).toBe('valid');
         expect(NextResponse.next).toHaveBeenCalled();
@@ -74,7 +74,7 @@ describe('Middleware', () => {
         (parse as any).mockReturnValue({ token: 'tampered' });
         (jwtVerify as any).mockRejectedValue(new Error('signature verification failed'));
 
-        const result = await middleware(req);
+        const result = await proxy(req);
 
         expect(NextResponse.redirect).toHaveBeenCalledWith(new URL('/', 'http://localhost/dashboard'));
         expect((result as any).cookies.delete).toHaveBeenCalledWith('token');
@@ -91,7 +91,7 @@ describe('Middleware', () => {
 
         (parse as any).mockReturnValue({});
 
-        await middleware(req);
+        await proxy(req);
 
         expect(NextResponse.redirect).toHaveBeenCalled();
     });

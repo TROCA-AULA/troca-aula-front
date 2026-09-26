@@ -1,5 +1,7 @@
 # Roadmap — Próximos Passos
 
+> **Next.js atualizado para 16.3.6 (era 15.3.2)** — corrige CVE-2025-66478. Mudança relevante: `src/middleware.ts` foi renomeado para `src/proxy.ts` (`export function middleware` → `export function proxy`), convenção obrigatória a partir do Next 16; o arquivo não roda mais em Edge Runtime, sempre Node.js (sem impacto funcional, `jose` funciona igual nos dois). `pnpm run lint` passou a chamar `eslint .` direto (`next lint` foi removido do framework). App já estava em conformidade com as outras breaking changes (Async Request APIs, sem `next/legacy/image`, sem rotas paralelas). Validado com `tsc`, `next build` (20 rotas + proxy) e `next start` real (`/` → 200, `/classes` sem cookie → 307, `/api/auth/me` sem cookie → 401). **Pendência não coberta**: várias docs em `docs/`/`specs/` ainda citam `middleware.ts` pelo nome antigo — não varridas nesta tarefa pontual.
+>
 > **Evolução Multi-Tenant:** ver [`design-doc-evolucao-multi-tenant.md`](../../../docs/design-doc-evolucao-multi-tenant.md) na raiz do projeto. Fase 3 (frontend: `SchoolContext`, seletor de escola ativa, correção do mapeamento de perfis, remoção de hardcodes) **implementada** — ver seção "Multi-Tenant" abaixo.
 
 ## Curto Prazo (1-3 meses)
