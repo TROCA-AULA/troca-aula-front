@@ -136,10 +136,12 @@ export default function Home() {
 
     const submidt = handleSubmit(async (data) => {
 
+        // Correção: o backend (CreateUserDto) não aceita profileId/schoolId na
+        // criação pública de usuário (ValidationPipe com forbidNonWhitelisted
+        // rejeita propriedades extras com 400) — o vínculo escola/perfil é
+        // feito depois, por quem tem permissão, via POST /users/:id/assign-profile.
         const payload = {
             password: Base64.stringify(sha1(data.password)),
-            profileId: 3,
-            schoolId: 1,
             name: data.name,
             email: data.email,
             phone: data.phone,

@@ -1,6 +1,7 @@
 'use client';
 import styled from 'styled-components';
-import { useUserHook } from '@/user/useUserHook';
+import { useSchoolContext } from '@/contexts/SchoolContext';
+import { PROFILE } from '@/constants/profile';
 import { useEnrollments } from '@/hooks/useEnrollments';
 import { useEnrollmentMutations } from '@/hooks/useEnrollment';
 import { useSubstitutionLimit } from '@/hooks/useSubstitutionLimit';
@@ -90,7 +91,7 @@ const ErrorMessage = styled.div`
 `;
 
 export default function ClassesPage() {
-  const { user, isLoading: userLoading } = useUserHook();
+  const { user, isLoading: userLoading } = useSchoolContext();
   const router = useRouter();
   const { classes, loading, error, refetch } = useEnrollments();
   const { createEnrollment, loading: creating } = useEnrollmentMutations();
@@ -108,7 +109,9 @@ export default function ClassesPage() {
     return null;
   }
 
-  if (user.profileId === 1) {
+  // Correção: MASTER é profileId=4 (o valor antigo, 1, é DIRETOR — bug real
+  // de autorização, ver src/constants/profile.ts).
+  if (user.profileId === PROFILE.MASTER) {
     router.push('/master');
     return null;
   }

@@ -1,6 +1,7 @@
 'use client';
 import styled from 'styled-components';
-import { useUserHook } from '@/user/useUserHook';
+import { useSchoolContext } from '@/contexts/SchoolContext';
+import { PROFILE } from '@/constants/profile';
 import { useEnrollments } from '@/hooks/useEnrollments';
 import { useEnrollmentMutations } from '@/hooks/useEnrollment';
 import { useRouter } from 'next/navigation';
@@ -149,7 +150,7 @@ const FILTER_OPTIONS: { label: string; value: EnrollmentStatus | 'ALL' }[] = [
 ];
 
 export default function MinhasAulasPage() {
-  const { user, isLoading: userLoading } = useUserHook();
+  const { user, isLoading: userLoading } = useSchoolContext();
   const router = useRouter();
   const [filter, setFilter] = useState<EnrollmentStatus | 'ALL'>('ALL');
   
@@ -167,7 +168,9 @@ export default function MinhasAulasPage() {
     return null;
   }
 
-  if (user.profileId === 1) {
+  // Correção: MASTER é profileId=4 (o valor antigo, 1, é DIRETOR — bug real
+  // de autorização, ver src/constants/profile.ts).
+  if (user.profileId === PROFILE.MASTER) {
     router.push('/master');
     return null;
   }

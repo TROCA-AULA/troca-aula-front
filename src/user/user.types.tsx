@@ -1,9 +1,19 @@
+export interface SchoolLink {
+    profileId: number;
+    schoolId: number;
+    approvedAt: string | null;
+}
+
 export interface UserData {
     id: string | number;
     name: string;
     email: string;
+    /** Perfil no vínculo ativo (ver SchoolContext) — mantido para compatibilidade com código existente. */
     profileId?: number;
+    /** Escola do vínculo ativo (ver SchoolContext) — mantido para compatibilidade com código existente. */
     schoolId?: number;
+    /** Todos os vínculos escola/perfil do usuário — um usuário pode pertencer a mais de uma escola. */
+    schoolLinks?: SchoolLink[];
 }
 
 

@@ -3,6 +3,7 @@ import {Geist, Geist_Mono} from "next/font/google";
 import "./globals.css";
 import StyledComponentsRegistry from '../lib/registry'
 import {ToastContainer} from "react-toastify";
+import {SchoolProvider} from "@/contexts/SchoolContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,7 +29,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
 
-          <StyledComponentsRegistry>{children}</StyledComponentsRegistry>
+          <StyledComponentsRegistry>
+              <SchoolProvider>{children}</SchoolProvider>
+          </StyledComponentsRegistry>
           <ToastContainer />
 
       </body>

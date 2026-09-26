@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import { useTeachers } from '@/hooks/useTeachers';
+import { useSchoolContext } from '@/contexts/SchoolContext';
 import { toast } from 'react-toastify';
 
 const PageContainer = styled.div`
@@ -243,7 +244,15 @@ export default function ProfessoresPage() {
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [enrollmentFilter, setEnrollmentFilter] = useState<string>('');
 
-  const schoolId = 'school-1'; // TODO: Get from authenticated user session
+  // Correção: antes era um hardcode fixo ('school-1'); agora vem da escola
+  // ativa real do usuário (SchoolContext). NOTA: `useTeachers`/`teacherService`
+  // ainda assumem um contrato de API (`GET /users?schoolId=&profileId=`,
+  // `PATCH /users/:id` com `schoolId`) que o backend atual não implementa mais
+  // (ver troca-aula-front/docs/06-status/problemas-conhecidos.md) — corrigir
+  // esse hardcode não resolve esse gap maior, que fica documentado como
+  // pendência separada.
+  const { activeSchoolId } = useSchoolContext();
+  const schoolId = activeSchoolId != null ? String(activeSchoolId) : '';
   const {
     linkedTeachers,
     availableTeachers,

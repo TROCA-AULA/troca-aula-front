@@ -1,13 +1,14 @@
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Home from './page';
-import { useUserHook } from '@/user/useUserHook';
+import { useSchoolContext } from '@/contexts/SchoolContext';
+import { PROFILE } from '@/constants/profile';
 import api from '@/api.service';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-vi.mock('@/user/useUserHook', () => ({
-    useUserHook: vi.fn(),
+vi.mock('@/contexts/SchoolContext', () => ({
+    useSchoolContext: vi.fn(),
 }));
 
 vi.mock('@/api.service', () => ({
@@ -39,7 +40,11 @@ vi.mock('react-toastify', () => ({
 }));
 
 describe('Dashboard Page', () => {
-    const mockUser = { id: 1, name: 'Test User', profileId: 1 };
+    // profileId: PROFILE.MASTER porque vários testes abaixo esperam o
+    // comportamento "vê todas as escolas" (chamada a GET /schools), que
+    // agora corretamente exige MASTER (4) em vez do valor antigo (1, que é
+    // DIRETOR — ver src/constants/profile.ts).
+    const mockUser = { id: 1, name: 'Test User', profileId: PROFILE.MASTER };
     const mockLogout = vi.fn();
     const mockRefreshUserData = vi.fn();
 
@@ -65,7 +70,7 @@ describe('Dashboard Page', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useUserHook as any).mockReturnValue({
+        (useSchoolContext as any).mockReturnValue({
             user: mockUser,
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
@@ -230,7 +235,7 @@ describe('Dashboard Page', () => {
     });
 
     it('refreshes user data if no user', () => {
-        (useUserHook as any).mockReturnValue({
+        (useSchoolContext as any).mockReturnValue({
             user: null,
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
@@ -240,7 +245,7 @@ describe('Dashboard Page', () => {
     });
 
     it('allows teacher to accept a class', async () => {
-        (useUserHook as any).mockReturnValue({
+        (useSchoolContext as any).mockReturnValue({
             user: { ...mockUser, profileId: 3 },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
@@ -261,7 +266,7 @@ describe('Dashboard Page', () => {
     });
 
     it('handles accept error for teacher', async () => {
-        (useUserHook as any).mockReturnValue({
+        (useSchoolContext as any).mockReturnValue({
             user: { ...mockUser, profileId: 3 },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
@@ -292,7 +297,7 @@ describe('Dashboard Page', () => {
     });
 
     it('renders "Minhas Aulas" tab for teachers', async () => {
-        (useUserHook as any).mockReturnValue({
+        (useSchoolContext as any).mockReturnValue({
             user: { ...mockUser, profileId: 3 },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
@@ -306,7 +311,7 @@ describe('Dashboard Page', () => {
     });
 
     it('filters correctly for teachers in "Minhas Aulas"', async () => {
-        (useUserHook as any).mockReturnValue({
+        (useSchoolContext as any).mockReturnValue({
             user: { ...mockUser, profileId: 3 },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
@@ -333,8 +338,8 @@ describe('Dashboard Page', () => {
     });
 
     it('shows classes when profileId is not 3 and not "all"', async () => {
-         (useUserHook as any).mockReturnValue({
-            user: { ...mockUser, profileId: 1 },
+         (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.MASTER },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
         });

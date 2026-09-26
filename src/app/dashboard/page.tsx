@@ -8,9 +8,11 @@ import * as Yup from 'yup';
 import api from "@/api.service";
 import {yupResolver} from "@hookform/resolvers/yup";
 import {toast} from "react-toastify";
-import {useUserHook} from "@/user/useUserHook";
+import {useSchoolContext} from "@/contexts/SchoolContext";
+import {PROFILE, isStaffProfile, isSchoolScopedStaffProfile} from "@/constants/profile";
 import {EnrollmentsList} from "@/components/EnrollmentsList";
 import {SubstitutionCounter} from "@/components/SubstitutionCounter";
+import {SchoolSelector} from "@/components/SchoolSelector";
 import {useSubstitutionLimit} from "@/hooks/useSubstitutionLimit";
 import axios from "axios";
 
@@ -269,10 +271,10 @@ export default function Home() {
         resolver: yupResolver(validationSchema),
     });
 
-    const {user, logout, refreshUserData} = useUserHook();
+    const {user, logout, refreshUserData} = useSchoolContext();
     
     const { current, limit, percentage, canApply, loading: limitLoading } = useSubstitutionLimit(
-        user?.profileId === 3 ? user?.id : undefined,
+        user?.profileId === PROFILE.PROFESSOR ? user?.id : undefined,
     );
 
     const loadClasses = useCallback(() => {
@@ -289,7 +291,10 @@ export default function Home() {
     const submit = handleSubmit(async (data) => {
             console.log(data)
             const {finishedAt, startAt, subject} = data;
-            const schoolId = user?.profileId === 1 ? selectedSchoolId : user?.schoolId;
+            // Correção: MASTER (profileId=4) vê o dropdown de todas as escolas;
+            // demais perfis com escopo de escola (DIRETOR/AUXILIAR_ADMIN) usam a
+            // própria escola. O valor antigo (1) era DIRETOR, não MASTER.
+            const schoolId = user?.profileId === PROFILE.MASTER ? selectedSchoolId : user?.schoolId;
             const payload = {
                 // @ts-ignore
                 schoolId: schoolId,
@@ -344,7 +349,7 @@ export default function Home() {
     useEffect(() => {
         if (!user) return;
         
-        if (user.profileId === 1) {
+        if (user.profileId === PROFILE.MASTER) {
             api.get('/schools').then((data) => {
                 setSchools(data?.data || [])
                 if (data?.data?.length > 0) {
@@ -352,7 +357,7 @@ export default function Home() {
                     setSchool(data.data[0])
                 }
             }).catch(() => {})
-        } else if (user.profileId === 2 && user.schoolId) {
+        } else if (isSchoolScopedStaffProfile(user.profileId) && user.schoolId) {
             api.get(`/schools/${user.schoolId}`).then((data) => {
                 setSchool(data?.data)
                 setSelectedSchoolId(user.schoolId ?? null)
@@ -367,7 +372,7 @@ export default function Home() {
             return classes.filter(item => item?.enrolledById === null).filter((item) => `${item?.subject?.name} ${item?.school?.name}`.toLowerCase().includes(search.toLowerCase()));
         }
         // @ts-ignore
-        if (user?.profileId === 3) return classes.filter(item => item?.enrolledById === user?.id).filter((item) => `${item?.subject?.name} ${item?.school?.name}`.toLowerCase().includes(search.toLowerCase()));
+        if (user?.profileId === PROFILE.PROFESSOR) return classes.filter(item => item?.enrolledById === user?.id).filter((item) => `${item?.subject?.name} ${item?.school?.name}`.toLowerCase().includes(search.toLowerCase()));
 
         // @ts-ignore
         return classes.filter(item => item?.enrolledById != null).filter((item) => `${item?.subject?.name} ${item?.school?.name}`.toLowerCase().includes(search.toLowerCase()));
@@ -376,7 +381,8 @@ export default function Home() {
             <Header>
                 <Logo size={60}/>
                 <div className={'profile'}>
-                    {user?.profileId === 3 && user?.schoolId && (
+                    <SchoolSelector />
+                    {user?.profileId === PROFILE.PROFESSOR && user?.schoolId && (
                         <SubstitutionCounter 
                             current={current} 
                             limit={limit} 
@@ -397,9 +403,9 @@ export default function Home() {
                         <TabHeader>
                             <button className={all === 'classes' ? 'active' : 'inactive'} onClick={() => setAll('classes')}>Aulas Disponiveis</button>
                             <button className={all === 'myclasses' ? 'active' : 'inactive'} onClick={() => setAll('myclasses')}>
-                                {user?.profileId != 3 ? 'Aulas aceitas' : 'Minhas Aulas'}
+                                {user?.profileId !== PROFILE.PROFESSOR ? 'Aulas aceitas' : 'Minhas Aulas'}
                             </button>
-                            {(user?.profileId == 1 || user?.profileId == 2) && (
+                            {isStaffProfile(user?.profileId) && (
                                 <button className={all === 'enrollments' ? 'active' : 'inactive'} onClick={() => setAll('enrollments')}>
                                     Candidaturas
                                 </button>
@@ -407,10 +413,11 @@ export default function Home() {
                         </TabHeader>
                         <CardContent>
                             {        // @ts-ignore
-                                all && user?.profileId != 3 && (
+                                all && user?.profileId !== PROFILE.PROFESSOR && (
+
                                 <>
                                     <Form onSubmit={submit}>
-                                        {user?.profileId === 1 ? (
+                                        {user?.profileId === PROFILE.MASTER ? (
                                             <select
                                                 value={selectedSchoolId || ''}
                                                 onChange={(e) => {
@@ -485,7 +492,7 @@ export default function Home() {
                                         <th>Escola</th>
                                         <th>Inicio</th>
                                         <th>Termino</th>
-                                        {user?.profileId != 3 && (<th>Professor</th>)}
+                                        {user?.profileId !== PROFILE.PROFESSOR && (<th>Professor</th>)}
                                         <th>Ações</th>
                                     </tr>
                                     </thead>
@@ -496,9 +503,9 @@ export default function Home() {
                                             <td>{item?.school?.name}</td>
                                             <td>{format(new Date(item?.statededAt), 'dd/MM/yyyy HH:mm:ss')}</td>
                                             <td>{format(new Date(item?.finishedAt), 'dd/MM/yyyy HH:mm:ss')}</td>
-                                            {user?.profileId != 3 && (<td>{item?.enrolledBy?.name}</td>)}
+                                            {user?.profileId !== PROFILE.PROFESSOR && (<td>{item?.enrolledBy?.name}</td>)}
                                             <td>
-                                                {user?.profileId == 3 ?
+                                                {user?.profileId === PROFILE.PROFESSOR ?
                                                     (!item?.enrolledBy && (<button onClick={accept(item?.id)}>aceitar</button>)) :
                                                     (
                                                         <>

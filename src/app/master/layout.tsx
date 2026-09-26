@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useUserHook } from '@/user/useUserHook';
+import { useSchoolContext } from '@/contexts/SchoolContext';
+import { PROFILE } from '@/constants/profile';
 import { MasterSidebar } from './components/MasterSidebar';
 import styled from 'styled-components';
 
@@ -27,7 +28,7 @@ export default function MasterLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isLoading } = useUserHook();
+  const { user, isLoading } = useSchoolContext();
 
   useEffect(() => {
     if (!isLoading) {
@@ -35,13 +36,15 @@ export default function MasterLayout({
         router.push('/login');
         return;
       }
-      if (user.profileId !== 1) {
+      // Correção: MASTER é profileId=4 (o valor antigo, 1, é DIRETOR —
+      // bug real de autorização, ver src/constants/profile.ts).
+      if (user.profileId !== PROFILE.MASTER) {
         router.push('/dashboard');
       }
     }
   }, [user, isLoading, router]);
 
-  if (isLoading || !user || user.profileId !== 1) {
+  if (isLoading || !user || user.profileId !== PROFILE.MASTER) {
     return (
       <LoadingContainer>
         <LoadingText>Carregando...</LoadingText>
