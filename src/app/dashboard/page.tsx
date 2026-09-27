@@ -13,6 +13,7 @@ import {yupResolver} from "@hookform/resolvers/yup";
 import {toast} from "react-toastify";
 import {useSchoolContext} from "@/contexts/SchoolContext";
 import {PROFILE, isStaffProfile, isSchoolScopedStaffProfile} from "@/constants/profile";
+import Link from "next/link";
 import {EnrollmentsList} from "@/components/EnrollmentsList";
 import {SubstitutionCounter} from "@/components/SubstitutionCounter";
 import {SchoolSelector} from "@/components/SchoolSelector";
@@ -385,6 +386,12 @@ export default function Home() {
                 <Logo size={60}/>
                 <div className={'profile'}>
                     <SchoolSelector />
+                    {(isSchoolScopedStaffProfile(user?.profileId) || user?.profileId === PROFILE.MASTER) && (
+                        <>
+                            <Link href="/escola/jornada-docente">Jornada Docente</Link>
+                            <Link href="/escola/fechamento-ponto">Fechamento de Ponto</Link>
+                        </>
+                    )}
                     {user?.profileId === PROFILE.PROFESSOR && user?.schoolId && (
                         <SubstitutionCounter 
                             current={current} 
