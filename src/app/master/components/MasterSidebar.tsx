@@ -50,7 +50,9 @@ const NavItem = styled(Link)<{ $active: boolean }>`
 
 const navItems = [
   { label: 'Dashboard', href: '/master/dashboard' },
+  { label: 'Redes de Ensino', href: '/master/redes' },
   { label: 'Escolas', href: '/master/escolas' },
+  { label: 'Políticas de Carga Horária', href: '/master/politicas-carga-horaria' },
   { label: 'Diretores', href: '/master/diretores' },
   { label: 'Administradores', href: '/master/administradores' },
   { label: 'Professores', href: '/master/professores' },

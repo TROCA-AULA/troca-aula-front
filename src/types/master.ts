@@ -51,6 +51,49 @@ export interface UpdateSchoolRequest {
   networkId?: number;
 }
 
+export interface CreateNetworkRequest {
+  name: string;
+}
+
+export interface UpdateNetworkRequest {
+  name?: string;
+}
+
+// Catálogo fixo (5 linhas seedadas via migration, sem controller de
+// escrita no backend — ADR-003 do Design Doc: categorias legais nacionais,
+// não variam por rede/escola). Sem tela própria: hardcode aqui, não vale a
+// pena um módulo de backend só pra ler 5 linhas que nunca mudam.
+export const WORKLOAD_TYPES = [
+  { id: 1, code: 'AULA', name: 'Horas-aula de interação com alunos' },
+  { id: 2, code: 'PEDAGOGICO_COLETIVO', name: 'Trabalho pedagógico coletivo' },
+  { id: 3, code: 'LIVRE_ESCOLHA', name: 'Trabalho pedagógico em local de livre escolha' },
+  { id: 4, code: 'SUPLEMENTAR', name: 'Carga suplementar' },
+  { id: 5, code: 'SUBSTITUICAO', name: 'Aulas de substituição' },
+] as const;
+
+export interface WorkloadPolicy {
+  id: number;
+  networkId: number;
+  workloadTypeId: number;
+  maxHoursPerWeek: number | null;
+  ataOficialRequired: boolean;
+  createdAt: string;
+}
+
+export interface CreateWorkloadPolicyRequest {
+  networkId: number;
+  workloadTypeId: number;
+  maxHoursPerWeek?: number;
+  ataOficialRequired?: boolean;
+}
+
+export interface UpdateWorkloadPolicyRequest {
+  networkId?: number;
+  workloadTypeId?: number;
+  maxHoursPerWeek?: number;
+  ataOficialRequired?: boolean;
+}
+
 export interface CreateUserRequest {
   name: string;
   email: string;

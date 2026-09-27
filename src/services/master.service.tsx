@@ -11,6 +11,11 @@ import type {
   UpdateSchoolRequest,
   CreateUserRequest,
   DashboardStats,
+  CreateNetworkRequest,
+  UpdateNetworkRequest,
+  WorkloadPolicy,
+  CreateWorkloadPolicyRequest,
+  UpdateWorkloadPolicyRequest,
 } from '@/types/master';
 
 // O backend não tem fluxo de convite/definição de senha por e-mail — gera
@@ -78,6 +83,35 @@ export const masterService = {
   // usada aqui para popular o seletor no formulário de criação de escola.
   getNetworks: async (): Promise<Network[]> => {
     const response = await api.get('/networks');
+    return response.data?.data ?? response.data;
+  },
+
+  createNetwork: async (data: CreateNetworkRequest): Promise<Network> => {
+    const response = await api.post('/networks', data);
+    return response.data?.data ?? response.data;
+  },
+
+  updateNetwork: async (id: number, data: UpdateNetworkRequest): Promise<Network> => {
+    const response = await api.patch(`/networks/${id}`, data);
+    return response.data?.data ?? response.data;
+  },
+
+  getWorkloadPolicies: async (networkId?: number): Promise<WorkloadPolicy[]> => {
+    const params = networkId ? `?networkId=${networkId}` : '';
+    const response = await api.get(`/workload-policies${params}`);
+    return response.data?.data ?? response.data;
+  },
+
+  createWorkloadPolicy: async (data: CreateWorkloadPolicyRequest): Promise<WorkloadPolicy> => {
+    const response = await api.post('/workload-policies', data);
+    return response.data?.data ?? response.data;
+  },
+
+  updateWorkloadPolicy: async (
+    id: number,
+    data: UpdateWorkloadPolicyRequest,
+  ): Promise<WorkloadPolicy> => {
+    const response = await api.patch(`/workload-policies/${id}`, data);
     return response.data?.data ?? response.data;
   },
 
