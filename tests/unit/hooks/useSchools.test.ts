@@ -20,8 +20,8 @@ vi.mock('react-toastify', () => ({
 }));
 
 const mockSchools = [
-  { id: 1, name: 'Escola A', networkId: 1, substitutionLimitPerSemester: 10, createdAt: '2026-01-01' },
-  { id: 2, name: 'Escola B', networkId: 1, substitutionLimitPerSemester: 5, createdAt: '2026-01-02' },
+  { id: 1, name: 'Escola A', networkId: 1, substitutionLimitPerSemester: 10, priorityWindowHours: null, createdAt: '2026-01-01' },
+  { id: 2, name: 'Escola B', networkId: 1, substitutionLimitPerSemester: 5, priorityWindowHours: null, createdAt: '2026-01-02' },
 ];
 
 describe('useSchools Hook - US2', () => {
@@ -44,6 +44,7 @@ describe('useSchools Hook - US2', () => {
       id: 3,
       ...newSchool,
       substitutionLimitPerSemester: null,
+      priorityWindowHours: null,
       createdAt: '2026-01-03',
     });
 
@@ -63,6 +64,7 @@ describe('useSchools Hook - US2', () => {
       ...updateData,
       networkId: 1,
       substitutionLimitPerSemester: 10,
+      priorityWindowHours: null,
       createdAt: '2026-01-01',
     });
 

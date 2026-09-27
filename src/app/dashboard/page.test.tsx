@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Home from './page';
 import { useSchoolContext } from '@/contexts/SchoolContext';
 import { PROFILE } from '@/constants/profile';
-import api from '@/api.service';
+import api from '@/api-client.service';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
@@ -11,7 +11,7 @@ vi.mock('@/contexts/SchoolContext', () => ({
     useSchoolContext: vi.fn(),
 }));
 
-vi.mock('@/api.service', () => ({
+vi.mock('@/api-client.service', () => ({
     default: {
         get: vi.fn(),
         post: vi.fn(),

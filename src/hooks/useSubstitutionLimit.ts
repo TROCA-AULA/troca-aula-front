@@ -1,6 +1,9 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import api from '@/api.service';
+// Client-side: usa o proxy Next.js, não o backend direto (o cookie de
+// sessão é httpOnly, o JS do navegador não consegue anexá-lo sozinho —
+// ver src/api-client.service.tsx).
+import api from '@/api-client.service';
 import type { EnrollmentRequest } from '@/types/enrollment';
 
 interface SubstitutionLimitState {

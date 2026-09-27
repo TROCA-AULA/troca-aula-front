@@ -1,4 +1,7 @@
-import api from '@/api.service';
+// Client-side: usa o proxy Next.js, não o backend direto (o cookie de
+// sessão é httpOnly, o JS do navegador não consegue anexá-lo sozinho —
+// ver src/api-client.service.tsx).
+import api from '@/api-client.service';
 import type {
   School,
   Network,
@@ -90,6 +93,19 @@ export const masterService = {
 
   deleteSchool: async (id: number): Promise<void> => {
     await api.delete(`/schools/${id}`);
+  },
+
+  // Endpoint dedicado (não faz parte do PATCH /schools/:id genérico) -
+  // DIRETOR/AUXILIAR_ADMIN da própria escola também podem chamar, não só
+  // MASTER (Design Doc, Seção 9.2: "cada escola tem sua regra").
+  updateSchoolPriorityWindow: async (
+    id: number,
+    priorityWindowHours: number | null,
+  ): Promise<School> => {
+    const response = await api.patch(`/schools/${id}/priority-window`, {
+      priorityWindowHours,
+    });
+    return response.data?.data ?? response.data;
   },
 
   getUsers: async (profileId?: number, schoolId?: number): Promise<User[]> => {

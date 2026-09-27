@@ -142,10 +142,11 @@ interface SchoolFormProps {
 interface FormData {
   name: string;
   networkId: number;
+  priorityWindowHours?: number;
 }
 
 export function SchoolForm({ open, mode, initialData, onClose }: SchoolFormProps) {
-  const { createSchool, updateSchool } = useSchools();
+  const { createSchool, updateSchool, updatePriorityWindow } = useSchools();
   const { networks, loading: networksLoading } = useNetworks();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -157,8 +158,12 @@ export function SchoolForm({ open, mode, initialData, onClose }: SchoolFormProps
     reset,
   } = useForm<FormData>({
     defaultValues: initialData
-      ? { name: initialData.name, networkId: initialData.networkId }
-      : { name: '', networkId: undefined },
+      ? {
+          name: initialData.name,
+          networkId: initialData.networkId,
+          priorityWindowHours: initialData.priorityWindowHours ?? undefined,
+        }
+      : { name: '', networkId: undefined, priorityWindowHours: undefined },
   });
 
   const onSubmit = async (data: FormData) => {
@@ -180,6 +185,12 @@ export function SchoolForm({ open, mode, initialData, onClose }: SchoolFormProps
         await createSchool({ name: data.name, networkId: Number(data.networkId) });
       } else if (initialData) {
         await updateSchool(initialData.id, { name: data.name, networkId: Number(data.networkId) });
+        // Endpoint dedicado (fora do PATCH /schools/:id genérico) - só faz
+        // a chamada se o valor mudou, pra não gerar uma request à toa.
+        const newWindow = data.priorityWindowHours ? Number(data.priorityWindowHours) : null;
+        if (newWindow !== (initialData.priorityWindowHours ?? null)) {
+          await updatePriorityWindow(initialData.id, newWindow);
+        }
       }
       onClose();
       reset();
@@ -217,6 +228,27 @@ export function SchoolForm({ open, mode, initialData, onClose }: SchoolFormProps
             </Select>
             {errors.networkId && <ErrorText>Selecione uma rede</ErrorText>}
           </FormGroup>
+
+          {mode === 'edit' && (
+            <FormGroup>
+              <Label htmlFor="priorityWindowHours">
+                Janela de prioridade (horas)
+              </Label>
+              <Input
+                id="priorityWindowHours"
+                type="number"
+                min={0}
+                step={1}
+                {...register('priorityWindowHours', { valueAsNumber: true })}
+                placeholder="Deixe em branco para não ter janela (abre geral na hora)"
+              />
+              <span style={{ fontSize: 12, color: '#666' }}>
+                Por quantas horas uma aula vaga fica visível só para
+                professores vinculados a esta escola antes de abrir para os
+                demais.
+              </span>
+            </FormGroup>
+          )}
 
           {error && <ErrorText>{error}</ErrorText>}
 

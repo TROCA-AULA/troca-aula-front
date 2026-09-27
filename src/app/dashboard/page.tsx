@@ -5,7 +5,10 @@ import {useForm} from "react-hook-form";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {format} from "date-fns";
 import * as Yup from 'yup';
-import api from "@/api.service";
+// Client-side: usa o proxy Next.js, não o backend direto (o cookie de
+// sessão é httpOnly, o JS do navegador não consegue anexá-lo sozinho —
+// ver src/api-client.service.tsx).
+import api from "@/api-client.service";
 import {yupResolver} from "@hookform/resolvers/yup";
 import {toast} from "react-toastify";
 import {useSchoolContext} from "@/contexts/SchoolContext";

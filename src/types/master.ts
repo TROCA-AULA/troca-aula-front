@@ -7,6 +7,11 @@ export interface School {
   // agora vem de WorkloadPolicies por rede (Design Doc, Fase 2). Continua
   // no tipo só para exibição (dado histórico), nunca enviado nas requests.
   substitutionLimitPerSemester: number | null;
+  // Design Doc, Seção 9.2: horas que uma vaga fica visível só para
+  // professores vinculados a esta escola antes de abrir geral. null = sem
+  // janela. Configurado via endpoint dedicado (updatePriorityWindow), não
+  // pelo PATCH /schools/:id genérico.
+  priorityWindowHours: number | null;
   createdAt: string;
 }
 

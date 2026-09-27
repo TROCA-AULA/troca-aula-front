@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { teacherService } from '../../src/services/teacher.service';
 import { PROFILE } from '../../src/constants/profile';
 
-vi.mock('../../src/api.service', () => ({
+vi.mock('../../src/api-client.service', () => ({
   __esModule: true,
   default: {
     get: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('../../src/api.service', () => ({
   },
 }));
 
-import apiService from '../../src/api.service';
+import apiService from '../../src/api-client.service';
 
 const mockApi = apiService as unknown as {
   get: ReturnType<typeof vi.fn>;
