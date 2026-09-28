@@ -16,6 +16,7 @@ import type {
   WorkloadPolicy,
   CreateWorkloadPolicyRequest,
   UpdateWorkloadPolicyRequest,
+  AuditLogEntry,
 } from '@/types/master';
 
 // O backend não tem fluxo de convite/definição de senha por e-mail — gera
@@ -139,6 +140,13 @@ export const masterService = {
     const response = await api.patch(`/schools/${id}/priority-window`, {
       priorityWindowHours,
     });
+    return response.data?.data ?? response.data;
+  },
+
+  // Rastreabilidade (MASTER-only no backend, RolesGuard) - só por rede
+  // (não existe "listar tudo"; a rede é o recorte natural de auditoria).
+  getAuditLogByNetwork: async (networkId: number): Promise<AuditLogEntry[]> => {
+    const response = await api.get(`/audit-log/network/${networkId}`);
     return response.data?.data ?? response.data;
   },
 

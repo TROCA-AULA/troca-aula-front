@@ -20,6 +20,36 @@ import {SchoolSelector} from "@/components/SchoolSelector";
 import {useSubstitutionLimit} from "@/hooks/useSubstitutionLimit";
 import axios from "axios";
 
+// P8 (problemas-conhecidos.md): tipos reais do formato denormalizado que
+// GET /classes devolve (school/subject/createdBy/enrolledBy populados via
+// `with` no ClassesRepository) - específico deste dashboard legado, por
+// isso local em vez de em types/enrollment.ts (que reflete o formato flat
+// usado pelas telas modernas /classes e /minhas-aulas).
+interface DashboardSchool {
+    id: number;
+    name: string;
+}
+interface DashboardSubject {
+    id: number;
+    name: string;
+}
+interface DashboardPerson {
+    id: number;
+    name: string;
+}
+interface DashboardClass {
+    id: number;
+    schoolId: number;
+    subjectId: number;
+    statededAt: string;
+    finishedAt: string;
+    available: boolean;
+    enrolledById: number | null;
+    school?: DashboardSchool;
+    subject?: DashboardSubject;
+    enrolledBy?: DashboardPerson;
+}
+
 const Wrapper = styled.div`
     display: flex;
     flex: 1;
@@ -262,11 +292,11 @@ const validationSchema = Yup.object({
 });
 
 export default function Home() {
-    const [classes, setClasses] = useState([])
-    const [school, setSchool] = useState<any>()
-    const [schools, setSchools] = useState<any[]>([])
+    const [classes, setClasses] = useState<DashboardClass[]>([])
+    const [school, setSchool] = useState<DashboardSchool | undefined>()
+    const [schools, setSchools] = useState<DashboardSchool[]>([])
     const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null)
-    const [subjects, setSubjects] = useState<any[]>([])
+    const [subjects, setSubjects] = useState<DashboardSubject[]>([])
     const [preSearch, setPreSearch] = useState('')
     const [search, setSerch] = useState('')
     const [all, setAll] = useState<'classes' | 'myclasses' | 'enrollments'>('classes')
@@ -300,7 +330,6 @@ export default function Home() {
             // própria escola. O valor antigo (1) era DIRETOR, não MASTER.
             const schoolId = user?.profileId === PROFILE.MASTER ? selectedSchoolId : user?.schoolId;
             const payload = {
-                // @ts-ignore
                 schoolId: schoolId,
                 subjectId: subject,
                 createdByd: user?.id,
@@ -317,7 +346,7 @@ export default function Home() {
         }
     );
 
-    const accept = (id: any)=>async () => {
+    const accept = (id: number)=>async () => {
         try {
             await api.post(`/enrollment-requests/request/${id}`);
             toast.success('Candidatura enviada com sucesso')
@@ -327,7 +356,7 @@ export default function Home() {
         }
     };
 
-    const deleteData = (id: any) => async() => {
+    const deleteData = (id: number) => async() => {
         try {
             await axios.delete(`/api/classes/${id}`);
             toast.success('Aula removida com sucesso')
@@ -372,13 +401,10 @@ export default function Home() {
 
     const classesFiltered = useMemo(() => {
         if (all === 'classes') {
-            // @ts-ignore
             return classes.filter(item => item?.enrolledById === null).filter((item) => `${item?.subject?.name} ${item?.school?.name}`.toLowerCase().includes(search.toLowerCase()));
         }
-        // @ts-ignore
         if (user?.profileId === PROFILE.PROFESSOR) return classes.filter(item => item?.enrolledById === user?.id).filter((item) => `${item?.subject?.name} ${item?.school?.name}`.toLowerCase().includes(search.toLowerCase()));
 
-        // @ts-ignore
         return classes.filter(item => item?.enrolledById != null).filter((item) => `${item?.subject?.name} ${item?.school?.name}`.toLowerCase().includes(search.toLowerCase()));
     }, [all, classes, search, user])
     return (<>
@@ -391,6 +417,9 @@ export default function Home() {
                             <Link href="/escola/jornada-docente">Jornada Docente</Link>
                             <Link href="/escola/fechamento-ponto">Fechamento de Ponto</Link>
                         </>
+                    )}
+                    {user?.profileId === PROFILE.PROFESSOR && (
+                        <Link href="/minha-jornada">Minha Jornada</Link>
                     )}
                     {user?.profileId === PROFILE.PROFESSOR && user?.schoolId && (
                         <SubstitutionCounter 
@@ -422,7 +451,7 @@ export default function Home() {
                             )}
                         </TabHeader>
                         <CardContent>
-                            {        // @ts-ignore
+                            {
                                 all && user?.profileId !== PROFILE.PROFESSOR && (
 
                                 <>
@@ -507,7 +536,7 @@ export default function Home() {
                                     </tr>
                                     </thead>
                                     <tbody>
-                                    {classesFiltered.map((item: any, index) => (
+                                    {classesFiltered.map((item) => (
                                         <tr key={`item-${item?.id}`}>
                                             <td>{item?.subject?.name}</td>
                                             <td>{item?.school?.name}</td>

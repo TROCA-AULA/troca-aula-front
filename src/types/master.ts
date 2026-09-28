@@ -137,6 +137,22 @@ export interface UsersPageState {
   };
 }
 
+// Rastreabilidade (Design Doc Seção 5.3) - hoje só TeacherWorkloadRecords
+// grava entradas aqui (ver AuditLogService.record no backend).
+export interface AuditLogEntry {
+  id: number;
+  networkId: number;
+  entityType: string;
+  entityId: number;
+  changedById: number;
+  changedByName: string | null;
+  changedByEmail: string | null;
+  before: unknown;
+  after: unknown;
+  justification: string | null;
+  changedAt: string;
+}
+
 export type RequestStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export interface ApiState<T> {

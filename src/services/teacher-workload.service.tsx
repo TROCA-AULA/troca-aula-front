@@ -17,6 +17,13 @@ export const teacherWorkloadService = {
     return response.data?.data ?? response.data;
   },
 
+  // Professor vê os próprios registros, em qualquer escola (sem exigir
+  // perfil de gestão) - contraparte de `getBySchool` (que exige RolesGuard).
+  getMine: async (): Promise<TeacherWorkloadRecord[]> => {
+    const response = await api.get('/teacher-workload-records/me');
+    return response.data?.data ?? response.data;
+  },
+
   create: async (
     data: CreateTeacherWorkloadRecordRequest,
   ): Promise<TeacherWorkloadRecord> => {

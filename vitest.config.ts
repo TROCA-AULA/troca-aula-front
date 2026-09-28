@@ -15,6 +15,7 @@ export default defineConfig({
       exclude: [
         'src/**/*.test.{ts,tsx}',
         'src/test-setup.ts',
+        'src/test-utils.tsx',
         'src/app/layout.tsx', // Boilerplate de layout é difícil de testar no JSDOM (html/body)
         'src/app/api/auth/me/route.ts', // Exemplo: rotas de API podem ser difíceis se não houver um bom mocking do NextRequest
         'src/app/api/auth/logout/route.ts',

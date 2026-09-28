@@ -8,9 +8,8 @@ export async function GET(req: NextRequest) {
 
         const tokenCookie = cookie.get('token');      // retorna { value, name, ... } ou undefined
         const searchParams = req.nextUrl.searchParams;
-        const params = {};
+        const params: Record<string, string> = {};
         for (const [key, value] of searchParams.entries()) {
-            // @ts-ignore
             params[key] = value;
         }
         const config = {

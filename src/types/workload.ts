@@ -20,6 +20,10 @@ export interface TeacherWorkloadRecord {
   validTo: string | null;
   createdById: number;
   createdAt: string;
+  // Populado só em GET /teacher-workload-records/me (útil quando o
+  // professor tem registros em mais de uma escola) - ausente na listagem
+  // de gestão por escola, que já é filtrada por schoolId.
+  school?: { id: number; name: string };
 }
 
 export interface CreateTeacherWorkloadRecordRequest {
