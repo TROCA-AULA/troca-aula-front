@@ -21,7 +21,6 @@ vi.mock('@/api-client.service', () => ({
 vi.mock('axios', () => {
     const mockAxios: Record<string, any> = {
         get: vi.fn(),
-        patch: vi.fn(),
         delete: vi.fn(),
         interceptors: {
             request: { use: vi.fn() },
@@ -191,8 +190,7 @@ describe('Dashboard Page', () => {
         });
     });
 
-    it('approves a class', async () => {
-        (axios.patch as any).mockResolvedValue({});
+    it('shows the enrolled professor name and no action buttons on accepted classes', async () => {
         render(<Home />);
 
         const myClassesButton = screen.getByText('Aulas aceitas');
@@ -200,32 +198,22 @@ describe('Dashboard Page', () => {
 
         await waitFor(() => expect(screen.getByRole('cell', { name: 'Science' })).toBeInTheDocument());
 
-        const approveButton = screen.getByText('aprovar');
-        fireEvent.click(approveButton);
-
-        await waitFor(() => {
-            expect(axios.patch).toHaveBeenCalledWith('/api/classes/2', expect.any(Object), expect.any(Object));
-            expect(toast.success).toHaveBeenCalledWith('Aula aprovada com sucesso');
-        });
+        // `enrolledBy` agora vem populado do backend (ClassesRepository) - a
+        // tabela mostra o nome do professor e nada de aceitar/deletar.
+        expect(screen.getByRole('cell', { name: 'Test User' })).toBeInTheDocument();
+        expect(screen.queryByText('aceitar')).not.toBeInTheDocument();
+        expect(screen.queryByText('deletar')).not.toBeInTheDocument();
     });
 
-    it('handles approve error', async () => {
-        (axios.patch as any).mockRejectedValue(new Error('Fail'));
-        console.log = vi.fn();
+    it('does not render the accept button for managers', async () => {
         render(<Home />);
 
-        const myClassesButton = screen.getByText('Aulas aceitas');
-        fireEvent.click(myClassesButton);
+        await waitFor(() => expect(screen.getByRole('cell', { name: 'Math' })).toBeInTheDocument());
 
-        await waitFor(() => expect(screen.getByRole('cell', { name: 'Science' })).toBeInTheDocument());
-
-        const approveButton = screen.getByText('aprovar');
-        fireEvent.click(approveButton);
-
-        await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith('Erro ao aprovar aula');
-            expect(console.log).toHaveBeenCalled();
-        });
+        // Aprovar candidatura vive em /master/professores (aba Candidaturas);
+        // o dashboard legado so mostra "deletar" para aula vaga.
+        expect(screen.queryByText('aceitar')).not.toBeInTheDocument();
+        expect(screen.getByText('deletar')).toBeInTheDocument();
     });
 
     it('calls logout when button clicked', () => {
@@ -244,13 +232,13 @@ describe('Dashboard Page', () => {
         expect(mockRefreshUserData).toHaveBeenCalled();
     });
 
-    it('allows teacher to accept a class', async () => {
+    it('allows teacher to apply to an available class', async () => {
         (useSchoolContext as any).mockReturnValue({
-            user: { ...mockUser, profileId: 3 },
+            user: { ...mockUser, profileId: PROFILE.PROFESSOR, schoolId: 1 },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
         });
-        (axios.patch as any).mockResolvedValue({});
+        (api.post as any).mockResolvedValue({});
 
         render(<Home />);
 
@@ -260,18 +248,20 @@ describe('Dashboard Page', () => {
         fireEvent.click(acceptButton);
 
         await waitFor(() => {
-            expect(axios.patch).toHaveBeenCalledWith('/api/classes/1', expect.any(Object), expect.any(Object));
-            expect(toast.success).toHaveBeenCalledWith('Aula aprovada com sucesso');
+            // Candidatura via EnrollmentRequests (fluxo real), nao mais
+            // PATCH /api/classes/:id da era do swap-request.
+            expect(api.post).toHaveBeenCalledWith('/enrollment-requests/request/1');
+            expect(toast.success).toHaveBeenCalledWith('Candidatura enviada com sucesso');
         });
     });
 
-    it('handles accept error for teacher', async () => {
+    it('handles apply error for teacher', async () => {
         (useSchoolContext as any).mockReturnValue({
-            user: { ...mockUser, profileId: 3 },
+            user: { ...mockUser, profileId: PROFILE.PROFESSOR, schoolId: 1 },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
         });
-        (axios.patch as any).mockRejectedValue(new Error('Fail'));
+        (api.post as any).mockRejectedValue(new Error('Fail'));
 
         render(<Home />);
 
@@ -281,7 +271,7 @@ describe('Dashboard Page', () => {
         fireEvent.click(acceptButton);
 
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith('Erro ao aprovar aula');
+            expect(toast.error).toHaveBeenCalledWith('Erro ao enviar candidatura');
         });
     });
 
