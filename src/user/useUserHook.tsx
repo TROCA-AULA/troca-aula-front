@@ -1,58 +1,20 @@
 'use client'
-import {useState, useEffect} from 'react';
-import {UserData} from "@/user/user.types";
+import { useSchoolContext } from '@/contexts/SchoolContext';
 import type { UserContextType } from '@/user/user.types';
-import {useRouter} from "next/navigation";
 
-
+/**
+ * @deprecated Use `useSchoolContext()` diretamente. Desde a Fase 3 o
+ * SchoolContext é a fonte única de sessão (busca `/api/auth/me` uma única
+ * vez e ainda expõe escola/perfil ativos); este wrapper existe apenas para
+ * compatibilidade de assinatura (`UserContextType`) com código antigo e
+ * será removido quando não houver mais consumidores. Não havia mais nenhum
+ * uso real no código — a unificação de fato (roadmap) é esta delegação.
+ *
+ * O `useGovbrAuth` continua existindo à parte por ser o fluxo de LOGIN
+ * Gov.br (OAuth), não uma segunda fonte de sessão: ele grava o cookie pela
+ * mesma rota (`/api/auth/govbr-session`) e o SchoolContext lê dali.
+ */
 export function useUserHook(): UserContextType {
-    const [userData, setUserData] = useState<UserData | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-    const router = useRouter();
-
-
-    const fetchUserData = async () => {
-        try {
-            setIsLoading(true);
-            const response = await fetch('/api/auth/me', {
-                credentials: 'include'
-            });
-            if (response.ok) {
-                const data = await response.json();
-                setUserData(data);
-            } else {
-                setUserData(null);
-            }
-        } catch (error) {
-            console.error('Erro ao buscar dados do usuário:', error);
-            setUserData(null);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchUserData();
-    }, []);
-
-    const logout = async () => {
-        try {
-            await fetch('/api/auth/logout', {
-                method: 'POST',
-                credentials: 'include'
-            });
-            setUserData(null);
-            router.push('/');
-
-        } catch (error) {
-            console.error('Erro ao fazer logout:', error);
-        }
-    };
-
-    return {
-        user: userData,
-        isLoading,
-        logout,
-        refreshUserData: fetchUserData
-    };
+    const { user, isLoading, logout, refreshUserData } = useSchoolContext();
+    return { user, isLoading, logout, refreshUserData };
 }
