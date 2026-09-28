@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { useTeachers } from '@/hooks/useTeachers';
 import { useSchoolContext } from '@/contexts/SchoolContext';
 import { toast } from 'react-toastify';
+import { accountService } from '@/services/account.service';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -284,6 +285,20 @@ export default function ProfessoresPage() {
     }
   };
 
+  // Reset de senha por gestor: o servidor gera a senha temporária e devolve
+  // uma única vez — mostrada no toast (autoClose: false) para repassar.
+  const handleResetPassword = async (userId: number, name: string) => {
+    if (!confirm(`Gerar uma nova senha temporária para ${name}?`)) return;
+    try {
+      const { tempPassword } = await accountService.resetUserPassword(userId);
+      toast.success(`Senha temporária de ${name}: ${tempPassword}`, {
+        autoClose: false,
+      });
+    } catch {
+      toast.error('Erro ao redefinir a senha');
+    }
+  };
+
   const handleUpdateEnrollment = async (
     enrollmentId: number,
     status: 'APPROVED' | 'REJECTED'
@@ -361,6 +376,12 @@ export default function ProfessoresPage() {
                       <Td>{teacher.subject?.name || '-'}</Td>
                       <Td>{teacher.totalSubstitutions}</Td>
                       <Td>
+                        <ActionButton
+                          onClick={() => handleResetPassword(teacher.id, teacher.name)}
+                          aria-label={`Redefinir senha de ${teacher.name}`}
+                        >
+                          Redefinir senha
+                        </ActionButton>
                         <ActionButton
                           $variant="danger"
                           onClick={() => handleUnlinkTeacher(teacher.id)}

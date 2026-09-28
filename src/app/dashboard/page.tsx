@@ -435,6 +435,7 @@ export default function Home() {
                     <p>
                         Olá, {user?.name}
                     </p>
+                    <Link href="/alterar-senha">Alterar senha</Link>
                     <button onClick={logout}>Sair</button>
                 </div>
             </Header>
