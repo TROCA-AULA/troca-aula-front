@@ -4,11 +4,14 @@ import Logo from "@/app/components/Logo";
 import {useForm} from "react-hook-form";
 import * as Yup from "yup";
 import {yupResolver} from "@hookform/resolvers/yup"
-import sha1 from 'crypto-js/sha1';
-import Base64 from 'crypto-js/enc-base64';
 import {redirect} from 'next/navigation'
 import {toast} from "react-toastify";
-import api from "@/api.service";
+// P9 (problemas-conhecidos.md): api.service.tsx é uso exclusivamente
+// server-side (Route Handlers) - este é um componente client. O cadastro
+// público não precisa de Authorization (rota sem guarda), então "funcionava"
+// mesmo assim, mas violava a arquitetura documentada; api-client.service é
+// o cliente certo para chamadas do navegador.
+import api from "@/api-client.service";
 
 const Wrapper = styled.div`
     display: flex;
@@ -125,8 +128,11 @@ const validationSchema = Yup.object({
     phone: Yup.string().required('Telefone é obrigatório'),
     password: Yup.string().required('Senha é obrigatório'),
     confirmpPass: Yup.string()
-        // @ts-ignore
-        .oneOf([Yup.ref('password'), null], 'As senhas não conferem')
+        // Tipagem do Yup para .oneOf() não aceita bem misturar Ref com
+        // null no array (o "null" aqui é proposital: permite deixar o
+        // campo em branco sem disparar o erro de "senhas não conferem",
+        // já que este campo não tem .required() próprio).
+        .oneOf([Yup.ref('password'), null] as unknown as (string | undefined)[], 'As senhas não conferem')
 });
 
 export default function Home() {
@@ -140,8 +146,10 @@ export default function Home() {
         // criação pública de usuário (ValidationPipe com forbidNonWhitelisted
         // rejeita propriedades extras com 400) — o vínculo escola/perfil é
         // feito depois, por quem tem permissão, via POST /users/:id/assign-profile.
+        // P3 (problemas-conhecidos.md): senha em texto puro sobre TLS, sem
+        // pré-hash no cliente — ver AuthService.signIn no backend.
         const payload = {
-            password: Base64.stringify(sha1(data.password)),
+            password: data.password,
             name: data.name,
             email: data.email,
             phone: data.phone,

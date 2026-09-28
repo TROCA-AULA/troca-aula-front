@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Home from './page';
 import { redirect } from 'next/navigation';
 import { toast } from 'react-toastify';
-import api from '@/api.service';
+import api from '@/api-client.service';
 
 vi.mock('next/navigation', () => ({
     redirect: vi.fn(),
@@ -16,7 +16,9 @@ vi.mock('react-toastify', () => ({
     },
 }));
 
-vi.mock('@/api.service', () => ({
+// P9 (problemas-conhecidos.md): a página passou a usar o cliente do
+// navegador (`api-client.service`), não o server-side (`api.service`).
+vi.mock('@/api-client.service', () => ({
     default: {
         post: vi.fn(),
     },

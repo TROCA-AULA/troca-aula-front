@@ -3,8 +3,6 @@ import styled from 'styled-components'
 import Logo from "@/app/components/Logo";
 import {useForm} from "react-hook-form";
 import {yupResolver} from "@hookform/resolvers/yup";
-import Base64 from "crypto-js/enc-base64";
-import sha1 from "crypto-js/sha1";
 import {toast} from "react-toastify";
 import * as Yup from "yup";
 import {useRouter} from "next/navigation";
@@ -134,8 +132,13 @@ export default function Home() {
 
 
         const submidt = handleSubmit(async (data) => {
+            // P3 (problemas-conhecidos.md): senha vai em texto puro sobre
+            // TLS, sem pré-hash no cliente — bcrypt no servidor (com salt)
+            // já é a defesa real; o hash client-side não adicionava
+            // segurança e causava um bug real (contas criadas pelo painel
+            // Master nunca conseguiam logar). Ver AuthService.signIn.
             const payload = {
-                password: Base64.stringify(sha1(data.password)),
+                password: data.password,
                 email: data.email,
             }
 
