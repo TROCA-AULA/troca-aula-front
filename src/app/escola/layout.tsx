@@ -53,7 +53,9 @@ export default function EscolaLayout({ children }: { children: React.ReactNode }
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.push('/login');
+        // P5 (problemas-conhecidos.md): '/login' nunca existiu como rota —
+        // o login vive em '/' (ver src/app/page.tsx).
+        router.push('/');
         return;
       }
       if (!hasAccess) {

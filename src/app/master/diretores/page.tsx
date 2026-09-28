@@ -5,7 +5,7 @@ import styled from 'styled-components';
 import { useUsers } from '@/hooks/useUsers';
 import { useSchools } from '@/hooks/useSchools';
 import { PROFILE } from '@/constants/profile';
-import { UserForm } from './components/UserForm';
+import { UserForm } from '../components/UserForm';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import type { User } from '@/types/master';
 

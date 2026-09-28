@@ -105,7 +105,9 @@ export default function ClassesPage() {
   }
 
   if (!user) {
-    router.push('/login');
+    // P5 (problemas-conhecidos.md): '/login' nunca existiu como rota — o
+    // login vive em '/' (ver src/app/page.tsx).
+    router.push('/');
     return null;
   }
 
@@ -155,7 +157,9 @@ export default function ClassesPage() {
               <ClassInfo>
                 <ClassLabel>Data</ClassLabel>
                 <ClassValue>
-                  {format(new Date((classItem as any).statededAt || classItem.date), 'dd/MM/yyyy HH:mm')}
+                  {classItem.statededAt
+                    ? format(new Date(classItem.statededAt), 'dd/MM/yyyy HH:mm')
+                    : '-'}
                 </ClassValue>
               </ClassInfo>
               <ApplyButton

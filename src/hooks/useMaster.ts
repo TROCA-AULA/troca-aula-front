@@ -14,7 +14,9 @@ export const useMaster = () => {
   const checkAccess = () => {
     if (isLoading) return true;
     if (!user) {
-      router.push('/login');
+      // P5 (problemas-conhecidos.md): '/login' nunca existiu como rota — o
+      // login vive em '/' (ver src/app/page.tsx).
+      router.push('/');
       return false;
     }
     if (user.profileId !== PROFILE.MASTER) {

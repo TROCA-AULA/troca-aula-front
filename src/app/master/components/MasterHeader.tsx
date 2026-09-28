@@ -44,15 +44,17 @@ const Avatar = styled.div`
 
 interface MasterHeaderProps {
   title?: string;
+  userName: string;
 }
 
-export function MasterHeader({ title = 'Área Administrativa' }: MasterHeaderProps) {
+export function MasterHeader({ title = 'Área Administrativa', userName }: MasterHeaderProps) {
+  const initial = userName.trim().charAt(0).toUpperCase() || '?';
   return (
     <HeaderContainer role="banner">
       <Title>{title}</Title>
       <UserInfo>
-        <UserName>Master</UserName>
-        <Avatar aria-label="Avatar do usuário">M</Avatar>
+        <UserName>{userName}</UserName>
+        <Avatar aria-label="Avatar do usuário">{initial}</Avatar>
       </UserInfo>
     </HeaderContainer>
   );

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useSchoolContext } from '@/contexts/SchoolContext';
 import { PROFILE } from '@/constants/profile';
 import { MasterSidebar } from './components/MasterSidebar';
+import { MasterHeader } from './components/MasterHeader';
 import styled from 'styled-components';
 
 const LayoutContainer = styled.div`
@@ -14,6 +15,13 @@ const LayoutContainer = styled.div`
 
 const SidebarWrapper = styled.div`
   flex-shrink: 0;
+`;
+
+const ContentColumn = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 `;
 
 const MainContent = styled.main`
@@ -33,7 +41,9 @@ export default function MasterLayout({
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.push('/login');
+        // P5 (problemas-conhecidos.md): '/login' nunca existiu como rota —
+        // o login vive em '/' (ver src/app/page.tsx).
+        router.push('/');
         return;
       }
       // Correção: MASTER é profileId=4 (o valor antigo, 1, é DIRETOR —
@@ -57,7 +67,10 @@ export default function MasterLayout({
       <SidebarWrapper>
         <MasterSidebar />
       </SidebarWrapper>
-      <MainContent>{children}</MainContent>
+      <ContentColumn>
+        <MasterHeader userName={user.name} />
+        <MainContent>{children}</MainContent>
+      </ContentColumn>
     </LayoutContainer>
   );
 }
