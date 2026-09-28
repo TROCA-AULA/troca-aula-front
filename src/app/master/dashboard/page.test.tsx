@@ -44,7 +44,8 @@ describe('Master DashboardPage', () => {
 
     render(<DashboardPage />);
 
-    expect(screen.getByText('Carregando estatísticas...')).toBeInTheDocument();
+    // P13: estado de carregamento agora é skeleton (não mais texto).
+    expect(screen.getByLabelText('Carregando')).toBeInTheDocument();
   });
 
   it('mostra o erro quando a busca falha', () => {

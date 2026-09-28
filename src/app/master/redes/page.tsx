@@ -6,31 +6,21 @@ import { useNetworks } from '@/hooks/useNetworks';
 import { NetworkForm } from './components/NetworkForm';
 import { NetworkInterconnectionsModal } from './components/NetworkInterconnectionsModal';
 import type { Network } from '@/types/master';
+import {
+  PageContainer,
+  PageHeader,
+  PageTitle,
+  PageSubtitle,
+  Table,
+  Th,
+  Td,
+  EmptyState,
+  LoadingState,
+} from '@/components/ui/AdminTable';
+import { SkeletonRows } from '@/components/ui/Skeleton';
 
-const PageContainer = styled.div`
-  padding: 24px;
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-`;
-
-const PageSubtitle = styled.p`
-  font-size: 13px;
-  color: #666;
-  margin: 4px 0 0 0;
-`;
-
+// P13: container/header/tabela/estados agora vêm do AdminTable + theme;
+// só o que é específico desta tela (botões de ação) segue local.
 const AddButton = styled.button`
   padding: 10px 20px;
   background-color: #1e3a5f;
@@ -52,31 +42,6 @@ const AddButton = styled.button`
   }
 `;
 
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-`;
-
-const Th = styled.th`
-  text-align: left;
-  padding: 16px;
-  background-color: #f8f9fa;
-  font-weight: 600;
-  color: #333;
-  font-size: 14px;
-`;
-
-const Td = styled.td`
-  padding: 16px;
-  border-bottom: 1px solid #eee;
-  color: #666;
-  font-size: 14px;
-`;
-
 const ActionButton = styled.button`
   padding: 6px 12px;
   border: none;
@@ -95,18 +60,6 @@ const ActionButton = styled.button`
     outline: 2px solid #4a90d9;
     outline-offset: 2px;
   }
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 48px;
-  color: #666;
-`;
-
-const LoadingState = styled.div`
-  text-align: center;
-  padding: 48px;
-  color: #666;
 `;
 
 export default function RedesPage() {
@@ -131,7 +84,9 @@ export default function RedesPage() {
   if (loading) {
     return (
       <PageContainer>
-        <LoadingState>Carregando...</LoadingState>
+        <LoadingState>
+          <SkeletonRows />
+        </LoadingState>
       </PageContainer>
     );
   }
