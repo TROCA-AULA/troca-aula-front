@@ -35,4 +35,16 @@ export const monthlyClosingReportsService = {
     const response = await api.patch(`/monthly-closing-reports/${id}/close`);
     return response.data?.data ?? response.data;
   },
+
+  // §6.3: correção explícita — reabre um relatório já conferido/fechado de
+  // volta para DRAFT, com justificativa obrigatória (vai para o AuditLog).
+  reopen: async (
+    id: number,
+    justification: string,
+  ): Promise<MonthlyClosingReport> => {
+    const response = await api.patch(`/monthly-closing-reports/${id}/reopen`, {
+      justification,
+    });
+    return response.data?.data ?? response.data;
+  },
 };

@@ -145,6 +145,30 @@ const EmptyState = styled.div`
   color: #666;
 `;
 
+const ReopenPanel = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px dashed #ddd;
+`;
+
+const TextArea = styled.textarea`
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: vertical;
+  min-height: 64px;
+`;
+
+const ReopenError = styled.span`
+  font-size: 12px;
+  color: #c62828;
+`;
+
 interface GenerateFormData {
   userId: string;
   referenceMonth: string;
@@ -155,14 +179,36 @@ function ReportCard({
   teacherName,
   onReview,
   onClose,
+  onReopen,
 }: {
   report: MonthlyClosingReport;
   teacherName: string;
   onReview: (id: number) => Promise<unknown>;
   onClose: (id: number) => Promise<unknown>;
+  onReopen: (id: number, justification: string) => Promise<unknown>;
 }) {
   const [busy, setBusy] = useState(false);
+  const [reopenOpen, setReopenOpen] = useState(false);
+  const [justification, setJustification] = useState('');
+  const [reopenError, setReopenError] = useState<string | null>(null);
   const entries = Object.entries(report.workloadBreakdown ?? {});
+
+  const submitReopen = async () => {
+    // Mesmo mínimo do DTO no backend (MinLength(10)) — evita ida e volta.
+    if (justification.trim().length < 10) {
+      setReopenError('Descreva o motivo com pelo menos 10 caracteres.');
+      return;
+    }
+    setReopenError(null);
+    setBusy(true);
+    try {
+      await onReopen(report.id, justification.trim());
+      setReopenOpen(false);
+      setJustification('');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   return (
     <Card>
@@ -210,13 +256,47 @@ function ReportCard({
           Fechar
         </SecondaryButton>
       )}
+      {report.status !== 'DRAFT' && !reopenOpen && (
+        <SecondaryButton disabled={busy} onClick={() => setReopenOpen(true)}>
+          Reabrir para ajuste
+        </SecondaryButton>
+      )}
+      {reopenOpen && (
+        <ReopenPanel>
+          <Label htmlFor={`justification-${report.id}`}>
+            Motivo da reabertura (fica registrado na auditoria)
+          </Label>
+          <TextArea
+            id={`justification-${report.id}`}
+            value={justification}
+            maxLength={500}
+            onChange={(e) => setJustification(e.target.value)}
+            placeholder="Ex.: horas de março lançadas em duplicidade no dia 12"
+          />
+          {reopenError && <ReopenError>{reopenError}</ReopenError>}
+          <div>
+            <SecondaryButton disabled={busy} onClick={submitReopen}>
+              Confirmar reabertura
+            </SecondaryButton>{' '}
+            <SecondaryButton
+              disabled={busy}
+              onClick={() => {
+                setReopenOpen(false);
+                setReopenError(null);
+              }}
+            >
+              Cancelar
+            </SecondaryButton>
+          </div>
+        </ReopenPanel>
+      )}
     </Card>
   );
 }
 
 export default function FechamentoPontoPage() {
   const { activeSchoolId } = useSchoolContext();
-  const { reports, loading, generateReport, reviewReport, closeReport } = useMonthlyClosingReports(
+  const { reports, loading, generateReport, reviewReport, closeReport, reopenReport } = useMonthlyClosingReports(
     activeSchoolId,
   );
   const { linkedTeachers, fetchLinkedTeachers } = useTeachers(activeSchoolId ?? 0);
@@ -296,6 +376,7 @@ export default function FechamentoPontoPage() {
               teacherName={teacherName(report.userId)}
               onReview={reviewReport}
               onClose={closeReport}
+              onReopen={reopenReport}
             />
           ))
       )}

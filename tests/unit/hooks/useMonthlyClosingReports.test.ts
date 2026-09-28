@@ -9,6 +9,7 @@ vi.mock('@/services/monthly-closing-reports.service', () => ({
     generate: vi.fn(),
     review: vi.fn(),
     close: vi.fn(),
+    reopen: vi.fn(),
   },
 }));
 
@@ -84,5 +85,24 @@ describe('useMonthlyClosingReports', () => {
     });
 
     expect(result.current.reports[0].status).toBe('CLOSED');
+  });
+
+  it('reopens a reviewed/closed report back to DRAFT with the justification', async () => {
+    const closed = { ...draftReport, status: 'CLOSED' as const };
+    vi.mocked(monthlyClosingReportsService.getBySchool).mockResolvedValue([closed]);
+    vi.mocked(monthlyClosingReportsService.reopen).mockResolvedValue(draftReport);
+
+    const { result } = renderHook(() => useMonthlyClosingReports(1));
+    await waitFor(() => expect(result.current.reports).toHaveLength(1));
+
+    await act(async () => {
+      await result.current.reopenReport(1, 'Horas lançadas em duplicidade');
+    });
+
+    expect(monthlyClosingReportsService.reopen).toHaveBeenCalledWith(
+      1,
+      'Horas lançadas em duplicidade',
+    );
+    expect(result.current.reports[0].status).toBe('DRAFT');
   });
 });

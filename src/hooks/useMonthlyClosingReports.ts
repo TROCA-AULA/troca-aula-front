@@ -54,5 +54,21 @@ export function useMonthlyClosingReports(schoolId: number | null, referenceMonth
     return updated;
   };
 
-  return { reports, loading, error, generateReport, reviewReport, closeReport, refetch: fetchReports };
+  const reopenReport = async (id: number, justification: string) => {
+    const updated = await monthlyClosingReportsService.reopen(id, justification);
+    setReports((prev) => prev.map((r) => (r.id === id ? updated : r)));
+    toast.success('Relatório reaberto para ajuste');
+    return updated;
+  };
+
+  return {
+    reports,
+    loading,
+    error,
+    generateReport,
+    reviewReport,
+    closeReport,
+    reopenReport,
+    refetch: fetchReports,
+  };
 }
