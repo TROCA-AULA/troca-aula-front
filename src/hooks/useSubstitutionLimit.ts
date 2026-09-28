@@ -1,10 +1,9 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 // Client-side: usa o proxy Next.js, não o backend direto (o cookie de
 // sessão é httpOnly, o JS do navegador não consegue anexá-lo sozinho —
 // ver src/api-client.service.tsx).
 import api from '@/api-client.service';
-import type { EnrollmentRequest } from '@/types/enrollment';
 
 interface SubstitutionLimitState {
   current: number;
@@ -15,17 +14,13 @@ interface SubstitutionLimitState {
   error: string | null;
 }
 
-const getCurrentSemester = (): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  if (month < 6) {
-    return `${year}-01-01`;
-  }
-  return `${year}-07-01`;
-};
-
-export const useSubstitutionLimit = (userId?: number | string): SubstitutionLimitState => {
+// P14 (problemas-conhecidos.md, corrigido): antes calculava o semestre com
+// `new Date()` do navegador e recontava aprovações no cliente — divergia do
+// gate real do backend, que nem tinha recorte de semestre. Agora só
+// consome `GET /enrollment-requests/substitution-limit/:professorId`, que
+// devolve o status já calculado no servidor (fonte única de verdade tanto
+// da data "agora" quanto da contagem).
+export const useSubstitutionLimit = (userId?: number): SubstitutionLimitState => {
   const [state, setState] = useState<SubstitutionLimitState>({
     current: 0,
     limit: null,
@@ -35,73 +30,31 @@ export const useSubstitutionLimit = (userId?: number | string): SubstitutionLimi
     error: null,
   });
 
-  const fetchUserLimit = useCallback(async (uid: number | string) => {
-    try {
-      const response = await api.get(`/users/${uid}`);
-      const user = response.data?.data ?? response.data;
-      return user.substitutionLimitPerSemester ?? null;
-    } catch (err) {
-      console.error('Error fetching user limit:', err);
-      return null;
-    }
-  }, []);
-
-  const fetchApprovedCount = useCallback(async (uid: number | string) => {
-    try {
-      const semesterStart = getCurrentSemester();
-      const response = await api.get('/enrollment-requests', {
-        params: {
-          userId: uid,
-          status: 'APPROVED',
-          createdAfter: semesterStart,
-        },
-      });
-      const enrollments: EnrollmentRequest[] = response.data?.data || response.data || [];
-      return enrollments.length;
-    } catch (err) {
-      console.error('Error fetching approved count:', err);
-      return 0;
-    }
-  }, []);
-
-  const calculatePercentage = useCallback((current: number, limit: number | null): number => {
-    if (limit === null || limit === 0) return 0;
-    return Math.round((current / limit) * 100);
-  }, []);
-
-  const canApply = useCallback((percentage: number, limit: number | null): boolean => {
-    if (limit === null) return true;
-    return percentage < 100;
-  }, []);
-
   useEffect(() => {
     if (!userId) {
-      setState(prev => ({ ...prev, loading: false }));
+      setState((prev) => ({ ...prev, loading: false }));
       return;
     }
 
+    let cancelled = false;
+
     const fetchData = async () => {
-      setState(prev => ({ ...prev, loading: true, error: null }));
-      
+      setState((prev) => ({ ...prev, loading: true, error: null }));
       try {
-        const [limit, current] = await Promise.all([
-          fetchUserLimit(userId),
-          fetchApprovedCount(userId),
-        ]);
-
-        const percentage = calculatePercentage(current, limit);
-        const canApplyResult = canApply(percentage, limit);
-
+        const response = await api.get(`/enrollment-requests/substitution-limit/${userId}`);
+        const data = response.data?.data ?? response.data;
+        if (cancelled) return;
         setState({
-          current,
-          limit,
-          percentage,
-          canApply: canApplyResult,
+          current: data.current,
+          limit: data.limit,
+          percentage: data.percentage,
+          canApply: data.canApply,
           loading: false,
           error: null,
         });
       } catch (err) {
-        setState(prev => ({
+        if (cancelled) return;
+        setState((prev) => ({
           ...prev,
           loading: false,
           error: err instanceof Error ? err.message : 'Erro ao carregar dados',
@@ -110,7 +63,10 @@ export const useSubstitutionLimit = (userId?: number | string): SubstitutionLimi
     };
 
     fetchData();
-  }, [userId, fetchUserLimit, fetchApprovedCount, calculatePercentage, canApply]);
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   return state;
 };
