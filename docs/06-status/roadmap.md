@@ -46,7 +46,7 @@
 - [x] Consumir o claim de `networkId` (Rede de Ensino) — `SchoolContext.activeNetworkId`, exposto por `/api/auth/me` a partir do JWT; `/master/auditoria` já abre na rede do vínculo ativo
 
 ### UX/UI
-- [ ] Biblioteca de componentes reutilizáveis — parcial: `AdminTable` e `Skeleton` em `src/components/ui/`; telas antigas ainda repetem estilos
+- [x] Biblioteca de componentes reutilizáveis — `AdminTable` e `Skeleton` em `src/components/ui/`; telas antigas migradas para os tokens do tema (P13 fechado)
 - [x] Skeleton loading e spinners padronizados — `src/components/ui/Skeleton.tsx` (adotado nas telas novas)
 - [x] Error Boundaries — `src/components/ErrorBoundary.tsx`, montado no layout raiz
 - [x] Sistema de temas (Theme Provider) — `src/components/ThemeProvider.tsx` + `src/styles/theme.ts`

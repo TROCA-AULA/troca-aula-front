@@ -74,12 +74,12 @@ const Content = styled.div`
         overflow: hidden;
 
         thead {
-            background-color: #6EC3C9;
+            background-color: ${({ theme }) => theme.colors.accentHover};
         }
 
         th {
             padding: 10px;
-            color: #fff;
+            color: ${({ theme }) => theme.colors.surface};
             text-transform: uppercase;
         }
 
@@ -99,15 +99,15 @@ const Content = styled.div`
 
         button {
             cursor: pointer;
-            background-color: #509BA1;
+            background-color: ${({ theme }) => theme.colors.accent};
             border: none;
             padding: 5px 10px;
             margin-right: 5px;
             border-radius: 3px;
-            color: #fff;
+            color: ${({ theme }) => theme.colors.surface};
 
             &:hover {
-                background-color: #6EC3C9;
+                background-color: ${({ theme }) => theme.colors.accentHover};
             }
 
             &:last-child {
@@ -131,7 +131,7 @@ const CardContent = styled.div`
     display: flex;
     flex: 1;
     flex-direction: column;
-    background-color: #fff;
+    background-color: ${({ theme }) => theme.colors.surface};
     gap: 16px;
     border-top-right-radius: 10px;
 
@@ -150,7 +150,7 @@ const CardContent = styled.div`
 `
 const Header = styled.header`
     display: flex;
-    background-color: #fff;
+    background-color: ${({ theme }) => theme.colors.surface};
     width: 100vw;
     height: 60px;
     align-items: center;
@@ -190,14 +190,14 @@ const Search = styled.div`
 
     & > button {
         border: none;
-        background-color: #509BA1;
+        background-color: ${({ theme }) => theme.colors.accent};
         padding: 5px 30px;
-        color: #ffffff;
+        color: ${({ theme }) => theme.colors.surface};
         text-transform: uppercase;
         cursor: pointer;
 
         &:hover {
-            background-color: #6EC3C9;
+            background-color: ${({ theme }) => theme.colors.accentHover};
         }
     }
 `
@@ -231,7 +231,7 @@ const Form = styled.form`
         border: none;
         border-radius: 5px;
         background-color: #f4f4f4;
-        color: #509BA1;
+        color: ${({ theme }) => theme.colors.accent};
         text-transform: uppercase;
 
         &:hover {
@@ -257,12 +257,12 @@ const TabHeader = styled.div`
 
         &:hover {
             background-color: #dff4f4;
-            color: #509BA1;
+            color: ${({ theme }) => theme.colors.accent};
         }
 
         &.active {
-            background-color: #fff;
-            color: #509BA1;
+            background-color: ${({ theme }) => theme.colors.surface};
+            color: ${({ theme }) => theme.colors.accent};
         }
     }
 

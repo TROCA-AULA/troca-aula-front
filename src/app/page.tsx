@@ -40,7 +40,7 @@ const Content = styled.div`
     dt {
         margin-top: 20px;
         margin-bottom: 10px;
-        color: #509BA1;
+        color: ${({ theme }) => theme.colors.accent};
         font-weight: bold;
         text-transform: uppercase;
     }
@@ -58,7 +58,7 @@ const Content = styled.div`
 
         background-color: #336367;
         border: 2px solid #336367;
-        color: #fff;
+        color: ${({ theme }) => theme.colors.surface};
         box-sizing: border-box;
 
         &:focus {
@@ -82,7 +82,7 @@ const Content = styled.div`
         color: #336367;
         text-transform: uppercase;
         cursor: pointer;
-        background-color: #fff;
+        background-color: ${({ theme }) => theme.colors.surface};
         transition: background-color 0.2s;
 
         &:hover {
@@ -94,7 +94,7 @@ const Content = styled.div`
     a {
         background: transparent;
         height: auto;
-        color: #ffffff;
+        color: ${({ theme }) => theme.colors.surface};
         text-transform: uppercase;
         text-decoration: none;
 
@@ -105,7 +105,7 @@ const Content = styled.div`
 `
 const Card = styled.div`
     display: flex;
-    background-color: #fff;
+    background-color: ${({ theme }) => theme.colors.surface};
     max-width: 1024px;
     flex-direction: row;
     margin: 20px;
@@ -114,7 +114,7 @@ const Card = styled.div`
 
     ${Content} {
         &:nth-child(2) {
-            background-color: #509BA1;
+            background-color: ${({ theme }) => theme.colors.accent};
             max-width: 400px;
         }
     }
