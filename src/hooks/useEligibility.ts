@@ -2,10 +2,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import {
   eligibilityService,
-  PriorityTier,
-  PriorityTiersResponse,
-  ProfessorPreferencesResponse,
   NetworkInterconnectionsResponse,
+  ProfessorPreferencesResponse,
+  TeacherGroupsResponse,
 } from '@/services/eligibility.service';
 
 export function useProfessorPreferences() {
@@ -64,17 +63,17 @@ export function useProfessorPreferences() {
   };
 }
 
-export function usePriorityTiers(schoolId: number | null) {
-  const [data, setData] = useState<PriorityTiersResponse | null>(null);
+export function useTeacherGroups(schoolId: number | null) {
+  const [data, setData] = useState<TeacherGroupsResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
   const refetch = useCallback(async () => {
     if (!schoolId) return;
     setLoading(true);
     try {
-      setData(await eligibilityService.getPriorityTiers(schoolId));
+      setData(await eligibilityService.getTeacherGroups(schoolId));
     } catch {
-      toast.error('Erro ao carregar os níveis de prioridade');
+      toast.error('Erro ao carregar os grupos de prioridade');
     } finally {
       setLoading(false);
     }
@@ -84,15 +83,76 @@ export function usePriorityTiers(schoolId: number | null) {
     refetch();
   }, [refetch]);
 
-  const save = async (tiers: PriorityTier[]) => {
+  const createGroup = async (name: string, delayMinutes: number) => {
     if (!schoolId) return;
-    const updated = await eligibilityService.setPriorityTiers(schoolId, tiers);
+    const updated = await eligibilityService.createTeacherGroup(schoolId, {
+      name,
+      delayMinutes,
+    });
     setData(updated);
-    toast.success('Níveis de prioridade atualizados');
+    toast.success('Grupo criado');
     return updated;
   };
 
-  return { data, loading, save, refetch };
+  const updateGroup = async (
+    groupId: number,
+    payload: { name?: string; delayMinutes?: number },
+  ) => {
+    if (!schoolId) return;
+    const updated = await eligibilityService.updateTeacherGroup(
+      schoolId,
+      groupId,
+      payload,
+    );
+    setData(updated);
+    toast.success('Grupo atualizado');
+    return updated;
+  };
+
+  const removeGroup = async (groupId: number) => {
+    if (!schoolId) return;
+    const updated = await eligibilityService.removeTeacherGroup(schoolId, groupId);
+    setData(updated);
+    toast.success('Grupo removido');
+    return updated;
+  };
+
+  const setGroupMembers = async (groupId: number, professorIds: number[]) => {
+    if (!schoolId) return;
+    const updated = await eligibilityService.setTeacherGroupMembers(
+      schoolId,
+      groupId,
+      professorIds,
+    );
+    setData(updated);
+    toast.success('Professores do grupo atualizados');
+    return updated;
+  };
+
+  const updateSettings = async (payload: {
+    ungroupedDelayMinutes?: number;
+    acceptedNetworkIds?: number[] | null;
+  }) => {
+    if (!schoolId) return;
+    const updated = await eligibilityService.updatePrioritySettings(
+      schoolId,
+      payload,
+    );
+    setData(updated);
+    toast.success('Configurações de prioridade atualizadas');
+    return updated;
+  };
+
+  return {
+    data,
+    loading,
+    createGroup,
+    updateGroup,
+    removeGroup,
+    setGroupMembers,
+    updateSettings,
+    refetch,
+  };
 }
 
 export function useInterconnections(networkId: number | null) {

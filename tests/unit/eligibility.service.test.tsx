@@ -6,6 +6,7 @@ vi.mock('@/api-client.service', () => ({
   default: {
     get: vi.fn(),
     post: vi.fn(),
+    patch: vi.fn(),
     put: vi.fn(),
     delete: vi.fn(),
   },
@@ -36,33 +37,60 @@ describe('eligibilityService', () => {
     expect(api.delete).toHaveBeenCalledWith('/professor-preferences/school-exclusions/9');
   });
 
-  it('lê e salva os níveis de prioridade da escola', async () => {
-    (api.get as any).mockResolvedValue({
-      data: { schoolId: 4, tiers: [], allowedNetworkIds: [], fallbackPriorityWindowHours: null },
+  it('gerencia os grupos de prioridade da escola', async () => {
+    (api.get as any).mockResolvedValue({ data: { schoolId: 6, groups: [] } });
+    (api.post as any).mockResolvedValue({ data: { schoolId: 6, groups: [] } });
+    (api.patch as any).mockResolvedValue({ data: { schoolId: 6, groups: [] } });
+    (api.put as any).mockResolvedValue({ data: { schoolId: 6, groups: [] } });
+    (api.delete as any).mockResolvedValue({ data: { schoolId: 6, groups: [] } });
+
+    await eligibilityService.getTeacherGroups(6);
+    await eligibilityService.createTeacherGroup(6, {
+      name: 'Professores da casa',
+      delayMinutes: 0,
     });
-    (api.put as any).mockResolvedValue({ data: { schoolId: 4, tiers: [] } });
+    await eligibilityService.updateTeacherGroup(6, 1, { delayMinutes: 30 });
+    await eligibilityService.setTeacherGroupMembers(6, 1, [17, 18]);
+    await eligibilityService.removeTeacherGroup(6, 1);
 
-    await eligibilityService.getPriorityTiers(4);
-    await eligibilityService.setPriorityTiers(4, [
-      { order: 1, delayMinutes: 0, scopeType: 'ESCOLA' },
-    ]);
+    expect(api.get).toHaveBeenCalledWith('/schools/6/teacher-groups');
+    expect(api.post).toHaveBeenCalledWith('/schools/6/teacher-groups', {
+      name: 'Professores da casa',
+      delayMinutes: 0,
+    });
+    expect(api.patch).toHaveBeenCalledWith('/schools/6/teacher-groups/1', {
+      delayMinutes: 30,
+    });
+    expect(api.put).toHaveBeenCalledWith('/schools/6/teacher-groups/1/members', {
+      professorIds: [17, 18],
+    });
+    expect(api.delete).toHaveBeenCalledWith('/schools/6/teacher-groups/1');
+  });
 
-    expect(api.get).toHaveBeenCalledWith('/schools/4/priority-tiers');
-    expect(api.put).toHaveBeenCalledWith('/schools/4/priority-tiers', {
-      tiers: [{ order: 1, delayMinutes: 0, scopeType: 'ESCOLA' }],
+  it('salva as configurações de prioridade da escola', async () => {
+    (api.patch as any).mockResolvedValue({ data: { schoolId: 6 } });
+
+    await eligibilityService.updatePrioritySettings(6, {
+      ungroupedDelayMinutes: 45,
+      acceptedNetworkIds: [5],
+    });
+
+    expect(api.patch).toHaveBeenCalledWith('/schools/6/priority-settings', {
+      ungroupedDelayMinutes: 45,
+      acceptedNetworkIds: [5],
     });
   });
 
   it('lê e salva as interconexões da rede', async () => {
-    (api.get as any).mockResolvedValue({ data: { networkId: 4, interconnections: [] } });
-    (api.put as any).mockResolvedValue({ data: { networkId: 4, interconnections: [] } });
+    (api.get as any).mockResolvedValue({ data: { networkId: 6, interconnections: [] } });
+    (api.put as any).mockResolvedValue({ data: { networkId: 6, interconnections: [] } });
 
-    await eligibilityService.getInterconnections(4);
-    await eligibilityService.setInterconnections(4, [3]);
+    await eligibilityService.getInterconnections(6);
+    await eligibilityService.setInterconnections(6, [5]);
 
-    expect(api.get).toHaveBeenCalledWith('/networks/4/interconnections');
-    expect(api.put).toHaveBeenCalledWith('/networks/4/interconnections', {
-      allowedNetworkIds: [3],
+    expect(api.get).toHaveBeenCalledWith('/networks/6/interconnections');
+    expect(api.put).toHaveBeenCalledWith('/networks/6/interconnections', {
+      allowedNetworkIds: [5],
     });
   });
 });

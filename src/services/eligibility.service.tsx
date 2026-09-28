@@ -1,19 +1,25 @@
 // Client-side: usa o proxy Next.js (ver src/api-client.service.tsx).
-// Fase 5 — preferências do professor e configuração de prioridade.
+// Fase 5 — grupos de prioridade por escola + preferências do professor.
 import api from '@/api-client.service';
 
-export interface PriorityTier {
-  order: number;
+export interface TeacherGroup {
+  id: number;
+  name: string;
   delayMinutes: number;
-  scopeType: string;
-  restrictedNetworkIds?: number[] | null;
+  professorIds: number[];
 }
 
-export interface PriorityTiersResponse {
+export interface TeacherGroupsResponse {
   schoolId: number;
+  /** Delay padrão para professores fora de qualquer grupo. */
+  ungroupedDelayMinutes: number;
+  /** Fallback retrocompatível (escolas sem grupos). */
   fallbackPriorityWindowHours: number | null;
+  /** Redes que a REDE interconectou (o que o município permite). */
   allowedNetworkIds: number[];
-  tiers: PriorityTier[];
+  /** Subconjunto que a escola aceita (null = todas as permitidas). */
+  acceptedNetworkIds: number[] | null;
+  groups: TeacherGroup[];
 }
 
 export interface ProfessorPreferencesResponse {
@@ -48,18 +54,61 @@ export const eligibilityService = {
     await api.delete(`/professor-preferences/school-exclusions/${schoolId}`);
   },
 
-  getPriorityTiers: async (schoolId: number): Promise<PriorityTiersResponse> => {
-    const response = await api.get(`/schools/${schoolId}/priority-tiers`);
+  getTeacherGroups: async (schoolId: number): Promise<TeacherGroupsResponse> => {
+    const response = await api.get(`/schools/${schoolId}/teacher-groups`);
     return response.data?.data ?? response.data;
   },
 
-  setPriorityTiers: async (
+  createTeacherGroup: async (
     schoolId: number,
-    tiers: PriorityTier[],
-  ): Promise<PriorityTiersResponse> => {
-    const response = await api.put(`/schools/${schoolId}/priority-tiers`, {
-      tiers,
-    });
+    data: { name: string; delayMinutes: number },
+  ): Promise<TeacherGroupsResponse> => {
+    const response = await api.post(`/schools/${schoolId}/teacher-groups`, data);
+    return response.data?.data ?? response.data;
+  },
+
+  updateTeacherGroup: async (
+    schoolId: number,
+    groupId: number,
+    data: { name?: string; delayMinutes?: number },
+  ): Promise<TeacherGroupsResponse> => {
+    const response = await api.patch(
+      `/schools/${schoolId}/teacher-groups/${groupId}`,
+      data,
+    );
+    return response.data?.data ?? response.data;
+  },
+
+  removeTeacherGroup: async (
+    schoolId: number,
+    groupId: number,
+  ): Promise<TeacherGroupsResponse> => {
+    const response = await api.delete(
+      `/schools/${schoolId}/teacher-groups/${groupId}`,
+    );
+    return response.data?.data ?? response.data;
+  },
+
+  setTeacherGroupMembers: async (
+    schoolId: number,
+    groupId: number,
+    professorIds: number[],
+  ): Promise<TeacherGroupsResponse> => {
+    const response = await api.put(
+      `/schools/${schoolId}/teacher-groups/${groupId}/members`,
+      { professorIds },
+    );
+    return response.data?.data ?? response.data;
+  },
+
+  updatePrioritySettings: async (
+    schoolId: number,
+    data: { ungroupedDelayMinutes?: number; acceptedNetworkIds?: number[] | null },
+  ): Promise<TeacherGroupsResponse> => {
+    const response = await api.patch(
+      `/schools/${schoolId}/priority-settings`,
+      data,
+    );
     return response.data?.data ?? response.data;
   },
 
