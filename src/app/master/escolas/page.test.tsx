@@ -84,6 +84,7 @@ describe('EscolasPage', () => {
 
     render(<EscolasPage />);
 
-    expect(screen.getByText('Carregando...')).toBeInTheDocument();
+    // P13: estado de carregamento agora é skeleton (não mais texto).
+    expect(screen.getByLabelText('Carregando')).toBeInTheDocument();
   });
 });

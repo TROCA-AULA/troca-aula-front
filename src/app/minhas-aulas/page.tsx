@@ -20,7 +20,7 @@ const Wrapper = styled.div`
 `;
 
 const Title = styled.h1`
-  color: #509BA1;
+  color: ${({ theme }) => theme.colors.accent};
   font-size: 24px;
   margin-bottom: 20px;
 `;
@@ -46,12 +46,12 @@ const TabHeader = styled.div`
 
     &:hover {
       background-color: #dff4f4;
-      color: #509BA1;
+      color: ${({ theme }) => theme.colors.accent};
     }
 
     &.active {
-      background-color: #fff;
-      color: #509BA1;
+      background-color: ${({ theme }) => theme.colors.surface};
+      color: ${({ theme }) => theme.colors.accent};
     }
   }
 `;
@@ -61,15 +61,15 @@ const EnrollmentsTable = styled.table`
   text-align: left;
   border-radius: 5px;
   overflow: hidden;
-  background: #fff;
+  background: ${({ theme }) => theme.colors.surface};
 
   thead {
-    background-color: #6EC3C9;
+    background-color: ${({ theme }) => theme.colors.accentHover};
   }
 
   th {
     padding: 10px;
-    color: #fff;
+    color: ${({ theme }) => theme.colors.surface};
     text-transform: uppercase;
     font-size: 12px;
   }
@@ -100,7 +100,7 @@ const StatusBadge = styled.span<{ $status: EnrollmentStatus }>`
       default: return '#ccc';
     }
   }};
-  color: #fff;
+  color: ${({ theme }) => theme.colors.surface};
 `;
 
 const ActionButton = styled.button`
@@ -108,7 +108,7 @@ const ActionButton = styled.button`
   border: none;
   padding: 5px 10px;
   border-radius: 3px;
-  color: #fff;
+  color: ${({ theme }) => theme.colors.surface};
   cursor: pointer;
   font-size: 12px;
   text-transform: uppercase;
@@ -124,7 +124,7 @@ const ActionButton = styled.button`
 `;
 
 const Loading = styled.div`
-  color: #509BA1;
+  color: ${({ theme }) => theme.colors.accent};
   text-align: center;
   padding: 40px;
 `;

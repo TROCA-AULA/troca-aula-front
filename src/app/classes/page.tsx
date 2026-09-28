@@ -19,7 +19,7 @@ const Wrapper = styled.div`
 `;
 
 const Title = styled.h1`
-  color: #509BA1;
+  color: ${({ theme }) => theme.colors.accent};
   font-size: 24px;
   margin-bottom: 20px;
 `;
@@ -31,7 +31,7 @@ const ClassesGrid = styled.div`
 `;
 
 const ClassCard = styled.div`
-  background: #fff;
+  background: ${({ theme }) => theme.colors.surface};
   border: 1px solid #f4f4f4;
   border-radius: 8px;
   padding: 16px;
@@ -58,8 +58,8 @@ const ClassValue = styled.span`
 `;
 
 const ApplyButton = styled.button`
-  background-color: #509BA1;
-  color: #fff;
+  background-color: ${({ theme }) => theme.colors.accent};
+  color: ${({ theme }) => theme.colors.surface};
   border: none;
   padding: 10px 20px;
   border-radius: 5px;
@@ -69,7 +69,7 @@ const ApplyButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #6EC3C9;
+    background-color: ${({ theme }) => theme.colors.accentHover};
   }
 
   &:disabled {
@@ -79,7 +79,7 @@ const ApplyButton = styled.button`
 `;
 
 const Loading = styled.div`
-  color: #509BA1;
+  color: ${({ theme }) => theme.colors.accent};
   text-align: center;
   padding: 40px;
 `;
