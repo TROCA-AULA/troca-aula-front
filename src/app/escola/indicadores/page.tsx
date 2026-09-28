@@ -8,6 +8,7 @@ import { useCoverageStats } from '@/hooks/useCoverageStats';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useTeachers } from '@/hooks/useTeachers';
 import { downloadCsv } from '@/utils/csv';
+import { downloadPdfTable } from '@/utils/pdf';
 import {
   PageContainer,
   PageHeader,
@@ -209,6 +210,27 @@ export default function IndicadoresPage() {
     ]);
   };
 
+  const exportHistoryPdf = async () => {
+    const today = format(new Date(), 'dd/MM/yyyy');
+    await downloadPdfTable(`indicadores-escola-${activeSchoolId}-${format(new Date(), 'yyyy-MM-dd')}.pdf`, {
+      title: `Indicadores — Escola #${activeSchoolId}`,
+      subtitle: stats
+        ? `Aulas vagas: ${stats.totalVagas} · Cobertas: ${stats.cobertas} · Taxa: ${Math.round(
+            stats.taxaCobertura * 100,
+          )}% · Risco: ${stats.nivel}`
+        : undefined,
+      headers: ['Professor', 'Aula', 'Status', 'Tempo de casa (desde)', 'Candidatura em'],
+      rows: enrollmentRequests.map((request) => [
+        request.user?.name ?? `Professor #${request.professorId}`,
+        `#${request.classId}`,
+        request.status,
+        formatDate(request.schoolSince ?? undefined),
+        formatDate(request.createdAt),
+      ]),
+      footer: `Gerado em ${today} — heurística do servidor, não preditiva.`,
+    });
+  };
+
   if (!activeSchoolId) {
     return (
       <PageContainer>
@@ -312,7 +334,13 @@ export default function IndicadoresPage() {
             >
               Exportar CSV
             </SecondaryButton>
-            <SecondaryButton onClick={() => window.print()}>Imprimir / PDF</SecondaryButton>
+            <SecondaryButton
+              onClick={exportHistoryPdf}
+              disabled={enrollmentRequests.length === 0}
+            >
+              Exportar PDF
+            </SecondaryButton>
+            <SecondaryButton onClick={() => window.print()}>Imprimir</SecondaryButton>
           </div>
         </NoPrint>
       </PageHeader>

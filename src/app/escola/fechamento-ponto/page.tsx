@@ -8,6 +8,7 @@ import { useMonthlyClosingReports } from '@/hooks/useMonthlyClosingReports';
 import { useTeachers } from '@/hooks/useTeachers';
 import { workloadTypeName } from '@/types/workload';
 import type { MonthlyClosingReport } from '@/types/workload';
+import { downloadPdfTable } from '@/utils/pdf';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -261,6 +262,27 @@ function ReportCard({
           Reabrir para ajuste
         </SecondaryButton>
       )}
+      <SecondaryButton
+        disabled={busy}
+        onClick={async () => {
+          const rows = entries.map(([key, value]) => [
+            key === 'total' ? 'Total' : workloadTypeName(Number(key)) || key,
+            `${value}h`,
+          ]);
+          await downloadPdfTable(
+            `fechamento-${report.referenceMonth}-professor-${report.userId}.pdf`,
+            {
+              title: `Fechamento de ponto — ${teacherName}`,
+              subtitle: `Mês de referência: ${report.referenceMonth} · Status: ${report.status}`,
+              headers: ['Tipo de carga', 'Horas'],
+              rows,
+              footer: 'Gerado pelo Troca Aula.',
+            },
+          );
+        }}
+      >
+        Baixar PDF
+      </SecondaryButton>
       {reopenOpen && (
         <ReopenPanel>
           <Label htmlFor={`justification-${report.id}`}>
