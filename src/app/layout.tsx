@@ -4,8 +4,7 @@ import "./globals.css";
 import StyledComponentsRegistry from '../lib/registry'
 import {ToastContainer} from "react-toastify";
 import {SchoolProvider} from "@/contexts/SchoolContext";
-import {ThemeProvider} from "styled-components";
-import {theme} from "@/styles/theme";
+import {ThemeProvider} from "@/components/ThemeProvider";
 import {ErrorBoundary} from "@/components/ErrorBoundary";
 
 const geistSans = Geist({
@@ -33,7 +32,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
 
           <StyledComponentsRegistry>
-              <ThemeProvider theme={theme}>
+              <ThemeProvider>
                   <ErrorBoundary>
                       <SchoolProvider>{children}</SchoolProvider>
                   </ErrorBoundary>
