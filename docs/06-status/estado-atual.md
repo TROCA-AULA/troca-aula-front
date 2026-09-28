@@ -80,11 +80,11 @@ pie title Progresso do Frontend
 
 | Área | Status |
 |------|--------|
-| Suíte completa | ✅ 173/173 testes em 35 arquivos |
-| Páginas cobertas | login/cadastro, dashboard legado, `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/auditoria`, `/master/dashboard`, `/minha-jornada`, `/escola/indicadores` |
-| Hooks/contextos cobertos | `SchoolContext`, `useUserHook`, `useNotifications`, `useGovbrAuth`, `useSubstitutionLimit`, `useSchools`, `useUsers`, `useTeachers`, hooks de relatórios/fechamento |
-| Services cobertos | `auth`, `classes`, `enrollment`, `teacher` |
-| Pendentes | páginas master restantes (`diretores`, `administradores`, `escolas`, `professores`, `redes`, `políticas-carga-horaria`), fluxos de escola (`fechamento-ponto`, `jornada-docente`), service `master` e hooks `useEnrollments`/`useEnrollment`/`useMaster`/`useMasterDashboard`/`useSubjects` (P12) |
+| Suíte completa | ✅ 202/202 testes em 45 arquivos |
+| Páginas cobertas | login/cadastro, dashboard legado, `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/auditoria`, `/master/dashboard`, `/master/redes`, `/minha-jornada`, `/escola/indicadores`, `/escola/prioridade`, `/minhas-preferencias` |
+| Hooks/contextos cobertos | `SchoolContext`, `useUserHook`, `useNotifications`, `useGovbrAuth`, `useSubstitutionLimit`, `useSchools`, `useUsers`, `useTeachers`, `useEnrollments`, `useEnrollment`, `useMasterDashboard`, `useSubjects`, hooks de relatórios/fechamento/eligibility |
+| Services cobertos | `auth`, `classes`, `enrollment`, `teacher`, `master`, `eligibility`, `account`, `indicators` |
+| Pendentes | páginas master restantes (`diretores`, `administradores`, `escolas`, `professores`, `políticas-carga-horaria`), fluxos de escola (`fechamento-ponto`, `jornada-docente`) e hooks `useMaster` (P12) |
 | Cobertura | Parcial (configurado para 100% nas pastas cobertas) |
 
 ## Dependências Principais

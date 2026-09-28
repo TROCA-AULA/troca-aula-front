@@ -83,12 +83,12 @@ Lista consolidada de problemas identificados na análise do frontend.
 ## Baixo (melhorias)
 
 ### P12 — Cobertura de testes incompleta — ⚠️ Parcial (avançou)
-- Novos testes nesta rodada: páginas `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/auditoria`, `/master/dashboard`, `/minha-jornada` e `/escola/indicadores`; `SchoolContext`, `useUserHook`, `useNotifications`; services `auth`, `classes`, `enrollment` e `teacher`; `ErrorBoundary`; hooks de relatórios/fechamento. Suíte: **173 testes em 35 arquivos**, todos passando.
-- Ainda faltam: páginas master (`diretores`, `administradores`, `escolas`, `professores`, `redes`, `políticas-carga-horaria`) e fluxos de escola (`fechamento-ponto`, `jornada-docente`); service `master`; hooks `useEnrollments`, `useEnrollment`, `useMaster`/`useMasterDashboard`, `useSubjects` — ver [testes.md](../02-guia-desenvolvimento/testes.md)
+- Novos testes nas rodadas: páginas `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/auditoria`, `/master/dashboard`, `/master/redes`, `/minha-jornada`, `/escola/indicadores`, `/escola/prioridade` e `/minhas-preferencias`; `SchoolContext`, `useUserHook`, `useNotifications`, `useEnrollments`, `useEnrollment`, `useMasterDashboard`, `useSubjects`; services `auth`, `classes`, `enrollment`, `teacher`, `master`, `eligibility`, `account`, `indicators`; `ErrorBoundary` e o helper de PDF. Suíte: **202 testes em 45 arquivos**, todos passando.
+- Ainda faltam: páginas master (`diretores`, `administradores`, `escolas`, `professores`, `políticas-carga-horaria`), fluxos de escola (`fechamento-ponto`, `jornada-docente`) e o hook `useMaster` — ver [testes.md](../02-guia-desenvolvimento/testes.md)
 
-### P13 — Sem biblioteca de componentes / theming — ⚠️ Parcial (infra pronta)
-- Feito: tema central (`src/styles/theme.ts` + `src/components/ThemeProvider.tsx`, montado no layout raiz); primitivos de container/header/tabela/estados em `src/components/ui/AdminTable.tsx`; `Skeleton`/`SkeletonRows` em `src/components/ui/Skeleton.tsx`; `ErrorBoundary` global no layout raiz.
-- Falta: migrar as telas antigas (dashboard, classes, minhas-aulas, master) para o tema e os componentes; cores `#509BA1`, `#6EC3C9` etc. ainda repetidas nelas.
+### P13 — Sem biblioteca de componentes / theming — ⚠️ Parcial (infra pronta + 1ª migração)
+- Feito: tema central (`src/styles/theme.ts` + `src/components/ThemeProvider.tsx`, montado no layout raiz); primitivos de container/header/tabela/estados em `src/components/ui/AdminTable.tsx`; `Skeleton`/`SkeletonRows` em `src/components/ui/Skeleton.tsx`; `ErrorBoundary` global no layout raiz; migração iniciada — `master/dashboard` e `master/redes` já usam AdminTable/tema/skeleton.
+- Falta: migrar as demais telas antigas (dashboard legado, classes, minhas-aulas, demais páginas master) para o tema e os componentes; cores `#509BA1`, `#6EC3C9` etc. ainda repetidas nelas.
 
 ### P14 — Cálculo de semestre client-side — ✅ Corrigido (backend + frontend)
 - Achado original: `useSubstitutionLimit` calculava o semestre com o relógio do navegador (`getCurrentSemester()`) e recontava aprovações no cliente via `GET /enrollment-requests?createdAfter=...`. Investigação revelou um bug mais sério: o gate real do backend (`EnrollmentRequestsService.countApprovedSubstitutions`, chamado em `create()`) contava candidaturas **APPROVED da carreira inteira** do professor contra `substitutionLimitPerSemester`, sem nenhum recorte de data — a mensagem de erro já dizia "para este semestre", mas a contagem nunca foi escopada assim.
@@ -112,8 +112,8 @@ Lista consolidada de problemas identificados na análise do frontend.
 | P9 | Médio | Baixo | Arquitetura | ✅ Corrigido |
 | P10 | Médio | Baixo | Componentes | ✅ Corrigido |
 | P11 | Médio | Trivial | Segurança/logs | ✅ Corrigido (bônus) |
-| P12 | Baixo | Médio | Testes | ⚠️ Parcial (avançou; 173/173) |
-| P13 | Baixo | Alto | UI | ⚠️ Parcial (infra pronta; migrar telas antigas) |
+| P12 | Baixo | Médio | Testes | ⚠️ Parcial (avançou; 202/202) |
+| P13 | Baixo | Alto | UI | ⚠️ Parcial (infra pronta + dashboard/redes migrados) |
 | P14 | Baixo | Baixo | Limite | ✅ Corrigido (backend + frontend) |
 | P15 | Alto | Alto | Contrato API (master) | ✅ Corrigido |
 | P16 | Alto | Baixo | Janela de prioridade (listagem) | ✅ Corrigido |

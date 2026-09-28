@@ -2,7 +2,7 @@
 
 > **Next.js atualizado para 16.3.6 (era 15.3.2)** — corrige CVE-2025-66478. Mudança relevante: `src/middleware.ts` foi renomeado para `src/proxy.ts` (`export function middleware` → `export function proxy`), convenção obrigatória a partir do Next 16; o arquivo não roda mais em Edge Runtime, sempre Node.js (sem impacto funcional, `jose` funciona igual nos dois). `pnpm run lint` passou a chamar `eslint .` direto (`next lint` foi removido do framework). App já estava em conformidade com as outras breaking changes (Async Request APIs, sem `next/legacy/image`, sem rotas paralelas). Validado com `tsc`, `next build` (20 rotas + proxy) e `next start` real (`/` → 200, `/classes` sem cookie → 307, `/api/auth/me` sem cookie → 401). Referências a `middleware.ts` como arquivo atual foram varridas em `docs/`/`specs/` nesta rodada; restam apenas as notas históricas da renomeação (como esta).
 >
-> **Última atualização: 27/09/2026** — rodada de correções P5, P7, P8, P9, P10, P14 e P16; novas telas (`/master/auditoria`, `/minha-jornada`, `/escola/indicadores`, `/alterar-senha`); notificações in-app no dashboard e no MasterHeader; `activeNetworkId` no `SchoolContext`; P13 com `ThemeProvider`, `AdminTable`, `Skeleton` e `ErrorBoundary`; `useUserHook` passou a delegar ao `SchoolContext`. Suíte: **173/173 testes em 35 arquivos**. Detalhes em [problemas-conhecidos.md](./problemas-conhecidos.md).
+> **Última atualização: 28/09/2026** — além da rodada anterior (P5/P7/P8/P9/P10/P14/P16 e telas de auditoria/jornada/indicadores/senha), entraram: **Fase 5** (prioridade em camadas, interesse/exclusão do professor e interconexão de redes — telas `/escola/prioridade` e `/minhas-preferencias` e modal de interconexões em `/master/redes`), **exportação PDF nativa** (jsPDF) e **notificação por e-mail** (backend, opcional sem SMTP). Suíte: **202/202 testes em 45 arquivos**. Detalhes em [problemas-conhecidos.md](./problemas-conhecidos.md).
 >
 > **Evolução Multi-Tenant:** ver [`design-doc-evolucao-multi-tenant.md`](../../../docs/design-doc-evolucao-multi-tenant.md) na raiz do projeto. Fase 3 (frontend: `SchoolContext`, seletor de escola ativa, correção do mapeamento de perfis, remoção de hardcodes) **implementada** — ver seção "Multi-Tenant" abaixo.
 
@@ -28,7 +28,7 @@
 - [x] Dashboard: mapeamento legado de perfis substituído por `src/constants/profile.ts`
 - [x] **P15** (era achado novo, agora corrigido): módulo de vínculo/criação de professores reescrito em dois passos (`POST /users` + `assign-profile`/`unassign-profile`) — ver `problemas-conhecidos.md`
 
-### 4. Testes — 🟡 Em andamento (173/173 em 35 arquivos)
+### 4. Testes — 🟡 Em andamento (202/202 em 45 arquivos)
 
 - [x] Já cobertos: login/cadastro, dashboard legado, `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/auditoria`, `/master/dashboard`, `/minha-jornada`, `/escola/indicadores`, `SchoolContext`, `useUserHook`, `useNotifications`, `useGovbrAuth`, `useSubstitutionLimit`, `useSchools`, `useUsers`, `useTeachers`, services `auth`/`classes`/`enrollment`/`teacher`, `ErrorBoundary` e hooks de relatórios/fechamento
 - [ ] Faltam: páginas master restantes (`diretores`, `administradores`, `escolas`, `professores`, `redes`, `políticas-carga-horaria`); fluxos de escola (`fechamento-ponto`, `jornada-docente`); service `master`; hooks `useEnrollments`, `useEnrollment`, `useMaster`/`useMasterDashboard`, `useSubjects`
@@ -60,12 +60,13 @@
 
 ### Notificações
 - [x] Notificação in-app de novas vagas (professores/gestão), aprovação/rejeição (professor) e candidaturas pendentes (MASTER) — `useNotifications` + `NotificationBell` no dashboard e no MasterHeader
+- [x] Notificação por e-mail de aprovação/rejeição e de nova vaga — `EmailService` no backend (nodemailer), opcional: sem `SMTP_HOST`, vira no-op
 - [ ] Notificações por e-mail/push
 
 ### Relatórios
 - [x] Dashboard com estatísticas detalhadas por escola — `/escola/indicadores` (coverage-stats da Fase 4)
 - [x] Histórico completo de substituições — `/escola/indicadores`; log de auditoria por rede em `/master/auditoria`
-- [ ] Exportação: CSV e impressão (PDF via navegador) feitos; falta exportação em PDF nativo
+- [x] Exportação: CSV, impressão e **PDF nativo** (jsPDF) — em `/escola/indicadores` (indicador + histórico) e por relatório em `/escola/fechamento-ponto`
 
 ## Longo Prazo (6-12 meses)
 
