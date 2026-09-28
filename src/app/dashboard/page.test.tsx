@@ -4,7 +4,6 @@ import Home from './page';
 import { useSchoolContext } from '@/contexts/SchoolContext';
 import { PROFILE } from '@/constants/profile';
 import api from '@/api-client.service';
-import axios from 'axios';
 import { toast } from 'react-toastify';
 
 vi.mock('@/contexts/SchoolContext', () => ({
@@ -15,21 +14,9 @@ vi.mock('@/api-client.service', () => ({
     default: {
         get: vi.fn(),
         post: vi.fn(),
+        delete: vi.fn(),
     },
 }));
-
-vi.mock('axios', () => {
-    const mockAxios: Record<string, any> = {
-        get: vi.fn(),
-        delete: vi.fn(),
-        interceptors: {
-            request: { use: vi.fn() },
-            response: { use: vi.fn() },
-        },
-    };
-    mockAxios.create = vi.fn().mockReturnValue(mockAxios);
-    return { default: mockAxios };
-});
 
 vi.mock('react-toastify', () => ({
     toast: {
@@ -74,8 +61,8 @@ describe('Dashboard Page', () => {
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
         });
-        (axios.get as any).mockResolvedValue({ data: mockClasses });
         (api.get as any).mockImplementation((url: string) => {
+            if (url === '/classes') return Promise.resolve({ data: mockClasses });
             if (url === '/schools/1') return Promise.resolve({ data: { id: 1, name: 'School A' } });
             if (url === '/schools') return Promise.resolve({ data: [{ id: 1, name: 'School A' }] });
             if (url === '/subjects') return Promise.resolve({ data: [{ id: 1, name: 'Math' }] });
@@ -89,7 +76,7 @@ describe('Dashboard Page', () => {
         expect(screen.getByText(/Olá, Test User/)).toBeInTheDocument();
 
         await waitFor(() => {
-            expect(axios.get).toHaveBeenCalledWith('/api/classes', expect.any(Object));
+            expect(api.get).toHaveBeenCalledWith('/classes');
             expect(api.get).toHaveBeenCalledWith('/schools');
             expect(api.get).toHaveBeenCalledWith('/subjects');
         });
@@ -162,7 +149,7 @@ describe('Dashboard Page', () => {
     });
 
     it('deletes a class', async () => {
-        (axios.delete as any).mockResolvedValue({});
+        (api.delete as any).mockResolvedValue({});
         render(<Home />);
 
         await waitFor(() => expect(screen.getByRole('cell', { name: 'Math' })).toBeInTheDocument());
@@ -171,13 +158,13 @@ describe('Dashboard Page', () => {
         fireEvent.click(deleteButton);
 
         await waitFor(() => {
-            expect(axios.delete).toHaveBeenCalledWith('/api/classes/1');
+            expect(api.delete).toHaveBeenCalledWith('/classes/1');
             expect(toast.success).toHaveBeenCalledWith('Aula removida com sucesso');
         });
     });
 
     it('handles delete error', async () => {
-        (axios.delete as any).mockRejectedValue(new Error('Fail'));
+        (api.delete as any).mockRejectedValue(new Error('Fail'));
         render(<Home />);
 
         await waitFor(() => expect(screen.getByRole('cell', { name: 'Math' })).toBeInTheDocument());

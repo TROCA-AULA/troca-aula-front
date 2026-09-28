@@ -5,10 +5,6 @@ import {useForm} from "react-hook-form";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {format} from "date-fns";
 import * as Yup from 'yup';
-// Client-side: usa o proxy Next.js, não o backend direto (o cookie de
-// sessão é httpOnly, o JS do navegador não consegue anexá-lo sozinho —
-// ver src/api-client.service.tsx).
-import api from "@/api-client.service";
 import {yupResolver} from "@hookform/resolvers/yup";
 import {toast} from "react-toastify";
 import {useSchoolContext} from "@/contexts/SchoolContext";
@@ -19,7 +15,11 @@ import {SubstitutionCounter} from "@/components/SubstitutionCounter";
 import {SchoolSelector} from "@/components/SchoolSelector";
 import {NotificationBell} from "@/components/NotificationBell";
 import {useSubstitutionLimit} from "@/hooks/useSubstitutionLimit";
-import axios from "axios";
+import {useSubjects} from "@/hooks/useSubjects";
+import {classesService} from "@/services/classes.service";
+import {schoolsService} from "@/services/schools.service";
+import {enrollmentService} from "@/services/enrollment.service";
+import type {Class} from "@/types/enrollment";
 
 // P8 (problemas-conhecidos.md): tipos reais do formato denormalizado que
 // GET /classes devolve (school/subject/createdBy/enrolledBy populados via
@@ -34,22 +34,10 @@ interface DashboardSubject {
     id: number;
     name: string;
 }
-interface DashboardPerson {
-    id: number;
-    name: string;
-}
-interface DashboardClass {
-    id: number;
-    schoolId: number;
-    subjectId: number;
-    statededAt: string;
-    finishedAt: string;
-    available: boolean;
-    enrolledById: number | null;
-    school?: DashboardSchool;
-    subject?: DashboardSubject;
-    enrolledBy?: DashboardPerson;
-}
+// Formato denormalizado que GET /classes devolve para este dashboard legado
+// (school/subject/createdBy/enrolledBy populados via `with` no
+// ClassesRepository) — herda o contrato base de types/enrollment.ts.
+type DashboardClass = Class;
 
 const Wrapper = styled.div`
     display: flex;
@@ -297,7 +285,6 @@ export default function Home() {
     const [school, setSchool] = useState<DashboardSchool | undefined>()
     const [schools, setSchools] = useState<DashboardSchool[]>([])
     const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null)
-    const [subjects, setSubjects] = useState<DashboardSubject[]>([])
     const [preSearch, setPreSearch] = useState('')
     const [search, setSerch] = useState('')
     const [all, setAll] = useState<'classes' | 'myclasses' | 'enrollments'>('classes')
@@ -307,24 +294,21 @@ export default function Home() {
     });
 
     const {user, logout, refreshUserData} = useSchoolContext();
+    const {subjects} = useSubjects();
     
     const { current, limit, percentage, canApply, loading: limitLoading } = useSubstitutionLimit(
         user?.profileId === PROFILE.PROFESSOR ? user?.id : undefined,
     );
 
     const loadClasses = useCallback(() => {
-        axios.get(`/api/classes`, {
-            withCredentials: true,
-            params: {
-                userId: user?.id,
-            }
-        }).then((data) => {
-            setClasses(data.data)
+        // P9: chamada centralizada no service (via proxy), sem axios direto
+        // na página. O backend injeta o userId do token (P16).
+        classesService.getClasses().then((data) => {
+            setClasses(data)
         })
-    }, [user])
+    }, [])
 
     const submit = handleSubmit(async (data) => {
-            console.log(data)
             const {finishedAt, startAt, subject} = data;
             // Correção: MASTER (profileId=4) vê o dropdown de todas as escolas;
             // demais perfis com escopo de escola (DIRETOR/AUXILIAR_ADMIN) usam a
@@ -332,13 +316,13 @@ export default function Home() {
             const schoolId = user?.profileId === PROFILE.MASTER ? selectedSchoolId : user?.schoolId;
             const payload = {
                 schoolId: schoolId,
-                subjectId: subject,
+                subjectId: Number(subject),
                 createdByd: user?.id,
                 statededAt: startAt,
                 finishedAt: finishedAt
             }
             try {
-                await api.post('/classes', payload);
+                await classesService.createClass(payload);
                 toast.success('Aula cadastrada com sucesso')
                 loadClasses()
             } catch (error) {
@@ -349,7 +333,7 @@ export default function Home() {
 
     const accept = (id: number)=>async () => {
         try {
-            await api.post(`/enrollment-requests/request/${id}`);
+            await enrollmentService.createEnrollment({ classId: id });
             toast.success('Candidatura enviada com sucesso')
             loadClasses()
         } catch (error) {
@@ -359,7 +343,7 @@ export default function Home() {
 
     const deleteData = (id: number) => async() => {
         try {
-            await axios.delete(`/api/classes/${id}`);
+            await classesService.deleteClass(id);
             toast.success('Aula removida com sucesso')
             loadClasses()
         } catch (error) {
@@ -374,26 +358,21 @@ export default function Home() {
     useEffect(() => {
         loadClasses();
     }, [loadClasses]);
-    useEffect(() => {
-        api.get('/subjects').then((data) => {
-            setSubjects(data?.data || [])
-        }).catch(() => {})
-    }, []);
 
     useEffect(() => {
         if (!user) return;
         
         if (user.profileId === PROFILE.MASTER) {
-            api.get('/schools').then((data) => {
-                setSchools(data?.data || [])
-                if (data?.data?.length > 0) {
-                    setSelectedSchoolId(data.data[0].id)
-                    setSchool(data.data[0])
+            schoolsService.getSchools().then((data) => {
+                setSchools(data || [])
+                if (data?.length > 0) {
+                    setSelectedSchoolId(data[0].id)
+                    setSchool(data[0])
                 }
             }).catch(() => {})
         } else if (isSchoolScopedStaffProfile(user.profileId) && user.schoolId) {
-            api.get(`/schools/${user.schoolId}`).then((data) => {
-                setSchool(data?.data)
+            schoolsService.getSchool(user.schoolId).then((data) => {
+                setSchool(data)
                 setSelectedSchoolId(user.schoolId ?? null)
             }).catch(() => {})
         }
@@ -544,8 +523,8 @@ export default function Home() {
                                         <tr key={`item-${item?.id}`}>
                                             <td>{item?.subject?.name}</td>
                                             <td>{item?.school?.name}</td>
-                                            <td>{format(new Date(item?.statededAt), 'dd/MM/yyyy HH:mm:ss')}</td>
-                                            <td>{format(new Date(item?.finishedAt), 'dd/MM/yyyy HH:mm:ss')}</td>
+                                            <td>{item?.statededAt ? format(new Date(item.statededAt), 'dd/MM/yyyy HH:mm:ss') : '-'}</td>
+                                            <td>{item?.finishedAt ? format(new Date(item.finishedAt), 'dd/MM/yyyy HH:mm:ss') : '-'}</td>
                                             {user?.profileId !== PROFILE.PROFESSOR && (<td>{item?.enrolledBy?.name}</td>)}
                                             <td>
                                                 {user?.profileId === PROFILE.PROFESSOR ?

@@ -46,6 +46,9 @@ export interface Class {
   /** Presentes na resposta real (relational query do backend) — usados pelo
    * sino de notificações e pelos indicadores. */
   createdAt?: string;
+  finishedAt?: string;
+  enrolledById?: number | null;
+  enrolledBy?: { id: number; name: string } | null;
   subject?: { id: number; name: string } | null;
   school?: { id: number; name: string } | null;
 }
