@@ -1,6 +1,7 @@
 'use client';
 
 import styled from 'styled-components';
+import { NotificationBell } from '@/components/NotificationBell';
 
 const HeaderContainer = styled.header`
   background-color: white;
@@ -53,6 +54,7 @@ export function MasterHeader({ title = 'Área Administrativa', userName }: Maste
     <HeaderContainer role="banner">
       <Title>{title}</Title>
       <UserInfo>
+        <NotificationBell />
         <UserName>{userName}</UserName>
         <Avatar aria-label="Avatar do usuário">{initial}</Avatar>
       </UserInfo>

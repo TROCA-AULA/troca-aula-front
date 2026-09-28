@@ -17,6 +17,7 @@ import Link from "next/link";
 import {EnrollmentsList} from "@/components/EnrollmentsList";
 import {SubstitutionCounter} from "@/components/SubstitutionCounter";
 import {SchoolSelector} from "@/components/SchoolSelector";
+import {NotificationBell} from "@/components/NotificationBell";
 import {useSubstitutionLimit} from "@/hooks/useSubstitutionLimit";
 import axios from "axios";
 
@@ -411,6 +412,7 @@ export default function Home() {
             <Header>
                 <Logo size={60}/>
                 <div className={'profile'}>
+                    <NotificationBell />
                     <SchoolSelector />
                     {(isSchoolScopedStaffProfile(user?.profileId) || user?.profileId === PROFILE.MASTER) && (
                         <>
