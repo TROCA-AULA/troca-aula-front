@@ -82,13 +82,13 @@ Lista consolidada de problemas identificados na análise do frontend.
 
 ## Baixo (melhorias)
 
-### P12 — Cobertura de testes incompleta — ⚠️ Parcial (avançou)
-- Novos testes nas rodadas: páginas `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/auditoria`, `/master/dashboard`, `/master/redes`, `/minha-jornada`, `/escola/indicadores`, `/escola/prioridade` e `/minhas-preferencias`; `SchoolContext`, `useUserHook`, `useNotifications`, `useEnrollments`, `useEnrollment`, `useMasterDashboard`, `useSubjects`; services `auth`, `classes`, `enrollment`, `teacher`, `master`, `eligibility`, `account`, `indicators`; `ErrorBoundary` e o helper de PDF. Suíte: **202 testes em 45 arquivos**, todos passando.
-- Ainda faltam: páginas master (`diretores`, `administradores`, `escolas`, `professores`, `políticas-carga-horaria`), fluxos de escola (`fechamento-ponto`, `jornada-docente`) e o hook `useMaster` — ver [testes.md](../02-guia-desenvolvimento/testes.md)
+### P12 — Cobertura de testes incompleta — ✅ Corrigido
+- Todas as lacunas listadas foram cobertas: páginas `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/{auditoria,dashboard,redes,diretores,administradores,escolas,professores,politicas-carga-horaria}`, `/minha-jornada`, `/escola/{indicadores,prioridade,fechamento-ponto,jornada-docente}`, `/minhas-preferencias`; contextos/hooks `SchoolContext`, `useUserHook`, `useNotifications`, `useEnrollments`, `useEnrollment`, `useMasterDashboard`, `useSubjects`, `useMaster` e os demais hooks de dados; services `auth`, `classes`, `enrollment`, `teacher`, `master`, `eligibility`, `account`, `indicators`; `ErrorBoundary` e o helper de PDF. Suíte: **235 testes em 53 arquivos**, todos passando.
+- Observação: segue sem meta de % de cobertura configurada (apenas 100% nas pastas cobertas) — decisão de qualidade, não lacuna de teste.
 
-### P13 — Sem biblioteca de componentes / theming — ⚠️ Parcial (infra pronta + 1ª migração)
-- Feito: tema central (`src/styles/theme.ts` + `src/components/ThemeProvider.tsx`, montado no layout raiz); primitivos de container/header/tabela/estados em `src/components/ui/AdminTable.tsx`; `Skeleton`/`SkeletonRows` em `src/components/ui/Skeleton.tsx`; `ErrorBoundary` global no layout raiz; migração iniciada — `master/dashboard` e `master/redes` já usam AdminTable/tema/skeleton.
-- Falta: migrar as demais telas antigas (dashboard legado, classes, minhas-aulas, demais páginas master) para o tema e os componentes; cores `#509BA1`, `#6EC3C9` etc. ainda repetidas nelas.
+### P13 — Sem biblioteca de componentes / theming — ⚠️ Parcial (só telas antigas de autenticação/dashboard legado)
+- Feito: tema central (`src/styles/theme.ts` + `src/components/ThemeProvider.tsx`, montado no layout raiz); primitivos de container/header/tabela/estados em `src/components/ui/AdminTable.tsx`; `Skeleton`/`SkeletonRows` em `src/components/ui/Skeleton.tsx`; `ErrorBoundary` global; migradas para AdminTable/tema/skeleton: `master/dashboard`, `master/redes`, `master/diretores`, `master/administradores`, `master/escolas`, `master/professores`, `master/politicas-carga-horaria`, `/classes` e `/minhas-aulas` (tokens de tema).
+- Falta: dashboard legado (`/dashboard`, que concentra a maior parte dos estilos antigos e tende a ser substituído pelas telas novas) e as telas de autenticação (`/` e `/cadastro`).
 
 ### P14 — Cálculo de semestre client-side — ✅ Corrigido (backend + frontend)
 - Achado original: `useSubstitutionLimit` calculava o semestre com o relógio do navegador (`getCurrentSemester()`) e recontava aprovações no cliente via `GET /enrollment-requests?createdAfter=...`. Investigação revelou um bug mais sério: o gate real do backend (`EnrollmentRequestsService.countApprovedSubstitutions`, chamado em `create()`) contava candidaturas **APPROVED da carreira inteira** do professor contra `substitutionLimitPerSemester`, sem nenhum recorte de data — a mensagem de erro já dizia "para este semestre", mas a contagem nunca foi escopada assim.
@@ -112,8 +112,8 @@ Lista consolidada de problemas identificados na análise do frontend.
 | P9 | Médio | Baixo | Arquitetura | ✅ Corrigido |
 | P10 | Médio | Baixo | Componentes | ✅ Corrigido |
 | P11 | Médio | Trivial | Segurança/logs | ✅ Corrigido (bônus) |
-| P12 | Baixo | Médio | Testes | ⚠️ Parcial (avançou; 202/202) |
-| P13 | Baixo | Alto | UI | ⚠️ Parcial (infra pronta + dashboard/redes migrados) |
+| P12 | Baixo | Médio | Testes | ✅ Corrigido (235/235) |
+| P13 | Baixo | Alto | UI | ⚠️ Parcial (só dashboard legado e login/cadastro antigos) |
 | P14 | Baixo | Baixo | Limite | ✅ Corrigido (backend + frontend) |
 | P15 | Alto | Alto | Contrato API (master) | ✅ Corrigido |
 | P16 | Alto | Baixo | Janela de prioridade (listagem) | ✅ Corrigido |

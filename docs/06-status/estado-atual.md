@@ -80,8 +80,8 @@ pie title Progresso do Frontend
 
 | Área | Status |
 |------|--------|
-| Suíte completa | ✅ 202/202 testes em 45 arquivos |
-| Páginas cobertas | login/cadastro, dashboard legado, `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/auditoria`, `/master/dashboard`, `/master/redes`, `/minha-jornada`, `/escola/indicadores`, `/escola/prioridade`, `/minhas-preferencias` |
+| Suíte completa | ✅ 235/235 testes em 53 arquivos |
+| Páginas cobertas | login/cadastro, dashboard legado, `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/{auditoria,dashboard,redes,diretores,administradores,escolas,professores,politicas-carga-horaria}`, `/minha-jornada`, `/escola/{indicadores,prioridade,fechamento-ponto,jornada-docente}`, `/minhas-preferencias` |
 | Hooks/contextos cobertos | `SchoolContext`, `useUserHook`, `useNotifications`, `useGovbrAuth`, `useSubstitutionLimit`, `useSchools`, `useUsers`, `useTeachers`, `useEnrollments`, `useEnrollment`, `useMasterDashboard`, `useSubjects`, hooks de relatórios/fechamento/eligibility |
 | Services cobertos | `auth`, `classes`, `enrollment`, `teacher`, `master`, `eligibility`, `account`, `indicators` |
 | Pendentes | páginas master restantes (`diretores`, `administradores`, `escolas`, `professores`, `políticas-carga-horaria`), fluxos de escola (`fechamento-ponto`, `jornada-docente`) e hooks `useMaster` (P12) |
