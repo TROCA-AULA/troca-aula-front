@@ -36,13 +36,15 @@ O frontend expõe API Routes do Next.js que atuam como **proxy** para o backend.
 
 - Proxy `DELETE /classes/:id` com Bearer token do cookie
 
-> **Nota**: não existe `POST /api/classes` — a criação de aula é feita diretamente no backend pelo dashboard (`api.post('/classes', ...)`).
+> **Nota**: não existe `POST /api/classes`; a criação de aula usa o proxy genérico (`/api/proxy/classes`, via `classesService`).
 
-## Middleware — `src/middleware.ts`
+## Proxy — `src/proxy.ts`
+
+> Nota histórica: `src/middleware.ts` foi renomeado para `src/proxy.ts` no Next 16.
 
 - Matcher: todas as rotas exceto `_next/*`, `favicon.ico`, `images`, `api` e `api/*`
 - Rotas públicas: `/`, `/cadastro`, `/api/login`, `/api/auth/me`, `/api/auth/logout`, `/api/classes`
-- Nas demais: verifica **presença** do cookie `token`; ausente → redirect `/`
+- Nas demais: valida assinatura/expiração do JWT (`jose.jwtVerify`); cookie ausente/inválido → redirect `/`
 
 ```ts
 export const config = {
@@ -63,6 +65,6 @@ export const config = {
 
 ## Observações de Segurança
 
-- `/api/auth/me` loga o payload do token via `console.log(payload)` — evitar em produção
-- O middleware só verifica presença do cookie, não a validade do JWT
+- O payload do token não é mais logado em `/api/auth/me` (P11)
+- O proxy valida o JWT (`jose.jwtVerify`); cookie ausente/inválido → redirect `/`
 - Os proxies de classes não revalidam o token no servidor (o backend é responsável pela autorização)

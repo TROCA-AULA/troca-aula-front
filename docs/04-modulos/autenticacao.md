@@ -14,7 +14,7 @@ Este módulo cobre as páginas e fluxos de autenticação: login, cadastro e cal
 
 - Layout de duas colunas com marca (logo) e formulário de credenciais
 - Campos: email e senha
-- A senha é enviada como `Base64(SHA1(senha))`
+- A senha é enviada em texto puro sob TLS (sem pré-hash no cliente desde o P3)
 - Chamada: `POST /api/auth/login` (via `fetch`, não axios)
 - Sucesso → redireciona para `/dashboard`
 - Componente `BotaoGovBr` dispara o fluxo Gov.br
@@ -24,8 +24,7 @@ Este módulo cobre as páginas e fluxos de autenticação: login, cadastro e cal
 
 ```mermaid
 flowchart LR
-    A[Preenche email/senha] --> B[Hash SHA1 + Base64]
-    B --> C[POST /api/auth/login]
+    A[Preenche email/senha] --> C[POST /api/auth/login]
     C -->|ok| D[Redirect /dashboard]
     C -->|401| E[Toast de erro]
     F[Clicou gov.br] --> G[Redireciona para URL do Gov.br]
@@ -34,8 +33,8 @@ flowchart LR
 ## Cadastro (`/cadastro`)
 
 - Formulário: nome, email, telefone, senha, confirmar senha (validação Yup)
-- Envia diretamente ao backend: `api.post('/users', { name, email, phone, password, profileId: 3, schoolId: 1 })`
-- ⚠️ **Hardcoded**: `profileId: 3` e `schoolId: 1` são fixos no código (professor da escola 1)
+- Envia via `api-client.service` (proxy `/api/proxy`): `POST /users` com nome, email, telefone e senha (sem `profileId`/`schoolId` — P4)
+- O vínculo escola/perfil é criado depois, por quem tem permissão (`assign-profile`)
 - Sucesso → toast + redireciona para `/`
 
 ## Callback Gov.br (`/auth/govbr-callback`)
@@ -44,7 +43,7 @@ flowchart LR
 - Chama `useGovbrAuth.loginWithGovbr(code)`
 - Estados: loading, sucesso, erro
 - Sucesso → redireciona para `/dashboard` após ~1.5s
-- Persiste `auth_token` e `user` no `localStorage`
+- Sessão gravada no cookie httpOnly via `POST /api/auth/govbr-session`
 
 ## Código Relacionado
 
@@ -54,10 +53,10 @@ flowchart LR
 | Hook Gov.br | `src/hooks/useGovbrAuth.ts` |
 | Service auth | `src/services/auth.service.tsx` |
 | Hook de sessão | `src/user/useUserHook.tsx` |
-| API Routes | `src/app/api/auth/login`, `logout`, `me` |
+| API Routes | `src/app/api/auth/login`, `logout`, `me`, `govbr-session` |
 
-## Pontos de Atenção
+## Pontos de Atenção (resolvidos)
 
-1. **Inconsistência de sessão Gov.br**: token vai para localStorage, não para o cookie `token` → o middleware não reconhece sessões Gov.br (ver [autenticacao.md](../03-arquitetura/autenticacao.md)).
-2. **Cadastro hardcoded**: `profileId: 3` / `schoolId: 1` fixos.
-3. **Hash SHA1**: não é bcrypt; vulnerabilidade conhecida (ver [problemas-conhecidos.md](../06-status/problemas-conhecidos.md)).
+1. **Sessão Gov.br** (P2): o token agora vai para o mesmo cookie httpOnly `token` via `POST /api/auth/govbr-session`; reconhecido pelo proxy.
+2. **Cadastro hardcoded** (P4): `profileId`/`schoolId` removidos do payload.
+3. **Hash SHA1** (P3): o frontend não pré-hasheia mais a senha; o backend usa bcrypt.

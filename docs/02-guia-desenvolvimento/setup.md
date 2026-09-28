@@ -87,7 +87,7 @@ troca-aula-front/
 │   ├── user/                  # Hook e tipos de sessão
 │   ├── lib/                   # Utilities (registry styled-components)
 │   ├── api.service.tsx        # Cliente axios compartilhado
-│   └── middleware.ts          # Middleware de autenticação
+│   └── proxy.ts               # Guard de autenticação (valida o JWT)
 ├── docs/                      # Documentação do projeto
 ├── specs/                     # Specs Speckit (planos de implementação)
 ├── tests/                     # Testes de integração

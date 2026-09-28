@@ -51,7 +51,7 @@ erDiagram
 | `name` | string |
 | `description` | string |
 
-Perfis: 1 = Master, 2 = Diretor, 3 = Administrador, 4 = Professor (mapeamento novo; ver [perfis-e-permissoes.md](../01-visao-geral/perfis-e-permissoes.md)).
+Perfis: 1 = DIRETOR, 2 = AUXILIAR_ADMIN, 3 = PROFESSOR, 4 = MASTER (valor real do backend, espelhado em `src/constants/profile.ts`; ver [perfis-e-permissoes.md](../01-visao-geral/perfis-e-permissoes.md)).
 
 ### Subject (`src/types/teacher.ts`)
 
@@ -136,6 +136,8 @@ stateDiagram-v2
 - Janelas de semestre: `01/01` (jan–jun) ou `01/07` (jul–dez), calculadas em `useSubstitutionLimit.ts`
 
 ## Inconsistências de Modelo Conhecidas
+
+> **Atualização (P7/P1):** os itens 1, 3 e 4 abaixo foram corrigidos na rodada de correção de tipos — o mapeamento de `profileId` é único (`src/constants/profile.ts`), os ids são `number` em todos os tipos e `Class.date` foi removido (só `statededAt`, campo real da API). O item 2 (`statededAt` como typo persistido) permanece por ser contrato do backend. Mantidos como registro histórico.
 
 1. **`profileId` divergente**: legado vs. módulo master (1=admin vs. 1=master, 3=professor vs. 4=professor)
 2. **`statededAt`**: nome de campo incorreto persistido na API (typo que virou contrato)

@@ -82,7 +82,7 @@ flowchart TB
 
 | Guarda | Arquivo | Comportamento |
 |--------|---------|---------------|
-| Middleware global | `src/middleware.ts` | Verifica cookie `token`; redireciona para `/` se ausente |
-| Área master | `src/app/master/layout.tsx` | Apenas `profileId === 1`; senão redireciona para `/login` ou `/dashboard` |
-| Página de aulas | `src/app/classes/page.tsx` | Não autenticado → `/login`; master → `/master` |
-| Página minhas aulas | `src/app/minhas-aulas/page.tsx` | Não autenticado → `/login`; master → `/master` |
+| Proxy global | `src/proxy.ts` | Valida o JWT do cookie `token` (`jose.jwtVerify`); ausente/inválido → `/` |
+| Área master | `src/app/master/layout.tsx` | Apenas `PROFILE.MASTER` (4); sem sessão → `/`, perfil errado → `/dashboard` |
+| Página de aulas | `src/app/classes/page.tsx` | Não autenticado → `/`; master → `/master` |
+| Página minhas aulas | `src/app/minhas-aulas/page.tsx` | Não autenticado → `/`; master → `/master` |

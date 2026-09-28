@@ -1,6 +1,8 @@
 # Roadmap — Próximos Passos
 
-> **Next.js atualizado para 16.3.6 (era 15.3.2)** — corrige CVE-2025-66478. Mudança relevante: `src/middleware.ts` foi renomeado para `src/proxy.ts` (`export function middleware` → `export function proxy`), convenção obrigatória a partir do Next 16; o arquivo não roda mais em Edge Runtime, sempre Node.js (sem impacto funcional, `jose` funciona igual nos dois). `pnpm run lint` passou a chamar `eslint .` direto (`next lint` foi removido do framework). App já estava em conformidade com as outras breaking changes (Async Request APIs, sem `next/legacy/image`, sem rotas paralelas). Validado com `tsc`, `next build` (20 rotas + proxy) e `next start` real (`/` → 200, `/classes` sem cookie → 307, `/api/auth/me` sem cookie → 401). **Pendência não coberta**: várias docs em `docs/`/`specs/` ainda citam `middleware.ts` pelo nome antigo — não varridas nesta tarefa pontual.
+> **Next.js atualizado para 16.3.6 (era 15.3.2)** — corrige CVE-2025-66478. Mudança relevante: `src/middleware.ts` foi renomeado para `src/proxy.ts` (`export function middleware` → `export function proxy`), convenção obrigatória a partir do Next 16; o arquivo não roda mais em Edge Runtime, sempre Node.js (sem impacto funcional, `jose` funciona igual nos dois). `pnpm run lint` passou a chamar `eslint .` direto (`next lint` foi removido do framework). App já estava em conformidade com as outras breaking changes (Async Request APIs, sem `next/legacy/image`, sem rotas paralelas). Validado com `tsc`, `next build` (20 rotas + proxy) e `next start` real (`/` → 200, `/classes` sem cookie → 307, `/api/auth/me` sem cookie → 401). Referências a `middleware.ts` como arquivo atual foram varridas em `docs/`/`specs/` nesta rodada; restam apenas as notas históricas da renomeação (como esta).
+>
+> **Última atualização: 27/09/2026** — rodada de correções P5, P7, P8, P9, P10, P14 e P16; novas telas (`/master/auditoria`, `/minha-jornada`, `/escola/indicadores`, `/alterar-senha`); notificações in-app no dashboard e no MasterHeader; `activeNetworkId` no `SchoolContext`; P13 com `ThemeProvider`, `AdminTable`, `Skeleton` e `ErrorBoundary`; `useUserHook` passou a delegar ao `SchoolContext`. Suíte: **173/173 testes em 35 arquivos**. Detalhes em [problemas-conhecidos.md](./problemas-conhecidos.md).
 >
 > **Evolução Multi-Tenant:** ver [`design-doc-evolucao-multi-tenant.md`](../../../docs/design-doc-evolucao-multi-tenant.md) na raiz do projeto. Fase 3 (frontend: `SchoolContext`, seletor de escola ativa, correção do mapeamento de perfis, remoção de hardcodes) **implementada** — ver seção "Multi-Tenant" abaixo.
 
@@ -16,8 +18,8 @@
 ### 2. Corrigir Sessão Gov.br (Alta prioridade) — ✅ Concluído
 
 - [x] Unificar persistência de token (cookie httpOnly vs localStorage) — nova rota `POST /api/auth/govbr-session` grava o JWT do Gov.br como cookie httpOnly, igual ao login tradicional
-- [x] Fazer o middleware reconhecer sessões Gov.br — automático, já que agora é o mesmo cookie
-- [ ] Unificar `useUserHook` e `useGovbrAuth` de fato em um único hook (ficaram unificados na fonte de sessão, mas ainda são dois hooks distintos — refatoração de conveniência, não bloqueia nada)
+- [x] Fazer o proxy reconhecer sessões Gov.br — automático, já que agora é o mesmo cookie
+- [x] Unificar `useUserHook` e `useGovbrAuth` — `useUserHook` virou wrapper deprecated do `SchoolContext` (fonte única de sessão); `useGovbrAuth` permanece separado por ser o fluxo de login OAuth, não uma fonte de sessão
 
 ### 3. Remover Valores Hardcoded — ✅ Concluído (Fase 3)
 
@@ -26,57 +28,55 @@
 - [x] Dashboard: mapeamento legado de perfis substituído por `src/constants/profile.ts`
 - [x] **P15** (era achado novo, agora corrigido): módulo de vínculo/criação de professores reescrito em dois passos (`POST /users` + `assign-profile`/`unassign-profile`) — ver `problemas-conhecidos.md`
 
-### 4. Testes
+### 4. Testes — 🟡 Em andamento (173/173 em 35 arquivos)
 
-- [ ] Testes para `/classes`, `/minhas-aulas`
-- [ ] Testes para hooks (`useEnrollments`, `useEnrollmentMutations`, `useSubstitutionLimit`, `useSchools`, `useUsers`, `useTeachers`)
-- [ ] Testes para services (`enrollment`, `master`, `teacher`, `auth`)
-- [ ] Testes para área master (páginas)
+- [x] Já cobertos: login/cadastro, dashboard legado, `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/auditoria`, `/master/dashboard`, `/minha-jornada`, `/escola/indicadores`, `SchoolContext`, `useUserHook`, `useNotifications`, `useGovbrAuth`, `useSubstitutionLimit`, `useSchools`, `useUsers`, `useTeachers`, services `auth`/`classes`/`enrollment`/`teacher`, `ErrorBoundary` e hooks de relatórios/fechamento
+- [ ] Faltam: páginas master restantes (`diretores`, `administradores`, `escolas`, `professores`, `redes`, `políticas-carga-horaria`); fluxos de escola (`fechamento-ponto`, `jornada-docente`); service `master`; hooks `useEnrollments`, `useEnrollment`, `useMaster`/`useMasterDashboard`, `useSubjects`
 
-### 5. Correções de Rotas e Navegação
+### 5. Correções de Rotas e Navegação — ✅ Concluído
 
-- [ ] Criar rota `/login` (redirects apontam para `/login`, mas o login está em `/`)
-- [ ] Usar `MasterHeader` no layout master (hoje não importado)
+- [x] Redirects para `/login` corrigidos para `/` (a rota nunca existiu — o login vive em `/`): `classes/page.tsx`, `minhas-aulas/page.tsx`, `escola/layout.tsx`, `useMaster.ts`, `master/layout.tsx` (P5)
+- [x] Usar `MasterHeader` no layout master — agora entra entre a sidebar e o conteúdo, com o nome real do usuário vindo do `SchoolContext` (P10)
 
 ## Médio Prazo (3-6 meses)
 
 ### Multi-Tenant (Fase 3 do Design Doc) — ✅ Concluído nesta rodada
 - [x] `SchoolContext` (estado global de sessão, substitui fetch repetido do `useUserHook`)
 - [x] Seletor de escola ativa persistente (`SchoolSelector`, oculto quando só há um vínculo)
-- [ ] Consumir o claim de `networkId` (Rede de Ensino) quando o backend expuser esse campo no JWT/`/auth/me` (depende da Fase 2 do Design Doc já ter `Networks` no schema — falta o claim chegar ao token)
+- [x] Consumir o claim de `networkId` (Rede de Ensino) — `SchoolContext.activeNetworkId`, exposto por `/api/auth/me` a partir do JWT; `/master/auditoria` já abre na rede do vínculo ativo
 
 ### UX/UI
-- [ ] Biblioteca de componentes reutilizáveis
-- [ ] Skeleton loading e spinners padronizados
-- [ ] Error Boundaries
-- [ ] Sistema de temas (Theme Provider)
+- [ ] Biblioteca de componentes reutilizáveis — parcial: `AdminTable` e `Skeleton` em `src/components/ui/`; telas antigas ainda repetem estilos
+- [x] Skeleton loading e spinners padronizados — `src/components/ui/Skeleton.tsx` (adotado nas telas novas)
+- [x] Error Boundaries — `src/components/ErrorBoundary.tsx`, montado no layout raiz
+- [x] Sistema de temas (Theme Provider) — `src/components/ThemeProvider.tsx` + `src/styles/theme.ts`
 
 ### Qualidade de Código
-- [ ] Remover todos os `@ts-ignore` e `any`
-- [ ] Padronizar tipos (`EnrollmentRequest`, `EnrollmentStatus` duplicados)
-- [ ] Centralizar chamadas diretas (dashboard/cadastro) nos services
-- [ ] Refatorar `UserForm` duplicado (diretores/administradores)
-- [ ] Unificar `Class.date` e `Class.statededAt`
+- [x] Remover todos os `@ts-ignore` e `any` — regras reativadas no `eslint.config.mjs` para o código de aplicação (liberadas apenas em `tests/**`)
+- [x] Padronizar tipos (`EnrollmentRequest`, `EnrollmentStatus` duplicados) — fonte única em `src/types/enrollment.ts`; ids numéricos em `Teacher`/`Subject`/`EnrollmentRequest`/`UserData`
+- [x] Centralizar chamadas diretas (dashboard/cadastro) nos services — dashboard migrado para `classesService`/`schoolsService`, via `api-client.service` (P9)
+- [x] Refatorar `UserForm` duplicado (diretores/administradores) — movido para `src/app/master/components/UserForm.tsx`
+- [x] Unificar `Class.date` e `Class.statededAt` — `Class.date` removido; só `statededAt`
 
 ### Notificações
-- [ ] Notificação de novas vagas para professores
-- [ ] Notificação de aprovação/rejeição
+- [x] Notificação in-app de novas vagas (professores/gestão), aprovação/rejeição (professor) e candidaturas pendentes (MASTER) — `useNotifications` + `NotificationBell` no dashboard e no MasterHeader
+- [ ] Notificações por e-mail/push
 
 ### Relatórios
-- [ ] Dashboard com estatísticas detalhadas por escola
-- [ ] Histórico completo de substituições
-- [ ] Exportação (PDF/Excel)
+- [x] Dashboard com estatísticas detalhadas por escola — `/escola/indicadores` (coverage-stats da Fase 4)
+- [x] Histórico completo de substituições — `/escola/indicadores`; log de auditoria por rede em `/master/auditoria`
+- [ ] Exportação: CSV e impressão (PDF via navegador) feitos; falta exportação em PDF nativo
 
 ## Longo Prazo (6-12 meses)
 
 ### Segurança e Conformidade
-- [ ] Substituir hash SHA1 por algoritmo seguro (ex.: bcrypt no backend)
-- [x] Validar JWT no middleware — `jose.jwtVerify`, cookie inválido/expirado agora é barrado na borda (P6)
+- [x] Substituir hash SHA1 por algoritmo seguro — frontend não pré-hasheia mais a senha (P3); backend usa bcrypt e migra hashes legados de forma lazy
+- [x] Validar JWT no proxy — `jose.jwtVerify`, cookie inválido/expirado agora é barrado na borda (P6)
 - [x] Remover `console.log` do payload do token em `/api/auth/me` — já removido junto do P0 (ver problemas-conhecidos.md)
 
 ### Mobile
 - [ ] Aplicativo React Native consumindo a mesma API
-- [ ] Push notifications
+- [ ] Push notifications (o sino in-app não cobre notificação fora do app)
 
 ### Integração IoT (visão de futuro)
 - [ ] Prova de conceito com sensores de presença
@@ -90,16 +90,17 @@ quadrantChart
     x-axis Baixa Complexidade --> Alta Complexidade
     y-axis Baixo Impacto --> Alto Impacto
 
+    "Multi-Tenant (concluido)": [0.7, 0.95]
     "Unificar perfis (concluido)": [0.5, 0.9]
     "Sessao Gov.br (concluido)": [0.6, 0.9]
-    "JWT no middleware (concluido)": [0.3, 0.8]
-    "Remover hardcodes": [0.4, 0.7]
-    "Testes novos": [0.5, 0.7]
-    "Rota /login": [0.3, 0.6]
-    "Relatórios": [0.6, 0.5]
-    "Notificações": [0.6, 0.5]
-    "Mobile": [0.8, 0.4]
-    "Multi-Tenant (NetworkContext)": [0.7, 0.95]
+    "Centralizar services/P9 (concluido)": [0.35, 0.6]
+    "Infra UI/P13 (concluido)": [0.45, 0.55]
+    "Testes de paginas master": [0.5, 0.6]
+    "Migrar telas antigas para o tema": [0.6, 0.45]
+    "Notificacoes e-mail/push": [0.7, 0.55]
+    "PDF nativo": [0.45, 0.35]
+    "App mobile": [0.8, 0.4]
+    "IoT": [0.9, 0.25]
 ```
 
 ## Como Contribuir

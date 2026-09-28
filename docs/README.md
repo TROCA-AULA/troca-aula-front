@@ -17,7 +17,7 @@ docs/
 │   └── testes.md                    # Testes automatizados
 ├── 03-arquitetura/                  # Arquitetura técnica
 │   ├── arquitetura.md               # Visão geral e padrões
-│   ├── autenticacao.md              # Login, JWT, Gov.br e middleware
+│   ├── autenticacao.md              # Login, JWT, Gov.br e proxy
 │   ├── integracao-backend.md        # Comunicação com o backend NestJS
 │   └── modelo-de-dados.md           # Entidades e relacionamentos
 ├── 04-modulos/                      # Módulos/funcionalidades

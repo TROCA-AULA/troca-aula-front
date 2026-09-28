@@ -31,19 +31,19 @@ pnpm test src/user/useUserHook.test.tsx
 
 ## Arquivos de Teste
 
-Os testes ficam lado a lado com o código (`*.test.tsx` / `*.test.ts`):
+Os testes ficam em `tests/` (unit/integration) e ao lado do código (`src/**/*.test.tsx`). Alguns exemplos:
 
 | Arquivo | O que cobre |
 |---------|-------------|
 | `src/api.service.test.tsx` | Interceptors do axios (request/response, toast de erro) |
-| `src/middleware.test.ts` | Middleware de autenticação (rotas públicas, redirect sem token) |
+| `src/proxy.test.ts` | Proxy de autenticação (rotas públicas, redirect sem token) |
 | `src/app/page.test.tsx` | Página de login |
 | `src/app/cadastro/page.test.tsx` | Página de cadastro |
 | `src/app/dashboard/page.test.tsx` | Dashboard legado |
 | `src/app/components/Logo.test.tsx` | Componente Logo |
 | `src/user/useUserHook.test.tsx` | Hook de sessão (fetch `/api/auth/me`, logout) |
 
-> Diretórios `tests/` na raiz e o arquivo `test_output.txt` são artefatos de execução passada.
+> O arquivo `test_output.txt` na raiz é um artefato de execução passada.
 
 ## Configuração
 

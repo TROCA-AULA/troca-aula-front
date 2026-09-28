@@ -9,7 +9,7 @@ Lista consolidada de problemas identificados na análise do frontend.
 ### P0 — Ausência total de contexto de tenant/escola ativa — ✅ Corrigido (Fase 3)
 - Criado `src/contexts/SchoolContext.tsx` (`SchoolProvider` montado em `src/app/layout.tsx`): sessão carregada uma única vez, expõe `schoolLinks` (todos os vínculos escola/perfil do usuário — antes o `/api/auth/me` só devolvia o primeiro e nem incluía `schoolId`), `activeSchoolId`/`activeProfileId` e `setActiveSchoolId` (persistido em `localStorage`).
 - Novo componente `src/components/SchoolSelector.tsx` — só aparece quando o usuário tem mais de um vínculo aprovado (hoje oculto na prática, já que a maioria dos usuários tem uma única escola).
-- Migrados para `useSchoolContext()`: `dashboard/page.tsx`, `classes/page.tsx`, `minhas-aulas/page.tsx`, `master/layout.tsx`, `useMaster.ts`. `useUserHook` continua existindo (não removido) para eventuais usos futuros pontuais.
+- Migrados para `useSchoolContext()`: `dashboard/page.tsx`, `classes/page.tsx`, `minhas-aulas/page.tsx`, `master/layout.tsx`, `useMaster.ts`. `useUserHook` foi mantido apenas como wrapper deprecated do `SchoolContext` (sem consumidores reais).
 
 ### P1 — Dois mapeamentos de `profileId` conflitantes — ✅ Corrigido (Fase 3)
 - **Achado mais grave que o suspeitado**: NENHUM dos dois mapeamentos batia com o valor real do backend (`DIRETOR=1, AUXILIAR_ADMIN=2, PROFESSOR=3, MASTER=4`, confirmado em `profile.enum.ts`). Isso incluía um bug de autorização real: `useMaster.ts`/`master/layout.tsx` liberavam a área `/master/*` para `profileId===1` (na verdade DIRETOR) e bloqueavam o MASTER de verdade (`profileId===4`).
@@ -33,7 +33,7 @@ Lista consolidada de problemas identificados na análise do frontend.
 ### P4 — Valores hardcoded — ✅ Corrigido (Fase 3)
 - `cadastro/page.tsx`: `profileId`/`schoolId` REMOVIDOS do payload (não só corrigidos) — o `CreateUserDto` real do backend não aceita esses campos (`ValidationPipe` com `forbidNonWhitelisted` rejeitaria com 400); o cadastro público hoje só cria o usuário base, o vínculo escola/perfil é feito depois via `assign-profile` por quem tem permissão.
 - `/master/professores`: `schoolId = 'school-1'` substituído por `activeSchoolId` real do `SchoolContext`.
-- **Novo achado (P15 abaixo)**: corrigir o hardcode não resolve um problema maior — o módulo de vínculo de professores (`teacher.service.tsx`/`useTeachers`) assume um contrato de API que o backend atual não implementa mais.
+- **Achado relacionado (P15, também corrigido)**: o módulo de vínculo de professores (`teacher.service.tsx`/`useTeachers`) assumia um contrato de API que o backend atual não implementava mais.
 
 ### P15 — Módulo de vínculo/criação de professores fora de contrato com o backend atual — ✅ Corrigido
 - **Backend**: `GET /users` ganhou filtros reais opcionais `schoolId`/`profileId` (via `UsersProfilesSchools`, compatível retroativamente sem eles). Novo endpoint `POST /users/:id/unassign-profile` (contraparte de `assign-profile`, mesmas guardas `TenantGuard`+`RolesGuard`). **Bug adicional encontrado e corrigido**: `assign-profile` nunca setava `approvedAt`/`approvedById` — o vínculo criado nunca era considerado aprovado pelo `TenantContextService`, ou seja, o endpoint não concedia acesso nenhum na prática; agora o vínculo nasce aprovado com `approvedById` = quem chamou (validado end-to-end contra Postgres real).
@@ -50,10 +50,10 @@ Lista consolidada de problemas identificados na análise do frontend.
 ### P5 — Rota `/login` inexistente — ✅ Corrigido
 - 5 pontos redirecionavam para `/login` (rota que nunca existiu — o login vive em `/`), resultando em 404: `minhas-aulas/page.tsx`, `classes/page.tsx`, `escola/layout.tsx`, `useMaster.ts`, `master/layout.tsx`. Todos corrigidos para `router.push('/')`, consistente com o próprio `proxy.ts`, que já redireciona pra `/` quando não há sessão válida.
 
-### P6 — Middleware não valida o JWT — ✅ Corrigido
-- Antes: `src/middleware.ts` verificava apenas a **presença** do cookie `token`; cookie inválido/expirado passava pelo middleware e só era barrado em `/api/auth/me`.
-- Correção: middleware agora assíncrono, valida assinatura e expiração do JWT com `jose.jwtVerify` (biblioteca já usada em `/api/auth/me`, compatível com o Edge Runtime — `jsonwebtoken` não funcionaria aqui). Mesmo segredo/fallback de `/api/auth/me` (`process.env.SECRET`, já configurado). Token inválido/expirado agora redireciona para `/` E remove o cookie (evita loop de redirecionamento).
-- **Arquivos**: `src/middleware.ts`, `src/middleware.test.ts`
+### P6 — Guard não validava o JWT — ✅ Corrigido
+- Antes: `src/middleware.ts` (hoje `src/proxy.ts`, renomeado no Next 16) verificava apenas a **presença** do cookie `token`; cookie inválido/expirado passava pelo guard e só era barrado em `/api/auth/me`.
+- Correção: o proxy agora é assíncrono, valida assinatura e expiração do JWT com `jose.jwtVerify` (biblioteca já usada em `/api/auth/me`). Mesmo segredo/fallback de `/api/auth/me` (`process.env.SECRET`, já configurado). Token inválido/expirado agora redireciona para `/` E remove o cookie (evita loop de redirecionamento).
+- **Arquivos**: `src/proxy.ts`, `src/proxy.test.ts`
 
 ## Médio (dívidas técnicas)
 
@@ -64,13 +64,13 @@ Lista consolidada de problemas identificados na análise do frontend.
 - **P7-b — `UserData.id: string | number`** (`src/user/user.types.tsx`) — ✅ Corrigido também: confirmado via `/api/auth/me` (`src/app/api/auth/me/route.ts`) que `id` vem sempre de `sub.id` no JWT, sempre numérico (`Users.id` é `serial`); nenhum consumidor (`master/diretores`, `master/administradores`, `useSubstitutionLimit`, `services/master.service.tsx`) dependia da forma `string`. Estreitado para `id: number`.
 - **Arquivos**: `src/types/enrollment.ts`, `src/types/teacher.ts`, `src/services/teacher.service.tsx`, `src/hooks/useTeachers.ts`, `src/app/classes/page.tsx`, `src/app/master/professores/page.tsx`, `src/app/escola/jornada-docente/page.tsx`, `src/app/escola/jornada-docente/components/WorkloadRecordForm.tsx`, `src/app/escola/fechamento-ponto/page.tsx`, `tests/unit/teacher.service.test.tsx`, `tests/unit/useTeachers.test.tsx`, `src/user/user.types.tsx`.
 
-### P8 — Uso extensivo de `any`/`@ts-ignore`
-- ESLint desabilita regras (`no-explicit-any`, `ban-ts-comment`, etc.)
-- Ex.: `payload?.sub?.upsUser` em `/api/auth/me`, `classesFiltered.map((item: any) ...)` no dashboard legado
+### P8 — Uso extensivo de `any`/`@ts-ignore` — ✅ Corrigido
+- `@typescript-eslint/no-explicit-any` e `@typescript-eslint/ban-ts-comment` foram reativadas no `eslint.config.mjs` para o código de aplicação; continuam liberadas apenas em `tests/**` (mocks).
+- Nenhum `any`/`@ts-ignore`/`@ts-nocheck` restante fora de testes (verificado em `src/`).
 
-### P9 — Criação de aula sem proxy
-- Listagem usa `/api/classes` (proxy), mas criação (`api.post('/classes')`) vai direto ao backend
-- Chamadas diretas espalhadas em páginas (dashboard, cadastro, `useSubstitutionLimit`) em vez de services
+### P9 — Chamadas diretas ao backend fora dos services — ✅ Corrigido
+- Cadastro e `useSubstitutionLimit` já usavam `api-client.service` (proxy `/api/proxy`); nesta rodada o dashboard legado (último ponto com chamadas diretas) foi migrado para `classesService` (`src/services/classes.service.tsx`) e `schoolsService` (`src/services/schools.service.tsx`).
+- Não restam chamadas axios/fetch diretas ao backend em páginas/hooks; o único uso direto é o proxy server-side (`src/app/api/proxy/[...path]/route.ts`), que é o ponto de entrada esperado.
 
 ### P10 — Componentes duplicados — ✅ Corrigido
 - `UserForm` (já era idêntico byte-a-byte entre `diretores/` e `administradores/`, já parametrizado por `profileId`) movido para `src/app/master/components/UserForm.tsx`; as duas páginas passaram a importar dali, cópias antigas removidas.
@@ -82,11 +82,13 @@ Lista consolidada de problemas identificados na análise do frontend.
 
 ## Baixo (melhorias)
 
-### P12 — Cobertura de testes incompleta
-- Páginas/hooks/serviços novos sem testes (ver [testes.md](../02-guia-desenvolvimento/testes.md))
+### P12 — Cobertura de testes incompleta — ⚠️ Parcial (avançou)
+- Novos testes nesta rodada: páginas `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/auditoria`, `/master/dashboard`, `/minha-jornada` e `/escola/indicadores`; `SchoolContext`, `useUserHook`, `useNotifications`; services `auth`, `classes`, `enrollment` e `teacher`; `ErrorBoundary`; hooks de relatórios/fechamento. Suíte: **173 testes em 35 arquivos**, todos passando.
+- Ainda faltam: páginas master (`diretores`, `administradores`, `escolas`, `professores`, `redes`, `políticas-carga-horaria`) e fluxos de escola (`fechamento-ponto`, `jornada-docente`); service `master`; hooks `useEnrollments`, `useEnrollment`, `useMaster`/`useMasterDashboard`, `useSubjects` — ver [testes.md](../02-guia-desenvolvimento/testes.md)
 
-### P13 — Sem biblioteca de componentes / theming
-- Estilos espalhados; cores `#509BA1`, `#6EC3C9`, etc. repetidas
+### P13 — Sem biblioteca de componentes / theming — ⚠️ Parcial (infra pronta)
+- Feito: tema central (`src/styles/theme.ts` + `src/components/ThemeProvider.tsx`, montado no layout raiz); primitivos de container/header/tabela/estados em `src/components/ui/AdminTable.tsx`; `Skeleton`/`SkeletonRows` em `src/components/ui/Skeleton.tsx`; `ErrorBoundary` global no layout raiz.
+- Falta: migrar as telas antigas (dashboard, classes, minhas-aulas, master) para o tema e os componentes; cores `#509BA1`, `#6EC3C9` etc. ainda repetidas nelas.
 
 ### P14 — Cálculo de semestre client-side — ✅ Corrigido (backend + frontend)
 - Achado original: `useSubstitutionLimit` calculava o semestre com o relógio do navegador (`getCurrentSemester()`) e recontava aprovações no cliente via `GET /enrollment-requests?createdAfter=...`. Investigação revelou um bug mais sério: o gate real do backend (`EnrollmentRequestsService.countApprovedSubstitutions`, chamado em `create()`) contava candidaturas **APPROVED da carreira inteira** do professor contra `substitutionLimitPerSemester`, sem nenhum recorte de data — a mensagem de erro já dizia "para este semestre", mas a contagem nunca foi escopada assim.
@@ -106,18 +108,17 @@ Lista consolidada de problemas identificados na análise do frontend.
 | P5 | Alto | Baixo | Navegação | ✅ Corrigido |
 | P6 | Alto | Médio | Segurança | ✅ Corrigido |
 | P7 | Médio | Médio | Tipos | ✅ Corrigido |
-| P8 | Médio | Médio | Qualidade | Pendente |
-| P9 | Médio | Baixo | Arquitetura | Pendente |
+| P8 | Médio | Médio | Qualidade | ✅ Corrigido |
+| P9 | Médio | Baixo | Arquitetura | ✅ Corrigido |
 | P10 | Médio | Baixo | Componentes | ✅ Corrigido |
 | P11 | Médio | Trivial | Segurança/logs | ✅ Corrigido (bônus) |
-| P12 | Baixo | Médio | Testes | Pendente |
-| P13 | Baixo | Alto | UI | Pendente |
+| P12 | Baixo | Médio | Testes | ⚠️ Parcial (avançou; 173/173) |
+| P13 | Baixo | Alto | UI | ⚠️ Parcial (infra pronta; migrar telas antigas) |
 | P14 | Baixo | Baixo | Limite | ✅ Corrigido (backend + frontend) |
 | P15 | Alto | Alto | Contrato API (master) | ✅ Corrigido |
 | P16 | Alto | Baixo | Janela de prioridade (listagem) | ✅ Corrigido |
 
 ## Como rastrear
 
-- Itens P1–P6 devem virar Issues/GitHub Tasks com prioridade alta
-- Itens P7–P14 podem ser tratados como dívida técnica em sprints
+- P8 e P9 foram fechados nesta rodada; restam P12 (cobertura de testes) e P13 (migrar as telas antigas para o tema/componentes) como dívida técnica
 - Atualize este documento conforme os itens forem resolvidos

@@ -14,7 +14,7 @@ flowchart TB
 
     subgraph Next.js
         NextAPI[API Routes /api/*]
-        MW[Middleware]
+        Proxy[Proxy]
     end
 
     subgraph Backend
@@ -28,7 +28,7 @@ flowchart TB
     Services -.direto.-> Nest
     NextAPI --> Nest
     Nest --> DB
-    MW -.protege rotas.-> UI
+    Proxy -.valida o JWT.-> UI
 
     style UI fill:#e3f2fd
     style NextAPI fill:#e8f5e9
@@ -80,7 +80,7 @@ src/
 ├── user/                  # Sessão do usuário (hook + tipos)
 ├── lib/                   # Registry styled-components (SSR)
 ├── api.service.tsx        # Cliente axios + interceptors
-└── middleware.ts          # Guard de autenticação
+└── proxy.ts               # Guard de autenticação (valida o JWT)
 ```
 
 ## Fluxo de Dados Típico

@@ -6,14 +6,14 @@ Este documento descreve as regras de negócio do sistema Troca Aula, definindo q
 
 ### R001 - Login de Usuário
 - O usuário deve fornecer email e senha válidos
-- No frontend, a senha é enviada como `Base64(SHA1(senha))` na rota `/api/auth/login`
+- No frontend, a senha é enviada em texto puro sob TLS (sem pré-hash no cliente desde o P3)
 - O backend compara e, em caso de sucesso, retorna um token JWT (`access_token`)
 - Em caso de erro, retorna `401 Unauthorized`
 
 ### R002 - Token JWT
 - Token é armazenado em cookie `httpOnly` chamado `token` com duração de 7 dias
 - O token contém o ID do usuário no payload (`sub`)
-- O middleware do Next.js verifica apenas a **presença** do cookie `token` nas rotas protegidas
+- O proxy do Next.js valida a assinatura e a expiração do JWT do cookie `token` nas rotas protegidas (cookie ausente/inválido → redirect para `/`)
 - A rota `/api/auth/me` valida o token com `jose.jwtVerify` usando a variável `SECRET`
 
 ### R003 - Logout
@@ -22,16 +22,16 @@ Este documento descreve as regras de negócio do sistema Troca Aula, definindo q
 
 ## Regras de Perfis
 
-### R013 - Perfis de Usuário (módulo master/novo)
+### R013 - Perfis de Usuário (mapeamento real do backend)
 
 | ID | Nome | Descrição |
 |----|------|-----------|
-| 1 | MASTER | Acesso completo ao sistema (gerencia escolas, diretores, administradores, professores) |
-| 2 | DIRETOR | Governa uma escola específica (cria vagas, aprova candidaturas) |
-| 3 | ADMIN | Opera as substituições de uma escola (cria vagas, gerencia operacional) |
-| 4 | PROFESSOR | Se candidata a aulas vagas e pode cancelar a própria candidatura |
+| 1 | DIRETOR | Governa uma escola específica (cria vagas, aprova candidaturas) |
+| 2 | AUXILIAR_ADMIN | Opera as substituições de uma escola (cria vagas, gerencia operacional) |
+| 3 | PROFESSOR | Se candidata a aulas vagas e pode cancelar a própria candidatura |
+| 4 | MASTER | Acesso completo ao sistema (gerencia redes, escolas, diretores, administradores, professores) |
 
-> **Inconsistência conhecida**: o módulo legado (dashboard) usa mapeamento diferente (`1` = admin, `2` = diretor, `3` = professor). Ver [problemas-conhecidos.md](../06-status/problemas-conhecidos.md).
+> **Correção (Fase 3/P1):** esta tabela antes trazia o "mapeamento novo" planejado (`1=MASTER, 2=DIRETOR, 3=ADMIN, 4=PROFESSOR`), que **nunca** correspondeu ao backend — o valor real é o da tabela acima (`ProfileEnum` do backend, espelhado em `src/constants/profile.ts`). O módulo legado também usava outro mapeamento errado; ambos foram unificados. Ver [problemas-conhecidos.md](../06-status/problemas-conhecidos.md) (P1).
 
 ### R014 - Relação Usuário-Escola-Perfil
 Um usuário pode ter múltiplos vínculos com diferentes escolas e perfis:
