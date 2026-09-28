@@ -418,6 +418,7 @@ export default function Home() {
                         <>
                             <Link href="/escola/jornada-docente">Jornada Docente</Link>
                             <Link href="/escola/fechamento-ponto">Fechamento de Ponto</Link>
+                            <Link href="/escola/indicadores">Indicadores</Link>
                         </>
                     )}
                     {user?.profileId === PROFILE.PROFESSOR && (

@@ -52,6 +52,7 @@ const navItems = [
   { label: 'Painel', href: '/dashboard' },
   { label: 'Jornada Docente', href: '/escola/jornada-docente' },
   { label: 'Fechamento de Ponto', href: '/escola/fechamento-ponto' },
+  { label: 'Indicadores', href: '/escola/indicadores' },
 ];
 
 export function EscolaSidebar() {

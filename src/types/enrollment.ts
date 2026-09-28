@@ -25,6 +25,10 @@ export interface EnrollmentRequest {
   createdAt: string;
   updatedAt?: string;
   appliedAt?: string;
+  /** Data de aprovação do vínculo do professor na escola da aula
+   * (UsersProfilesSchools.approvedAt) — "tempo de casa", populado pelo
+   * backend desde a janela de prioridade. */
+  schoolSince?: string | null;
   professor?: EnrollmentCandidate;
   user?: EnrollmentCandidate;
 }
@@ -39,6 +43,11 @@ export interface Class {
   statededAt: string | null;
   available: boolean;
   schoolId?: number;
+  /** Presentes na resposta real (relational query do backend) — usados pelo
+   * sino de notificações e pelos indicadores. */
+  createdAt?: string;
+  subject?: { id: number; name: string } | null;
+  school?: { id: number; name: string } | null;
 }
 
 export interface CreateEnrollmentRequest {
