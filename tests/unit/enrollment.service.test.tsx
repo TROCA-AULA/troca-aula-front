@@ -63,4 +63,97 @@ describe('enrollmentService', () => {
 
     expect(api.delete).toHaveBeenCalledWith('/enrollment-requests/3');
   });
+
+  it('getEnrollment busca a solicitação pelo id (com e sem envelope)', async () => {
+    (api.get as any)
+      .mockResolvedValueOnce({ data: { data: { id: 7, status: 'PENDING' } } })
+      .mockResolvedValueOnce({ data: { id: 8, status: 'APPROVED' } });
+
+    await expect(enrollmentService.getEnrollment(7)).resolves.toEqual({
+      id: 7,
+      status: 'PENDING',
+    });
+    await expect(enrollmentService.getEnrollment(8)).resolves.toEqual({
+      id: 8,
+      status: 'APPROVED',
+    });
+
+    expect(api.get).toHaveBeenNthCalledWith(1, '/enrollment-requests/7');
+    expect(api.get).toHaveBeenNthCalledWith(2, '/enrollment-requests/8');
+  });
+
+  it('getEnrollments usa professorId quando não há userId e inclui escola e status', async () => {
+    (api.get as any).mockResolvedValue({ data: [] });
+
+    await enrollmentService.getEnrollments({
+      professorId: 3,
+      status: 'APPROVED',
+      schoolId: 2,
+    });
+
+    expect(api.get).toHaveBeenCalledWith(
+      '/enrollment-requests?professorId=3&status=APPROVED&schoolId=2',
+    );
+  });
+
+  it('getEnrollments prioriza userId sobre professorId', async () => {
+    (api.get as any).mockResolvedValue({ data: [] });
+
+    await enrollmentService.getEnrollments({ userId: 7, professorId: 3 });
+
+    expect(api.get).toHaveBeenCalledWith('/enrollment-requests?userId=7');
+  });
+
+  it('getEnrollments sem filtros usa a query vazia', async () => {
+    (api.get as any).mockResolvedValue({ data: [] });
+
+    await enrollmentService.getEnrollments();
+
+    expect(api.get).toHaveBeenCalledWith('/enrollment-requests?');
+  });
+
+  it('getAvailableClasses e getEnrollments aceitam resposta sem envelope', async () => {
+    const classes = [{ id: 1, available: true }];
+    const solicitacoes = [{ id: 4, status: 'PENDING' }];
+    (api.get as any)
+      .mockResolvedValueOnce({ data: { data: classes } })
+      .mockResolvedValueOnce({ data: solicitacoes });
+
+    await expect(enrollmentService.getAvailableClasses()).resolves.toEqual(classes);
+    await expect(enrollmentService.getEnrollments({ userId: 4 })).resolves.toEqual(
+      solicitacoes,
+    );
+  });
+
+  it('approveEnrollment devolve a solicitação usando o envelope quando existe', async () => {
+    (api.patch as any).mockResolvedValue({
+      data: { data: { id: 5, status: 'APPROVED' } },
+    });
+
+    await expect(enrollmentService.approveEnrollment(5)).resolves.toEqual({
+      id: 5,
+      status: 'APPROVED',
+    });
+
+    expect(api.patch).toHaveBeenCalledWith('/enrollment-requests/5/approve');
+  });
+
+  it('rejectEnrollment sem motivo envia rejectionReason indefinido', async () => {
+    (api.patch as any).mockResolvedValue({ data: { data: { id: 6, status: 'REJECTED' } } });
+
+    await enrollmentService.rejectEnrollment(6);
+
+    expect(api.patch).toHaveBeenCalledWith('/enrollment-requests/6/reject', {
+      rejectionReason: undefined,
+    });
+  });
+
+  it('cancelEnrollment aceita resposta sem envelope', async () => {
+    (api.delete as any).mockResolvedValue({ data: { id: 9, status: 'CANCELLED' } });
+
+    await expect(enrollmentService.cancelEnrollment(9)).resolves.toEqual({
+      id: 9,
+      status: 'CANCELLED',
+    });
+  });
 });

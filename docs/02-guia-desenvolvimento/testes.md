@@ -47,15 +47,15 @@ Os testes ficam em `tests/` (unit/integration) e ao lado do código (`src/**/*.t
 
 ## Configuração
 
-- `vitest.config.ts` define ambiente `jsdom`, alias `@` → `./src`, e limites de cobertura (100% global).
+- `vitest.config.ts` define ambiente `jsdom`, alias `@` → `./src`, e limites de cobertura **mínimos de 90% globais** (statements, branches, functions e lines) — o CI roda `pnpm run test:coverage` e falha se cair abaixo disso.
 - `src/test-setup.ts` importa `@testing-library/jest-dom`.
-- A configuração de cobertura exclui rotas de API do Next (`src/app/api/**`) e o layout raiz.
+- A configuração de cobertura exclui boilerplate sem comportamento próprio: layout raiz (`src/app/layout.tsx`), `src/lib/registry.tsx` (styled-components no Next) e as rotas de API que são só repasse fino (`api/auth/{me,logout,login}` e `api/classes/**`).
 
 ## Boas Práticas
 
 1. **Teste o comportamento, não a implementação**: interaja via `userEvent` e verifique com queries de acesso (getByRole, getByLabelText, etc.).
 2. **Mocks de API**: use MSW (`server.use(...)`) para simular as rotas do backend; evite chamadas reais.
-3. **Cobertura**: o projeto mira 100% de cobertura para hooks e serviços críticos.
+3. **Cobertura**: mínimo de **90% global** (statements/branches/functions/lines), buscando o máximo possível perto de 100% — hoje o projeto está em 98,6% de statements e 99,1% de linhas.
 4. **Teste de erro**: cubra tanto o fluxo feliz quanto os fluxos de erro (toast de erro, redirect).
 
 ## Exemplo de Teste com MSW
@@ -79,4 +79,4 @@ afterAll(() => server.close());
 
 ## Cobertura Atual
 
-O status de cobertura e quais áreas ainda precisam de testes está documentado em [estado-atual.md](../06-status/estado-atual.md) e [roadmap.md](../06-status/roadmap.md).
+Medição de 28/09/2026 (`pnpm run test:coverage`): **84 arquivos / 619 testes**, com **98,56% de statements, 92,79% de branches, 98,59% de functions e 99,05% de lines**. O mínimo de 90% é exigido no CI; o que ainda não está coberto está listado em [problemas-conhecidos.md](../06-status/problemas-conhecidos.md) (branches comprovadamente inalcançáveis, ex.: guardas de SSR no `SchoolContext`).

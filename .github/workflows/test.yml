@@ -31,6 +31,7 @@ jobs:
     - name: Run Build
       run: pnpm run build
 
-    - name: Run Tests
-      # Aqui rodamos os testes sem precisar da DATABASE_URL real
-      run: pnpm test
+    - name: Run Tests (com cobertura minima de 90%)
+      # Aqui rodamos os testes sem precisar da DATABASE_URL real.
+      # O script com cobertura aplica os thresholds globais (90%) do vitest.config.ts.
+      run: pnpm run test:coverage

@@ -158,4 +158,214 @@ describe('PrioridadePage (grupos)', () => {
 
     expect(screen.getByText(/Nenhum grupo criado/)).toBeInTheDocument();
   });
+
+  it('salva as alterações de nome e espera de um grupo', async () => {
+    updateGroup.mockResolvedValue(data);
+    render(<PrioridadePage />);
+
+    fireEvent.change(screen.getAllByLabelText('Nome')[0], {
+      target: { value: 'Professores da casa (editado)' },
+    });
+    fireEvent.change(screen.getAllByLabelText('Espera (minutos)')[0], {
+      target: { value: '15' },
+    });
+    fireEvent.click(screen.getAllByText('Salvar grupo')[0]);
+
+    await waitFor(() =>
+      expect(updateGroup).toHaveBeenCalledWith(1, {
+        name: 'Professores da casa (editado)',
+        delayMinutes: 15,
+      }),
+    );
+  });
+
+  it('remove um grupo de prioridade', async () => {
+    removeGroup.mockResolvedValue(undefined);
+    render(<PrioridadePage />);
+
+    fireEvent.click(screen.getByLabelText('Remover grupo Professores da casa'));
+
+    await waitFor(() => expect(removeGroup).toHaveBeenCalledWith(1));
+  });
+
+  it('desmarca um professor do grupo antes de salvar', async () => {
+    setGroupMembers.mockResolvedValue(data);
+    render(<PrioridadePage />);
+
+    // Maria começa marcada no grupo 1; clicar desmarca.
+    fireEvent.click(screen.getAllByLabelText('Maria')[0]);
+    fireEvent.click(screen.getAllByText('Salvar professores do grupo')[0]);
+
+    await waitFor(() =>
+      expect(setGroupMembers).toHaveBeenCalledWith(1, expect.not.arrayContaining([17])),
+    );
+  });
+
+  it('mantém a tela estável quando uma ação falha', async () => {
+    updateGroup.mockRejectedValue(new Error('falha de rede'));
+    render(<PrioridadePage />);
+
+    fireEvent.click(screen.getAllByText('Salvar grupo')[0]);
+
+    await waitFor(() =>
+      expect(screen.getAllByText('Salvar grupo')[0]).not.toBeDisabled(),
+    );
+  });
+
+  it('mostra a janela única com horas quando não há grupos e há fallback configurado', () => {
+    vi.mocked(useTeacherGroups).mockReturnValue({
+      data: { ...data, groups: [], fallbackPriorityWindowHours: 8 },
+      loading: false,
+      createGroup,
+      updateGroup,
+      removeGroup,
+      setGroupMembers,
+      updateSettings,
+      refetch: vi.fn(),
+    } as any);
+
+    render(<PrioridadePage />);
+
+    expect(screen.getByText(/janela única/)).toHaveTextContent('(8h)');
+  });
+
+  it('não mostra seção de redes quando o município não configurou interconexão', () => {
+    vi.mocked(useTeacherGroups).mockReturnValue({
+      data: { ...data, allowedNetworkIds: [] },
+      loading: false,
+      createGroup,
+      updateGroup,
+      removeGroup,
+      setGroupMembers,
+      updateSettings,
+      refetch: vi.fn(),
+    } as any);
+
+    render(<PrioridadePage />);
+
+    expect(
+      screen.getByText(/nenhuma interconexão configurada pelo município/),
+    ).toBeInTheDocument();
+  });
+
+  it('usa "Rede #id" quando a rede permitida não está na lista de redes', () => {
+    vi.mocked(useTeacherGroups).mockReturnValue({
+      data: { ...data, allowedNetworkIds: [5, 99] },
+      loading: false,
+      createGroup,
+      updateGroup,
+      removeGroup,
+      setGroupMembers,
+      updateSettings,
+      refetch: vi.fn(),
+    } as any);
+
+    render(<PrioridadePage />);
+
+    expect(screen.getByLabelText('Aceitar professores de Rede A')).toBeInTheDocument();
+    expect(screen.getByLabelText('Aceitar professores de Rede #99')).toBeInTheDocument();
+  });
+
+  it('avisa quando a escola ainda não tem professores vinculados', () => {
+    vi.mocked(useTeachers).mockReturnValue({
+      linkedTeachers: [],
+      availableTeachers: [],
+      enrollmentRequests: [],
+      loading: false,
+      error: null,
+      fetchLinkedTeachers: vi.fn(),
+      fetchAvailableTeachers: vi.fn(),
+      fetchEnrollmentRequests: vi.fn(),
+      linkTeacher: vi.fn(),
+      unlinkTeacher: vi.fn(),
+      updateEnrollmentStatus: vi.fn(),
+    } as any);
+
+    render(<PrioridadePage />);
+
+    expect(
+      screen.getAllByText('Nenhum professor vinculado à escola ainda.').length,
+    ).toBeGreaterThanOrEqual(1);
+  });
+
+  it('salva acceptedNetworkIds como null quando nenhuma rede é aceita', async () => {
+    vi.mocked(useTeacherGroups).mockReturnValue({
+      data: { ...data, acceptedNetworkIds: [5] },
+      loading: false,
+      createGroup,
+      updateGroup,
+      removeGroup,
+      setGroupMembers,
+      updateSettings,
+      refetch: vi.fn(),
+    } as any);
+    updateSettings.mockResolvedValue(data);
+
+    render(<PrioridadePage />);
+
+    // Começa marcada (acceptedNetworkIds [5]); clicar desmarca.
+    fireEvent.click(screen.getByLabelText('Aceitar professores de Rede A'));
+    fireEvent.click(screen.getByText('Salvar configurações'));
+
+    await waitFor(() =>
+      expect(updateSettings).toHaveBeenCalledWith({
+        ungroupedDelayMinutes: 60,
+        acceptedNetworkIds: null,
+      }),
+    );
+  });
+
+  it('mostra o modo de janela única quando os dados ainda não chegaram', () => {
+    vi.mocked(useTeacherGroups).mockReturnValue({
+      data: null,
+      loading: false,
+      createGroup,
+      updateGroup,
+      removeGroup,
+      setGroupMembers,
+      updateSettings,
+      refetch: vi.fn(),
+    } as any);
+
+    render(<PrioridadePage />);
+
+    expect(screen.getByText(/Nenhum grupo criado/)).toBeInTheDocument();
+  });
+
+  it('pede para selecionar uma escola quando não há escola ativa', () => {
+    vi.mocked(useSchoolContext).mockReturnValue({
+      user: { id: 1, name: 'Diretora', email: 'd@e.com', profileId: 1 },
+      isLoading: false,
+      logout: vi.fn(),
+      refreshUserData: vi.fn(),
+      schoolLinks: [],
+      activeSchoolId: null,
+      activeProfileId: 1,
+      activeNetworkId: null,
+      setActiveSchoolId: vi.fn(),
+    } as any);
+
+    render(<PrioridadePage />);
+
+    expect(
+      screen.getByText('Selecione uma escola para configurar a prioridade.'),
+    ).toBeInTheDocument();
+  });
+
+  it('mostra o carregando dos grupos de prioridade', () => {
+    vi.mocked(useTeacherGroups).mockReturnValue({
+      data: null,
+      loading: true,
+      createGroup,
+      updateGroup,
+      removeGroup,
+      setGroupMembers,
+      updateSettings,
+      refetch: vi.fn(),
+    } as any);
+
+    render(<PrioridadePage />);
+
+    expect(screen.getByRole('status', { name: 'Carregando' })).toBeInTheDocument();
+  });
 });

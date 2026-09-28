@@ -95,6 +95,12 @@ describe('Dashboard Page', () => {
             expect(screen.getByRole('cell', { name: 'Science' })).toBeInTheDocument();
             expect(screen.queryByRole('cell', { name: 'Math' })).not.toBeInTheDocument();
         });
+
+        // Voltar para a aba de aulas disponíveis mostra as vagas de novo.
+        fireEvent.click(screen.getByText('Aulas Disponiveis'));
+
+        await waitFor(() => expect(screen.getByRole('cell', { name: 'Math' })).toBeInTheDocument());
+        expect(screen.getByText('Aulas Disponiveis')).toHaveClass('active');
     });
 
     it('handles search', async () => {
@@ -264,6 +270,7 @@ describe('Dashboard Page', () => {
 
     it('handles subjects and school fetch error', async () => {
         (api.get as any).mockImplementation((url: string) => {
+             if (url === '/classes') return Promise.resolve({ data: mockClasses });
              return Promise.reject(new Error('Network error'));
         });
         render(<Home />);
@@ -326,5 +333,119 @@ describe('Dashboard Page', () => {
         fireEvent.click(acceptedButton);
 
         await waitFor(() => expect(screen.getByRole('cell', { name: 'Science' })).toBeInTheDocument());
+    });
+
+    it('abre a aba Candidaturas para a equipe', async () => {
+        render(<Home />);
+
+        fireEvent.click(screen.getByText('Candidaturas'));
+
+        await waitFor(() =>
+            expect(screen.getByText('Nenhuma candidatura pending encontrada.')).toBeInTheDocument(),
+        );
+    });
+
+    it('permite ao MASTER trocar a escola do formulário', async () => {
+        (api.get as any).mockImplementation((url: string) => {
+            if (url === '/classes') return Promise.resolve({ data: mockClasses });
+            if (url === '/schools') {
+                return Promise.resolve({
+                    data: [
+                        { id: 1, name: 'School A' },
+                        { id: 2, name: 'School B' },
+                    ],
+                });
+            }
+            return Promise.resolve({ data: [] });
+        });
+        render(<Home />);
+
+        const schoolSelect = (await screen.findAllByRole('combobox'))[0];
+        await waitFor(() => expect(schoolSelect).toHaveValue('1'));
+
+        fireEvent.change(schoolSelect, { target: { value: '2' } });
+
+        expect(schoolSelect).toHaveValue('2');
+    });
+
+    it('carrega a escola do diretor e mostra o nome no formulário', async () => {
+        (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.DIRETOR, schoolId: 1 },
+            logout: mockLogout,
+            refreshUserData: mockRefreshUserData,
+        });
+        render(<Home />);
+
+        expect(await screen.findByDisplayValue('School A')).toBeInTheDocument();
+        expect(api.get).toHaveBeenCalledWith('/schools/1');
+    });
+
+    it('lida com MASTER sem escolas cadastradas', async () => {
+        (api.get as any).mockImplementation((url: string) => {
+            if (url === '/classes') return Promise.resolve({ data: mockClasses });
+            if (url === '/schools') return Promise.resolve({ data: null });
+            return Promise.resolve({ data: [] });
+        });
+        render(<Home />);
+
+        const schoolSelect = (await screen.findAllByRole('combobox'))[0];
+        await waitFor(() => expect(api.get).toHaveBeenCalledWith('/schools'));
+        expect(schoolSelect).toHaveValue('');
+    });
+
+    it('mostra "-" quando a aula não tem datas preenchidas', async () => {
+        (api.get as any).mockImplementation((url: string) => {
+            if (url === '/classes') {
+                return Promise.resolve({
+                    data: [
+                        {
+                            id: 9,
+                            subject: { name: 'História' },
+                            school: { name: 'School A' },
+                            statededAt: null,
+                            finishedAt: null,
+                            enrolledById: null,
+                        },
+                    ],
+                });
+            }
+            if (url === '/schools') return Promise.resolve({ data: [{ id: 1, name: 'School A' }] });
+            return Promise.resolve({ data: [] });
+        });
+        render(<Home />);
+
+        await waitFor(() => expect(screen.getByRole('cell', { name: 'História' })).toBeInTheDocument());
+        expect(screen.getAllByRole('cell', { name: '-' }).length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('mostra os erros de validação ao cadastrar sem preencher', async () => {
+        render(<Home />);
+
+        await waitFor(() => expect(screen.getByRole('cell', { name: 'Math' })).toBeInTheDocument());
+        fireEvent.click(screen.getByText('Cadastrar'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Materia é obrigatório')).toBeInTheDocument();
+            expect(screen.getByText('Inicio é obrigatório')).toBeInTheDocument();
+            expect(screen.getByText('Termino é obrigatório')).toBeInTheDocument();
+        });
+        expect(api.post).not.toHaveBeenCalled();
+    });
+
+    it('lida com falha ao carregar a escola do diretor', async () => {
+        (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.DIRETOR, schoolId: 1 },
+            logout: mockLogout,
+            refreshUserData: mockRefreshUserData,
+        });
+        (api.get as any).mockImplementation((url: string) => {
+            if (url === '/classes') return Promise.resolve({ data: mockClasses });
+            if (url === '/schools/1') return Promise.reject(new Error('fail'));
+            return Promise.resolve({ data: [] });
+        });
+        render(<Home />);
+
+        await waitFor(() => expect(api.get).toHaveBeenCalledWith('/schools/1'));
+        expect(screen.getByDisplayValue('Nome da Escola')).toBeInTheDocument();
     });
 });

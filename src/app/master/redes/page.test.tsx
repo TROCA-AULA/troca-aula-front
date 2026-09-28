@@ -13,9 +13,25 @@ vi.mock('@/hooks/useEligibility', () => ({
 }));
 
 // O NetworkForm chama outros hooks de rede; o teste focado aqui é a lista e
-// a abertura do modal de interconexões.
+// a abertura dos modais (formulário e interconexões).
 vi.mock('./components/NetworkForm', () => ({
-  NetworkForm: () => null,
+  NetworkForm: ({
+    open,
+    mode,
+    initialData,
+    onClose,
+  }: {
+    open: boolean;
+    mode: 'create' | 'edit';
+    initialData?: { id: number } | null;
+    onClose: () => void;
+  }) =>
+    open ? (
+      <div>
+        form-rede-{mode}-{initialData?.id ?? 'novo'}
+        <button onClick={onClose}>fechar-form-rede</button>
+      </div>
+    ) : null,
 }));
 
 describe('RedesPage', () => {
@@ -70,5 +86,46 @@ describe('RedesPage', () => {
     render(<RedesPage />);
 
     expect(screen.getByLabelText('Carregando')).toBeInTheDocument();
+  });
+
+  it('mostra o estado vazio quando não há redes', () => {
+    vi.mocked(useNetworks).mockReturnValue({
+      networks: [],
+      loading: false,
+      error: null,
+      createNetwork: vi.fn(),
+      updateNetwork: vi.fn(),
+      refetch: vi.fn(),
+    } as any);
+
+    render(<RedesPage />);
+
+    expect(screen.getByText('Nenhuma rede cadastrada.')).toBeInTheDocument();
+    expect(screen.queryByText('Interconexões')).not.toBeInTheDocument();
+  });
+
+  it('abre o formulário de criação e o de edição da rede selecionada', () => {
+    render(<RedesPage />);
+
+    fireEvent.click(screen.getByText('+ Nova Rede'));
+    expect(screen.getByText('form-rede-create-novo')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('fechar-form-rede'));
+    expect(screen.queryByText('form-rede-create-novo')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getAllByText('Editar')[0]);
+    expect(screen.getByText('form-rede-edit-1')).toBeInTheDocument();
+  });
+
+  it('fecha o modal de interconexões ao cancelar', () => {
+    render(<RedesPage />);
+
+    fireEvent.click(screen.getAllByText('Interconexões')[0]);
+    expect(screen.getByText('Interconexões de Rede A')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Cancelar'));
+    expect(
+      screen.queryByText('Interconexões de Rede A'),
+    ).not.toBeInTheDocument();
   });
 });

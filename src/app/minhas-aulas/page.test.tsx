@@ -139,4 +139,167 @@ describe('MinhasAulasPage', () => {
 
     expect(push).toHaveBeenCalledWith('/');
   });
+
+  it('mostra o carregando enquanto o usuário não chega', () => {
+    vi.mocked(useSchoolContext).mockReturnValue({
+      user: null,
+      isLoading: true,
+      logout: vi.fn(),
+      refreshUserData: vi.fn(),
+      schoolLinks: [],
+      activeSchoolId: null,
+      activeProfileId: null,
+      activeNetworkId: null,
+      setActiveSchoolId: vi.fn(),
+    } as any);
+
+    render(<MinhasAulasPage />);
+
+    expect(screen.getByText('Carregando...')).toBeInTheDocument();
+  });
+
+  it('mostra o carregando das candidaturas', () => {
+    mockUser();
+    vi.mocked(useEnrollments).mockReturnValue({
+      enrollments: [],
+      classes: [],
+      loading: true,
+      error: null,
+      refetch,
+    });
+
+    render(<MinhasAulasPage />);
+
+    expect(screen.getByText('Carregando minhas candidaturas...')).toBeInTheDocument();
+  });
+
+  it('mostra o erro ao carregar as candidaturas', () => {
+    mockUser();
+    vi.mocked(useEnrollments).mockReturnValue({
+      enrollments: [],
+      classes: [],
+      loading: false,
+      error: 'Falha ao carregar',
+      refetch,
+    });
+
+    render(<MinhasAulasPage />);
+
+    expect(screen.getByText('Falha ao carregar')).toBeInTheDocument();
+  });
+
+  it('mostra o estado vazio geral quando não há candidaturas', () => {
+    mockUser();
+    vi.mocked(useEnrollments).mockReturnValue({
+      enrollments: [],
+      classes: [],
+      loading: false,
+      error: null,
+      refetch,
+    });
+
+    render(<MinhasAulasPage />);
+
+    expect(screen.getByText('Você ainda não tem candidaturas.')).toBeInTheDocument();
+  });
+
+  it('mostra o estado vazio conforme o filtro selecionado', () => {
+    mockUser();
+    vi.mocked(useEnrollments).mockReturnValue({
+      enrollments: [],
+      classes: [],
+      loading: false,
+      error: null,
+      refetch,
+    });
+
+    render(<MinhasAulasPage />);
+    fireEvent.click(screen.getByText('Pendentes'));
+
+    expect(screen.getByText('Nenhuma candidatura pending.')).toBeInTheDocument();
+  });
+
+  it('mostra rejeitada, cancelada e o motivo da rejeição', () => {
+    mockUser();
+    vi.mocked(useEnrollments).mockReturnValue({
+      enrollments: [
+        {
+          id: 3,
+          classId: 12,
+          professorId: 7,
+          status: 'REJECTED',
+          rejectionReason: 'Sem vaga no turno',
+          createdAt: '2026-10-03T10:00:00Z',
+        },
+        {
+          id: 4,
+          classId: 13,
+          professorId: 7,
+          status: 'CANCELLED',
+          createdAt: '2026-10-04T10:00:00Z',
+        },
+      ],
+      classes: [],
+      loading: false,
+      error: null,
+      refetch,
+    });
+
+    render(<MinhasAulasPage />);
+
+    expect(screen.getByText('Rejeitada')).toBeInTheDocument();
+    expect(screen.getByText('Sem vaga no turno')).toBeInTheDocument();
+    expect(screen.getByText('Cancelada')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText('Canceladas'));
+    expect(screen.getByText('#13')).toBeInTheDocument();
+    expect(screen.queryByText('#12')).not.toBeInTheDocument();
+  });
+
+  it('mostra o erro ao falhar o cancelamento', async () => {
+    mockUser();
+    cancelEnrollment.mockRejectedValue(new Error('Candidatura já processada'));
+
+    render(<MinhasAulasPage />);
+    fireEvent.click(screen.getByText('Cancelar'));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('Candidatura já processada'),
+    );
+  });
+
+  it('usa a mensagem padrão quando o cancelamento falha sem Error', async () => {
+    mockUser();
+    cancelEnrollment.mockRejectedValue('falha');
+
+    render(<MinhasAulasPage />);
+    fireEvent.click(screen.getByText('Cancelar'));
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('Erro ao cancelar candidatura'),
+    );
+  });
+
+  it('renderiza um status desconhecido sem quebrar o badge', () => {
+    mockUser();
+    vi.mocked(useEnrollments).mockReturnValue({
+      enrollments: [
+        {
+          id: 9,
+          classId: 99,
+          professorId: 7,
+          status: 'UNKNOWN' as any,
+          createdAt: '2026-10-05T10:00:00Z',
+        },
+      ],
+      classes: [],
+      loading: false,
+      error: null,
+      refetch,
+    });
+
+    render(<MinhasAulasPage />);
+
+    expect(screen.getByText('#99')).toBeInTheDocument();
+  });
 });

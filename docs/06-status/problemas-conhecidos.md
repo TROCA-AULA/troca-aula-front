@@ -83,7 +83,7 @@ Lista consolidada de problemas identificados na análise do frontend.
 ## Baixo (melhorias)
 
 ### P12 — Cobertura de testes incompleta — ✅ Corrigido
-- Todas as lacunas listadas foram cobertas: páginas `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/{auditoria,dashboard,redes,diretores,administradores,escolas,professores,politicas-carga-horaria}`, `/minha-jornada`, `/escola/{indicadores,prioridade,fechamento-ponto,jornada-docente}`, `/minhas-preferencias`; contextos/hooks `SchoolContext`, `useUserHook`, `useNotifications`, `useEnrollments`, `useEnrollment`, `useMasterDashboard`, `useSubjects`, `useMaster` e os demais hooks de dados; services `auth`, `classes`, `enrollment`, `teacher`, `master`, `eligibility`, `account`, `indicators`; `ErrorBoundary` e o helper de PDF. Suíte: **238 testes em 53 arquivos**, todos passando.
+- Todas as lacunas listadas foram cobertas: páginas `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/{auditoria,dashboard,redes,diretores,administradores,escolas,professores,politicas-carga-horaria}`, `/minha-jornada`, `/escola/{indicadores,prioridade,fechamento-ponto,jornada-docente}`, `/minhas-preferencias`; contextos/hooks `SchoolContext`, `useUserHook`, `useNotifications`, `useEnrollments`, `useEnrollment`, `useMasterDashboard`, `useSubjects`, `useMaster` e os demais hooks de dados; services `auth`, `classes`, `enrollment`, `teacher`, `master`, `eligibility`, `account`, `indicators`; `ErrorBoundary` e o helper de PDF. Suíte: **619 testes em 84 arquivos**, todos passando (cobertura 98,6% de statements / 99,1% de linhas).
 - Observação: segue sem meta de % de cobertura configurada (apenas 100% nas pastas cobertas) — decisão de qualidade, não lacuna de teste.
 
 ### P13 — Sem biblioteca de componentes / theming — ✅ Corrigido
@@ -113,7 +113,7 @@ Lista consolidada de problemas identificados na análise do frontend.
 | P9 | Médio | Baixo | Arquitetura | ✅ Corrigido |
 | P10 | Médio | Baixo | Componentes | ✅ Corrigido |
 | P11 | Médio | Trivial | Segurança/logs | ✅ Corrigido (bônus) |
-| P12 | Baixo | Médio | Testes | ✅ Corrigido (235/235) |
+| P12 | Baixo | Médio | Testes | ✅ Corrigido (619/619; mínimo de 90% de cobertura exigido no CI) |
 | P13 | Baixo | Alto | UI | ✅ Corrigido |
 | P14 | Baixo | Baixo | Limite | ✅ Corrigido (backend + frontend) |
 | P15 | Alto | Alto | Contrato API (master) | ✅ Corrigido |

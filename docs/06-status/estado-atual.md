@@ -80,7 +80,7 @@ pie title Progresso do Frontend
 
 | Área | Status |
 |------|--------|
-| Suíte completa | ✅ 238/238 testes em 53 arquivos |
+| Suíte completa | ✅ 619/619 testes em 84 arquivos (cobertura ≥ 92,8% em todas as métricas; mínimo de 90% no CI) |
 | Páginas cobertas | login/cadastro, dashboard legado, `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/{auditoria,dashboard,redes,diretores,administradores,escolas,professores,politicas-carga-horaria}`, `/minha-jornada`, `/escola/{indicadores,prioridade,fechamento-ponto,jornada-docente}`, `/minhas-preferencias` |
 | Hooks/contextos cobertos | `SchoolContext`, `useUserHook`, `useNotifications`, `useGovbrAuth`, `useSubstitutionLimit`, `useSchools`, `useUsers`, `useTeachers`, `useEnrollments`, `useEnrollment`, `useMasterDashboard`, `useSubjects`, hooks de relatórios/fechamento/eligibility |
 | Services cobertos | `auth`, `classes`, `enrollment`, `teacher`, `master`, `eligibility`, `account`, `indicators` |

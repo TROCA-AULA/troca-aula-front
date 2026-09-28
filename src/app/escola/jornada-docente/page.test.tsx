@@ -1,4 +1,4 @@
-import { render, screen } from '@/test-utils';
+import { render, screen, fireEvent, act } from '@/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import JornadaDocentePage from './page';
 import { useSchoolContext } from '@/contexts/SchoolContext';
@@ -10,9 +10,12 @@ vi.mock('@/hooks/useTeacherWorkloadRecords', () => ({
   useTeacherWorkloadRecords: vi.fn(),
 }));
 vi.mock('@/hooks/useTeachers', () => ({ useTeachers: vi.fn() }));
+const workloadFormMock = vi.hoisted(() => vi.fn(() => null));
 vi.mock('./components/WorkloadRecordForm', () => ({
-  WorkloadRecordForm: () => null,
+  WorkloadRecordForm: workloadFormMock,
 }));
+
+const fetchLinkedTeachers = vi.fn();
 
 function mockSchool(activeSchoolId: number | null) {
   vi.mocked(useSchoolContext).mockReturnValue({
@@ -37,7 +40,7 @@ describe('JornadaDocentePage', () => {
       enrollmentRequests: [],
       loading: false,
       error: null,
-      fetchLinkedTeachers: vi.fn(),
+      fetchLinkedTeachers,
       fetchAvailableTeachers: vi.fn(),
       fetchEnrollmentRequests: vi.fn(),
       linkTeacher: vi.fn(),
@@ -103,5 +106,101 @@ describe('JornadaDocentePage', () => {
     render(<JornadaDocentePage />);
 
     expect(screen.getByText('Nenhum registro de jornada ainda.')).toBeInTheDocument();
+  });
+
+  it('mostra o carregando enquanto os registros não chegam', () => {
+    mockSchool(1);
+    vi.mocked(useTeacherWorkloadRecords).mockReturnValue({
+      records: [],
+      loading: true,
+      error: null,
+      createRecord: vi.fn(),
+      refetch: vi.fn(),
+    } as any);
+
+    render(<JornadaDocentePage />);
+
+    expect(screen.getByText('Carregando...')).toBeInTheDocument();
+  });
+
+  it('recarrega os professores ao clicar em "+ Novo Registro"', () => {
+    mockSchool(1);
+    vi.mocked(useTeacherWorkloadRecords).mockReturnValue({
+      records: [],
+      loading: false,
+      error: null,
+      createRecord: vi.fn(),
+      refetch: vi.fn(),
+    } as any);
+
+    render(<JornadaDocentePage />);
+    fireEvent.click(screen.getByText('+ Novo Registro'));
+
+    expect(fetchLinkedTeachers).toHaveBeenCalled();
+  });
+
+  it('fecha o formulário quando o modal pede para fechar', () => {
+    mockSchool(1);
+    vi.mocked(useTeacherWorkloadRecords).mockReturnValue({
+      records: [],
+      loading: false,
+      error: null,
+      createRecord: vi.fn(),
+      refetch: vi.fn(),
+    } as any);
+
+    render(<JornadaDocentePage />);
+    fireEvent.click(screen.getByText('+ Novo Registro'));
+
+    const calls = workloadFormMock.mock.calls as unknown as Array<
+      [{ open: boolean; onClose: () => void }]
+    >;
+    const props = calls[calls.length - 1][0];
+    expect(props.open).toBe(true);
+
+    act(() => props.onClose());
+
+    const updatedCalls = workloadFormMock.mock.calls as unknown as Array<
+      [Record<string, unknown>]
+    >;
+    expect(updatedCalls[updatedCalls.length - 1][0]).toEqual(
+      expect.objectContaining({ open: false }),
+    );
+  });
+
+  it('mostra a vigência com fim, a ata oficial e o nome padrão de professor desconhecido', () => {
+    mockSchool(1);
+    vi.mocked(useTeacherWorkloadRecords).mockReturnValue({
+      records: [
+        {
+          id: 2,
+          userId: 99,
+          schoolId: 1,
+          workloadTypeId: 4,
+          hours: 8,
+          validFrom: '2026-01-01',
+          validTo: '2026-06-30',
+          ataOficialRef: 'ATA-2026-001',
+          createdById: 1,
+          createdAt: '2026-01-01',
+        },
+      ],
+      loading: false,
+      error: null,
+      createRecord: vi.fn(),
+      refetch: vi.fn(),
+    } as any);
+
+    render(<JornadaDocentePage />);
+
+    expect(screen.getByText('Professor #99')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        `${new Date('2026-01-01').toLocaleDateString('pt-BR')} até ${new Date(
+          '2026-06-30',
+        ).toLocaleDateString('pt-BR')}`,
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText('ATA-2026-001')).toBeInTheDocument();
   });
 });
