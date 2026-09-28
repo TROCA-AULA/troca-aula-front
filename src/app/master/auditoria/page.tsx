@@ -5,6 +5,7 @@ import styled from 'styled-components';
 import { useNetworks } from '@/hooks/useNetworks';
 import { useAuditLog } from '@/hooks/useAuditLog';
 import { useSchoolContext } from '@/contexts/SchoolContext';
+import { SkeletonRows } from '@/components/ui/Skeleton';
 import {
   PageContainer,
   PageHeader,
@@ -130,7 +131,7 @@ export default function AuditoriaPage() {
       {!selectedNetworkId ? (
         <EmptyState>Selecione uma rede para ver o histórico de alterações.</EmptyState>
       ) : loading ? (
-        <LoadingState>Carregando...</LoadingState>
+        <LoadingState><SkeletonRows /></LoadingState>
       ) : entries.length === 0 ? (
         <EmptyState>Nenhuma alteração registrada para esta rede ainda.</EmptyState>
       ) : (

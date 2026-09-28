@@ -16,6 +16,7 @@ import {
   EmptyState,
   LoadingState,
 } from '@/components/ui/AdminTable';
+import { SkeletonRows } from '@/components/ui/Skeleton';
 
 // Contraparte de /escola/jornada-docente (visão de gestão, por escola):
 // aqui é a visão do próprio professor sobre os registros dele -
@@ -35,7 +36,7 @@ export default function MinhaJornadaPage() {
   if (isLoading || !user) {
     return (
       <PageContainer>
-        <LoadingState>Carregando...</LoadingState>
+        <LoadingState><SkeletonRows /></LoadingState>
       </PageContainer>
     );
   }
@@ -53,7 +54,7 @@ export default function MinhaJornadaPage() {
       </PageHeader>
 
       {loading ? (
-        <LoadingState>Carregando...</LoadingState>
+        <LoadingState><SkeletonRows /></LoadingState>
       ) : records.length === 0 ? (
         <EmptyState>Nenhum registro de jornada lançado ainda.</EmptyState>
       ) : (

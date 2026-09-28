@@ -19,6 +19,7 @@ import {
   EmptyState,
   LoadingState,
 } from '@/components/ui/AdminTable';
+import { SkeletonRows } from '@/components/ui/Skeleton';
 
 // Fase 4 do Design Doc: indicador estatístico simples de risco de aula vaga
 // (GET /classes/coverage-stats) + histórico de substituições aprovadas da
@@ -268,7 +269,7 @@ export default function IndicadoresPage() {
       </NoPrint>
 
       {loading ? (
-        <LoadingState>Carregando indicador...</LoadingState>
+        <LoadingState><SkeletonRows /></LoadingState>
       ) : error ? (
         <EmptyState>{error}</EmptyState>
       ) : (
@@ -317,7 +318,7 @@ export default function IndicadoresPage() {
       </PageHeader>
 
       {historyLoading ? (
-        <LoadingState>Carregando histórico...</LoadingState>
+        <LoadingState><SkeletonRows /></LoadingState>
       ) : enrollmentRequests.length === 0 ? (
         <EmptyState>Nenhuma substituição aprovada registrada para a escola ativa.</EmptyState>
       ) : (
