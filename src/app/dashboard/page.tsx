@@ -398,10 +398,14 @@ export default function Home() {
                             <Link href="/escola/jornada-docente">Jornada Docente</Link>
                             <Link href="/escola/fechamento-ponto">Fechamento de Ponto</Link>
                             <Link href="/escola/indicadores">Indicadores</Link>
+                            <Link href="/escola/prioridade">Prioridade de Vagas</Link>
                         </>
                     )}
                     {user?.profileId === PROFILE.PROFESSOR && (
                         <Link href="/minha-jornada">Minha Jornada</Link>
+                    )}
+                    {user?.profileId === PROFILE.PROFESSOR && (
+                        <Link href="/minhas-preferencias">Minhas Preferências</Link>
                     )}
                     {user?.profileId === PROFILE.PROFESSOR && user?.schoolId && (
                         <SubstitutionCounter 

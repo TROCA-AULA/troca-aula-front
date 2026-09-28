@@ -4,6 +4,7 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { useNetworks } from '@/hooks/useNetworks';
 import { NetworkForm } from './components/NetworkForm';
+import { NetworkInterconnectionsModal } from './components/NetworkInterconnectionsModal';
 import type { Network } from '@/types/master';
 
 const PageContainer = styled.div`
@@ -113,6 +114,7 @@ export default function RedesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
+  const [interconnectionsFor, setInterconnectionsFor] = useState<Network | null>(null);
 
   const handleCreate = () => {
     setFormMode('create');
@@ -170,6 +172,9 @@ export default function RedesPage() {
                 <Td>{new Date(network.createdAt).toLocaleDateString('pt-BR')}</Td>
                 <Td>
                   <ActionButton onClick={() => handleEdit(network)}>Editar</ActionButton>
+                  <ActionButton onClick={() => setInterconnectionsFor(network)}>
+                    Interconexões
+                  </ActionButton>
                 </Td>
               </tr>
             ))}
@@ -182,6 +187,13 @@ export default function RedesPage() {
         mode={formMode}
         initialData={selectedNetwork}
         onClose={() => setFormOpen(false)}
+      />
+
+      <NetworkInterconnectionsModal
+        open={interconnectionsFor !== null}
+        network={interconnectionsFor}
+        networks={networks}
+        onClose={() => setInterconnectionsFor(null)}
       />
     </PageContainer>
   );

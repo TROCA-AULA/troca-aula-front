@@ -53,6 +53,7 @@ const navItems = [
   { label: 'Jornada Docente', href: '/escola/jornada-docente' },
   { label: 'Fechamento de Ponto', href: '/escola/fechamento-ponto' },
   { label: 'Indicadores', href: '/escola/indicadores' },
+  { label: 'Prioridade de Vagas', href: '/escola/prioridade' },
 ];
 
 export function EscolaSidebar() {
