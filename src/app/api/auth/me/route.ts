@@ -17,7 +17,7 @@ export async function GET() {
 
         const { payload } = await jwtVerify(tokenCookie.value, secret);
         const sub = payload?.sub as
-            | { id?: number; name?: string; email?: string; upsUser?: Array<{ profileId: number; schoolId: number; approvedAt: string | null }> }
+            | { id?: number; name?: string; email?: string; upsUser?: Array<{ profileId: number; schoolId: number; approvedAt: string | null; networkId?: number | null }> }
             | undefined;
         const upsUser = sub?.upsUser ?? [];
 
@@ -37,6 +37,9 @@ export async function GET() {
                 profileId: u.profileId,
                 schoolId: u.schoolId,
                 approvedAt: u.approvedAt ?? null,
+                // Vem do JWT (AuthService.signIn). Tokens emitidos antes
+                // desta rodada não têm o campo — cai para null até relogar.
+                networkId: u.networkId ?? null,
             })),
         });
     } catch (error) {

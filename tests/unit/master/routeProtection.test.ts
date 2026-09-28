@@ -37,6 +37,7 @@ describe('Route Protection - US1', () => {
       schoolLinks: [],
       activeSchoolId: null,
       activeProfileId: PROFILE.MASTER,
+      activeNetworkId: null,
       setActiveSchoolId: vi.fn(),
     });
 
@@ -54,6 +55,7 @@ describe('Route Protection - US1', () => {
       schoolLinks: [],
       activeSchoolId: null,
       activeProfileId: PROFILE.DIRETOR,
+      activeNetworkId: null,
       setActiveSchoolId: vi.fn(),
     });
 
@@ -71,6 +73,7 @@ describe('Route Protection - US1', () => {
       schoolLinks: [],
       activeSchoolId: null,
       activeProfileId: PROFILE.AUXILIAR_ADMIN,
+      activeNetworkId: null,
       setActiveSchoolId: vi.fn(),
     });
 
@@ -88,6 +91,7 @@ describe('Route Protection - US1', () => {
       schoolLinks: [],
       activeSchoolId: null,
       activeProfileId: PROFILE.PROFESSOR,
+      activeNetworkId: null,
       setActiveSchoolId: vi.fn(),
     });
 
@@ -105,6 +109,7 @@ describe('Route Protection - US1', () => {
       schoolLinks: [],
       activeSchoolId: null,
       activeProfileId: null,
+      activeNetworkId: null,
       setActiveSchoolId: vi.fn(),
     });
 
@@ -122,6 +127,7 @@ describe('Route Protection - US1', () => {
       schoolLinks: [],
       activeSchoolId: null,
       activeProfileId: null,
+      activeNetworkId: null,
       setActiveSchoolId: vi.fn(),
     });
 

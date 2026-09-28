@@ -12,6 +12,13 @@ vi.mock('@/hooks/useAuditLog', () => ({
   useAuditLog: vi.fn(),
 }));
 
+// A página usa o activeNetworkId do SchoolContext para já abrir na rede da
+// escola ativa; neste teste o contexto é mockado sem rede ativa, então a
+// seleção continua manual (comportamento dos casos abaixo).
+vi.mock('@/contexts/SchoolContext', () => ({
+  useSchoolContext: vi.fn(() => ({ activeNetworkId: null })),
+}));
+
 describe('AuditoriaPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();

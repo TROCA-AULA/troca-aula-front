@@ -2,6 +2,12 @@ export interface SchoolLink {
     profileId: number;
     schoolId: number;
     approvedAt: string | null;
+    /**
+     * Rede de ensino da escola (Schools.networkId). Passou a vir no JWT
+     * (AuthService.signIn) e é exposta por /api/auth/me nesta rodada —
+     * consumida como `activeNetworkId` no SchoolContext.
+     */
+    networkId: number | null;
 }
 
 export interface UserData {

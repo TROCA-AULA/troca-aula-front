@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { useNetworks } from '@/hooks/useNetworks';
 import { useAuditLog } from '@/hooks/useAuditLog';
+import { useSchoolContext } from '@/contexts/SchoolContext';
 import {
   PageContainer,
   PageHeader,
@@ -80,8 +81,22 @@ function EntryDetails({ entry }: { entry: AuditLogEntry }) {
 
 export default function AuditoriaPage() {
   const { networks, loading: networksLoading } = useNetworks();
+  const { activeNetworkId } = useSchoolContext();
   const [selectedNetworkId, setSelectedNetworkId] = useState<number | undefined>(undefined);
   const { entries, loading } = useAuditLog(selectedNetworkId);
+
+  // Já abre na rede da escola ativa do usuário (claim `networkId` do JWT →
+  // SchoolContext), quando ela estiver na lista de redes; o seletor
+  // continua livre para consultar outras redes.
+  useEffect(() => {
+    if (
+      selectedNetworkId === undefined &&
+      activeNetworkId != null &&
+      networks.some((n) => n.id === activeNetworkId)
+    ) {
+      setSelectedNetworkId(activeNetworkId);
+    }
+  }, [activeNetworkId, networks, selectedNetworkId]);
 
   return (
     <PageContainer>

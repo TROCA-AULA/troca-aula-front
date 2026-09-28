@@ -20,6 +20,11 @@ interface SchoolContextValue extends UserContextType {
     activeSchoolId: number | null;
     /** Perfil do usuário NA escola ativa (pode variar por escola). */
     activeProfileId: number | null;
+    /**
+     * Rede de ensino da escola ativa (Schools.networkId, via JWT). Null
+     * quando o vínculo não tem rede resolvida ou para tokens antigos.
+     */
+    activeNetworkId: number | null;
     /** Troca a escola ativa — só aceita um schoolId presente em schoolLinks. */
     setActiveSchoolId: (schoolId: number) => void;
 }
@@ -116,6 +121,15 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         return link?.profileId ?? userData?.profileId ?? null;
     }, [schoolLinks, selectedSchoolId, userData]);
 
+    // Rede de ensino da escola ativa — vem no vínculo (JWT → /api/auth/me).
+    // Permite telas de escopo de rede (ex.: /master/auditoria) já abrirem na
+    // rede da escola em que o usuário está operando.
+    const activeNetworkId = useMemo(() => {
+        if (selectedSchoolId == null) return null;
+        const link = schoolLinks.find((l) => l.schoolId === selectedSchoolId);
+        return link?.networkId ?? null;
+    }, [schoolLinks, selectedSchoolId]);
+
     const logout = useCallback(async () => {
         try {
             await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
@@ -146,6 +160,7 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
         schoolLinks,
         activeSchoolId: selectedSchoolId,
         activeProfileId,
+        activeNetworkId,
         setActiveSchoolId,
     };
 
