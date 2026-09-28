@@ -219,7 +219,7 @@ export default function FechamentoPontoPage() {
   const { reports, loading, generateReport, reviewReport, closeReport } = useMonthlyClosingReports(
     activeSchoolId,
   );
-  const { linkedTeachers, fetchLinkedTeachers } = useTeachers(String(activeSchoolId ?? ''));
+  const { linkedTeachers, fetchLinkedTeachers } = useTeachers(activeSchoolId ?? 0);
   const { register, handleSubmit, reset } = useForm<GenerateFormData>({
     defaultValues: { referenceMonth: new Date().toISOString().slice(0, 7) },
   });
@@ -231,7 +231,7 @@ export default function FechamentoPontoPage() {
   }, [activeSchoolId]);
 
   const teacherName = (userId: number) =>
-    linkedTeachers.find((t) => Number(t.id) === userId)?.name ?? `Professor #${userId}`;
+    linkedTeachers.find((t) => t.id === userId)?.name ?? `Professor #${userId}`;
 
   const onGenerate = async (data: GenerateFormData) => {
     if (!activeSchoolId) return;

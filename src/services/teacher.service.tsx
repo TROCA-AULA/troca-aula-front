@@ -24,17 +24,16 @@ interface RawTeacher {
   upsUser?: RawUpsLink[];
 }
 
-function flattenTeacher(raw: RawTeacher, schoolId?: string): Teacher {
+function flattenTeacher(raw: RawTeacher, schoolId?: number): Teacher {
   const links = raw.upsUser ?? [];
   const link =
-    (schoolId !== undefined &&
-      links.find((l) => String(l.schoolId) === schoolId)) ||
+    (schoolId !== undefined && links.find((l) => l.schoolId === schoolId)) ||
     links[0];
   return {
-    id: String(raw.id),
+    id: raw.id,
     name: raw.name,
     email: raw.email,
-    schoolId: link ? String(link.schoolId) : null,
+    schoolId: link ? link.schoolId : null,
     profileId: link?.profileId ?? PROFILE.PROFESSOR,
     subject: raw.subject ?? null,
     totalSubstitutions: raw.totalSubstitutions ?? 0,
@@ -42,7 +41,7 @@ function flattenTeacher(raw: RawTeacher, schoolId?: string): Teacher {
 }
 
 export const teacherService = {
-  async getLinkedTeachers(schoolId: string): Promise<Teacher[]> {
+  async getLinkedTeachers(schoolId: number): Promise<Teacher[]> {
     const response = await api.get('/users', {
       params: { schoolId, profileId: PROFILE.PROFESSOR },
     });
@@ -50,7 +49,7 @@ export const teacherService = {
     return raw.map((t) => flattenTeacher(t, schoolId));
   },
 
-  async getAvailableTeachers(schoolId: string): Promise<Teacher[]> {
+  async getAvailableTeachers(schoolId: number): Promise<Teacher[]> {
     // "Disponível" = professor com vínculo em qualquer OUTRA escola, ou sem
     // vínculo nenhum ainda — como não há endpoint de "professores sem
     // vínculo", listamos todos os PROFESSOR e filtramos no cliente quem já
@@ -68,24 +67,24 @@ export const teacherService = {
   // Vincular = assign-profile com perfil PROFESSOR (guardado por
   // TenantGuard/RolesGuard desde a Fase 0 — quem chama precisa já ter
   // vínculo de gestão NAQUELA escola).
-  async linkTeacher(userId: string, schoolId: string): Promise<void> {
+  async linkTeacher(userId: number, schoolId: number): Promise<void> {
     await api.post(`/users/${userId}/assign-profile`, {
       profileId: PROFILE.PROFESSOR,
-      schoolId: Number(schoolId),
+      schoolId,
     });
   },
 
   // Desvincular = contraparte de assign-profile (endpoint novo do P15,
   // remove a linha de UsersProfilesSchools).
-  async unlinkTeacher(userId: string, schoolId: string): Promise<void> {
+  async unlinkTeacher(userId: number, schoolId: number): Promise<void> {
     await api.post(`/users/${userId}/unassign-profile`, {
       profileId: PROFILE.PROFESSOR,
-      schoolId: Number(schoolId),
+      schoolId,
     });
   },
 
   async getEnrollmentRequests(
-    schoolId: string,
+    schoolId: number,
     status?: string
   ): Promise<EnrollmentRequest[]> {
     const params: Record<string, string> = {};
@@ -96,7 +95,7 @@ export const teacherService = {
   },
 
   async updateEnrollmentStatus(
-    enrollmentId: string,
+    enrollmentId: number,
     status: 'APPROVED' | 'REJECTED'
   ): Promise<EnrollmentRequest> {
     const endpoint = status === 'APPROVED' ? 'approve' : 'reject';

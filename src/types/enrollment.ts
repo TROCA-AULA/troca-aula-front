@@ -1,21 +1,42 @@
 export type EnrollmentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
 
+// Candidato denormalizado (nome/email/disciplina/contador). Nenhum endpoint
+// real hoje devolve isso embutido em EnrollmentRequest — GET
+// /enrollment-requests é flat (ver EnrollmentRequestsRepository.findAll no
+// backend). Mantido como campo opcional só para não quebrar telas que já
+// esperavam esse formato (ex.: /master/professores) até que o backend
+// exponha os dados populados; ver P7 em problemas-conhecidos.md.
+export interface EnrollmentCandidate {
+  id: number;
+  name: string;
+  email: string;
+  subject?: { id: number; name: string } | null;
+  totalSubstitutions: number;
+}
+
 export interface EnrollmentRequest {
   id: number;
   classId: number;
   professorId: number;
   userId?: number;
+  schoolId?: number;
   status: EnrollmentStatus;
   rejectionReason?: string | null;
   createdAt: string;
   updatedAt?: string;
+  appliedAt?: string;
+  professor?: EnrollmentCandidate;
+  user?: EnrollmentCandidate;
 }
 
 export interface Class {
   id: number;
   subjectId: number;
   subjectName?: string;
-  date: string;
+  // Nome real do campo no backend (Drizzle schema `classes.statededAt`) —
+  // não existe `date` na API; o typo é intencional lá, preservado aqui para
+  // bater com o contrato real (ver Design Doc / P7).
+  statededAt: string | null;
   available: boolean;
   schoolId?: number;
 }

@@ -5,7 +5,9 @@ export interface SchoolLink {
 }
 
 export interface UserData {
-    id: string | number;
+    // Sempre numérico na prática: vem de `sub.id` no JWT (Users.id é serial
+    // no banco) — ver src/app/api/auth/me/route.ts. Nunca string.
+    id: number;
     name: string;
     email: string;
     /** Perfil no vínculo ativo (ver SchoolContext) — mantido para compatibilidade com código existente. */

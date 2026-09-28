@@ -75,13 +75,13 @@ const EmptyState = styled.div`
 export default function JornadaDocentePage() {
   const { activeSchoolId } = useSchoolContext();
   const { records, loading, createRecord } = useTeacherWorkloadRecords(activeSchoolId);
-  const { linkedTeachers, fetchLinkedTeachers } = useTeachers(String(activeSchoolId ?? ''));
+  const { linkedTeachers, fetchLinkedTeachers } = useTeachers(activeSchoolId ?? 0);
   const [formOpen, setFormOpen] = useState(false);
 
   // Nomes dos professores não vêm no registro de jornada (só userId) -
   // reaproveita a lista de professores vinculados já buscada pelo form.
   const teacherName = (userId: number) =>
-    linkedTeachers.find((t) => Number(t.id) === userId)?.name ?? `Professor #${userId}`;
+    linkedTeachers.find((t) => t.id === userId)?.name ?? `Professor #${userId}`;
 
   if (!activeSchoolId) {
     return (

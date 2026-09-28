@@ -45,17 +45,17 @@ describe('teacherService', () => {
       ];
       mockApi.get = vi.fn().mockResolvedValue({ data: mockRaw });
 
-      const result = await teacherService.getLinkedTeachers('1');
+      const result = await teacherService.getLinkedTeachers(1);
 
       expect(mockApi.get).toHaveBeenCalledWith('/users', {
-        params: { schoolId: '1', profileId: PROFILE.PROFESSOR },
+        params: { schoolId: 1, profileId: PROFILE.PROFESSOR },
       });
       expect(result).toEqual([
         {
-          id: '1',
+          id: 1,
           name: 'João Silva',
           email: 'joao@escola.com',
-          schoolId: '1',
+          schoolId: 1,
           profileId: PROFILE.PROFESSOR,
           subject: { id: 'subj-1', name: 'Matemática' },
           totalSubstitutions: 15,
@@ -66,7 +66,7 @@ describe('teacherService', () => {
     it('should return empty array when no teachers are linked', async () => {
       mockApi.get = vi.fn().mockResolvedValue({ data: [] });
 
-      const result = await teacherService.getLinkedTeachers('school-1');
+      const result = await teacherService.getLinkedTeachers(1);
 
       expect(result).toEqual([]);
     });
@@ -74,7 +74,7 @@ describe('teacherService', () => {
     it('should throw error when API call fails', async () => {
       mockApi.get = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      await expect(teacherService.getLinkedTeachers('school-1')).rejects.toThrow(
+      await expect(teacherService.getLinkedTeachers(1)).rejects.toThrow(
         'Network error'
       );
     });
@@ -102,12 +102,12 @@ describe('teacherService', () => {
       ];
       mockApi.get = vi.fn().mockResolvedValue({ data: mockRaw });
 
-      const result = await teacherService.getAvailableTeachers('1');
+      const result = await teacherService.getAvailableTeachers(1);
 
       expect(mockApi.get).toHaveBeenCalledWith('/users', {
         params: { profileId: PROFILE.PROFESSOR },
       });
-      expect(result.map((t) => t.id)).toEqual(['2', '3']);
+      expect(result.map((t) => t.id)).toEqual([2, 3]);
     });
 
     it('should exclude teachers already linked to this school', async () => {
@@ -122,7 +122,7 @@ describe('teacherService', () => {
       ];
       mockApi.get = vi.fn().mockResolvedValue({ data: mockRaw });
 
-      const result = await teacherService.getAvailableTeachers('1');
+      const result = await teacherService.getAvailableTeachers(1);
 
       expect(result).toEqual([]);
     });
@@ -130,7 +130,7 @@ describe('teacherService', () => {
     it('should throw error when API call fails', async () => {
       mockApi.get = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      await expect(teacherService.getAvailableTeachers('1')).rejects.toThrow(
+      await expect(teacherService.getAvailableTeachers(1)).rejects.toThrow(
         'Network error'
       );
     });
@@ -140,7 +140,7 @@ describe('teacherService', () => {
     it('should call assign-profile with PROFESSOR role', async () => {
       mockApi.post = vi.fn().mockResolvedValue({ data: {} });
 
-      await teacherService.linkTeacher('1', '1');
+      await teacherService.linkTeacher(1, 1);
 
       expect(mockApi.post).toHaveBeenCalledWith('/users/1/assign-profile', {
         profileId: PROFILE.PROFESSOR,
@@ -154,7 +154,7 @@ describe('teacherService', () => {
       });
 
       await expect(
-        teacherService.linkTeacher('invalid-user', '1')
+        teacherService.linkTeacher(999, 1)
       ).rejects.toThrow();
     });
   });
@@ -163,7 +163,7 @@ describe('teacherService', () => {
     it('should call unassign-profile with PROFESSOR role', async () => {
       mockApi.post = vi.fn().mockResolvedValue({ data: {} });
 
-      await teacherService.unlinkTeacher('1', '1');
+      await teacherService.unlinkTeacher(1, 1);
 
       expect(mockApi.post).toHaveBeenCalledWith('/users/1/unassign-profile', {
         profileId: PROFILE.PROFESSOR,
@@ -174,7 +174,7 @@ describe('teacherService', () => {
     it('should throw error when API call fails', async () => {
       mockApi.post = vi.fn().mockRejectedValue(new Error('Network error'));
 
-      await expect(teacherService.unlinkTeacher('1', '1')).rejects.toThrow(
+      await expect(teacherService.unlinkTeacher(1, 1)).rejects.toThrow(
         'Network error'
       );
     });
@@ -200,10 +200,13 @@ describe('teacherService', () => {
       ];
       mockApi.get = vi.fn().mockResolvedValue({ data: mockEnrollments });
 
-      const result = await teacherService.getEnrollmentRequests('school-1');
+      const result = await teacherService.getEnrollmentRequests(1);
 
+      // A escola não vai mais na query: o backend deriva do token do gestor
+      // autenticado (P15/P16). O parâmetro `schoolId` da assinatura é só
+      // para compatibilidade com os chamadores.
       expect(mockApi.get).toHaveBeenCalledWith('/enrollment-requests', {
-        params: { schoolId: 'school-1' },
+        params: {},
       });
       expect(result).toEqual(mockEnrollments);
     });
@@ -211,10 +214,10 @@ describe('teacherService', () => {
     it('should filter by status when provided', async () => {
       mockApi.get = vi.fn().mockResolvedValue({ data: [] });
 
-      await teacherService.getEnrollmentRequests('school-1', 'PENDING');
+      await teacherService.getEnrollmentRequests(1, 'PENDING');
 
       expect(mockApi.get).toHaveBeenCalledWith('/enrollment-requests', {
-        params: { schoolId: 'school-1', status: 'PENDING' },
+        params: { status: 'PENDING' },
       });
     });
 
@@ -222,7 +225,7 @@ describe('teacherService', () => {
       mockApi.get = vi.fn().mockRejectedValue(new Error('Network error'));
 
       await expect(
-        teacherService.getEnrollmentRequests('school-1')
+        teacherService.getEnrollmentRequests(1)
       ).rejects.toThrow('Network error');
     });
   });
@@ -239,13 +242,13 @@ describe('teacherService', () => {
       mockApi.patch = vi.fn().mockResolvedValue({ data: mockResponse });
 
       const result = await teacherService.updateEnrollmentStatus(
-        'enr-1',
+        1,
         'APPROVED'
       );
 
-      expect(mockApi.patch).toHaveBeenCalledWith('/enrollment-requests/enr-1', {
-        status: 'APPROVED',
-      });
+      expect(mockApi.patch).toHaveBeenCalledWith(
+        '/enrollment-requests/1/approve'
+      );
       expect(result).toEqual(mockResponse);
     });
 
@@ -260,13 +263,13 @@ describe('teacherService', () => {
       mockApi.patch = vi.fn().mockResolvedValue({ data: mockResponse });
 
       const result = await teacherService.updateEnrollmentStatus(
-        'enr-1',
+        1,
         'REJECTED'
       );
 
-      expect(mockApi.patch).toHaveBeenCalledWith('/enrollment-requests/enr-1', {
-        status: 'REJECTED',
-      });
+      expect(mockApi.patch).toHaveBeenCalledWith(
+        '/enrollment-requests/1/reject'
+      );
       expect(result).toEqual(mockResponse);
     });
 
@@ -276,7 +279,7 @@ describe('teacherService', () => {
       });
 
       await expect(
-        teacherService.updateEnrollmentStatus('invalid-id', 'APPROVED')
+        teacherService.updateEnrollmentStatus(999, 'APPROVED')
       ).rejects.toThrow();
     });
   });

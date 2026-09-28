@@ -252,7 +252,7 @@ export default function ProfessoresPage() {
   // esse hardcode não resolve esse gap maior, que fica documentado como
   // pendência separada.
   const { activeSchoolId } = useSchoolContext();
-  const schoolId = activeSchoolId != null ? String(activeSchoolId) : '';
+  const schoolId = activeSchoolId ?? 0;
   const {
     linkedTeachers,
     availableTeachers,
@@ -271,13 +271,13 @@ export default function ProfessoresPage() {
     setShowLinkModal(true);
   };
 
-  const handleLinkTeacher = async (userId: string) => {
+  const handleLinkTeacher = async (userId: number) => {
     await linkTeacher(userId, schoolId);
     setShowLinkModal(false);
     toast.success('Professor vinculado com sucesso!');
   };
 
-  const handleUnlinkTeacher = async (userId: string) => {
+  const handleUnlinkTeacher = async (userId: number) => {
     if (confirm('Tem certeza que deseja desvincular este professor?')) {
       await unlinkTeacher(userId);
       toast.success('Professor desvinculado com sucesso!');
@@ -285,7 +285,7 @@ export default function ProfessoresPage() {
   };
 
   const handleUpdateEnrollment = async (
-    enrollmentId: string,
+    enrollmentId: number,
     status: 'APPROVED' | 'REJECTED'
   ) => {
     await updateEnrollmentStatus(enrollmentId, status);

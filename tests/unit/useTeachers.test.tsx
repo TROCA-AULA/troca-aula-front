@@ -16,34 +16,37 @@ vi.mock('@/services/teacher.service', () => ({
 
 const mockLinkedTeachers = [
   {
-    id: 'user-1',
+    id: 1,
     name: 'João Silva',
     email: 'joao@escola.com',
-    schoolId: 'school-1',
+    schoolId: 1,
     profileId: 4,
-    subject: { id: 'subj-1', name: 'Matemática' },
+    subject: { id: 1, name: 'Matemática' },
     totalSubstitutions: 15,
   },
 ];
 
 const mockAvailableTeachers = [
   {
-    id: 'user-2',
+    id: 2,
     name: 'Maria Santos',
     email: 'maria@email.com',
     schoolId: null,
     profileId: 4,
-    subject: { id: 'subj-2', name: 'Física' },
+    subject: { id: 2, name: 'Física' },
     totalSubstitutions: 8,
   },
 ];
 
 const mockEnrollmentRequests = [
   {
-    id: 'enr-1',
-    userId: 'user-2',
-    schoolId: 'school-1',
-    status: 'PENDING',
+    id: 1,
+    classId: 1,
+    professorId: 2,
+    userId: 2,
+    schoolId: 1,
+    status: 'PENDING' as const,
+    createdAt: '2026-05-17T10:00:00Z',
     appliedAt: '2026-05-17T10:00:00Z',
     user: mockAvailableTeachers[0],
   },
@@ -59,12 +62,12 @@ describe('useTeachers Hook - US1', () => {
       mockLinkedTeachers
     );
 
-    const { result } = renderHook(() => useTeachers('school-1'));
+    const { result } = renderHook(() => useTeachers(1));
 
     await waitFor(() =>
       expect(result.current.linkedTeachers).toEqual(mockLinkedTeachers)
     );
-    expect(teacherService.getLinkedTeachers).toHaveBeenCalledWith('school-1');
+    expect(teacherService.getLinkedTeachers).toHaveBeenCalledWith(1);
   });
 
   it('should fetch available teachers', async () => {
@@ -72,7 +75,7 @@ describe('useTeachers Hook - US1', () => {
       mockAvailableTeachers
     );
 
-    const { result } = renderHook(() => useTeachers('school-1'));
+    const { result } = renderHook(() => useTeachers(1));
 
     await act(async () => {
       await result.current.fetchAvailableTeachers();
@@ -82,26 +85,20 @@ describe('useTeachers Hook - US1', () => {
   });
 
   it('should link a teacher to school', async () => {
-    vi.mocked(teacherService.linkTeacher).mockResolvedValue({
-      id: 'user-2',
-      schoolId: 'school-1',
-    } as any);
+    vi.mocked(teacherService.linkTeacher).mockResolvedValue(undefined);
     vi.mocked(teacherService.getLinkedTeachers).mockResolvedValue([
       ...mockLinkedTeachers,
-      { ...mockAvailableTeachers[0], schoolId: 'school-1' },
+      { ...mockAvailableTeachers[0], schoolId: 1 },
     ]);
     vi.mocked(teacherService.getAvailableTeachers).mockResolvedValue([]);
 
-    const { result } = renderHook(() => useTeachers('school-1'));
+    const { result } = renderHook(() => useTeachers(1));
 
     await act(async () => {
-      await result.current.linkTeacher('user-2', 'school-1');
+      await result.current.linkTeacher(2, 1);
     });
 
-    expect(teacherService.linkTeacher).toHaveBeenCalledWith(
-      'user-2',
-      'school-1'
-    );
+    expect(teacherService.linkTeacher).toHaveBeenCalledWith(2, 1);
   });
 
   it('should unlink a teacher from school', async () => {
@@ -111,19 +108,16 @@ describe('useTeachers Hook - US1', () => {
       mockAvailableTeachers
     );
 
-    const { result } = renderHook(() => useTeachers('school-1'));
+    const { result } = renderHook(() => useTeachers(1));
 
     await act(async () => {
-      await result.current.unlinkTeacher('user-1');
+      await result.current.unlinkTeacher(1);
     });
 
     // useTeachers já conhece o schoolId (veio do parâmetro do hook) e o
     // injeta automaticamente — o backend real exige profileId+schoolId no
     // corpo do unassign-profile (ver P15 em problemas-conhecidos.md).
-    expect(teacherService.unlinkTeacher).toHaveBeenCalledWith(
-      'user-1',
-      'school-1'
-    );
+    expect(teacherService.unlinkTeacher).toHaveBeenCalledWith(1, 1);
   });
 
   it('should handle loading state', () => {
@@ -131,7 +125,7 @@ describe('useTeachers Hook - US1', () => {
       () => new Promise(() => {})
     );
 
-    const { result } = renderHook(() => useTeachers('school-1'));
+    const { result } = renderHook(() => useTeachers(1));
 
     expect(result.current.loading).toBe(true);
   });
@@ -141,7 +135,7 @@ describe('useTeachers Hook - US1', () => {
       new Error('API Error')
     );
 
-    const { result } = renderHook(() => useTeachers('school-1'));
+    const { result } = renderHook(() => useTeachers(1));
 
     await waitFor(() => expect(result.current.error).toBe('API Error'));
   });
@@ -151,7 +145,7 @@ describe('useTeachers Hook - US1', () => {
       mockEnrollmentRequests
     );
 
-    const { result } = renderHook(() => useTeachers('school-1'));
+    const { result } = renderHook(() => useTeachers(1));
 
     await act(async () => {
       await result.current.fetchEnrollmentRequests();
@@ -162,19 +156,19 @@ describe('useTeachers Hook - US1', () => {
 
   it('should update enrollment status', async () => {
     vi.mocked(teacherService.updateEnrollmentStatus).mockResolvedValue({
-      id: 'enr-1',
+      ...mockEnrollmentRequests[0],
       status: 'APPROVED',
-    } as any);
+    });
     vi.mocked(teacherService.getEnrollmentRequests).mockResolvedValue([]);
 
-    const { result } = renderHook(() => useTeachers('school-1'));
+    const { result } = renderHook(() => useTeachers(1));
 
     await act(async () => {
-      await result.current.updateEnrollmentStatus('enr-1', 'APPROVED');
+      await result.current.updateEnrollmentStatus(1, 'APPROVED');
     });
 
     expect(teacherService.updateEnrollmentStatus).toHaveBeenCalledWith(
-      'enr-1',
+      1,
       'APPROVED'
     );
   });

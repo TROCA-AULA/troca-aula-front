@@ -50,7 +50,7 @@ export function useUserHook(): UserContextType {
     };
 
     return {
-        user: userData as any,
+        user: userData,
         isLoading,
         logout,
         refreshUserData: fetchUserData

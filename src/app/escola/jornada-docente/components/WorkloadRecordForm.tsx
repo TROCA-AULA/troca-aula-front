@@ -151,7 +151,7 @@ interface FormData {
 
 export function WorkloadRecordForm({ open, schoolId, onClose, onSubmit }: WorkloadRecordFormProps) {
   const { linkedTeachers, fetchLinkedTeachers, loading: teachersLoading } = useTeachers(
-    String(schoolId),
+    schoolId,
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
