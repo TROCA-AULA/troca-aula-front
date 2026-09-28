@@ -184,7 +184,6 @@ export default function IndicadoresPage() {
     if (activeSchoolId) {
       fetchEnrollmentRequests('APPROVED');
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSchoolId]);
 
   const exportHistoryCsv = () => {

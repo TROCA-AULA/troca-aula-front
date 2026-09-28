@@ -307,7 +307,6 @@ export default function FechamentoPontoPage() {
 
   useEffect(() => {
     if (activeSchoolId) fetchLinkedTeachers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSchoolId]);
 
   const teacherName = (userId: number) =>

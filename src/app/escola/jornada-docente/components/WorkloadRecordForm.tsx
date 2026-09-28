@@ -158,7 +158,6 @@ export function WorkloadRecordForm({ open, schoolId, onClose, onSubmit }: Worklo
 
   useEffect(() => {
     if (open) fetchLinkedTeachers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, schoolId]);
 
   const {

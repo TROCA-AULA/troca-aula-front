@@ -54,6 +54,9 @@ export function useGovbrAuth(): UseGovbrAuthReturn {
     // a sessão agora vive só no cookie httpOnly, não há mais localStorage
     // de auth para limpar.
     fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).finally(() => {
+      // Reload completo de propósito após o logout (limpa qualquer estado
+      // em memória da SPA) — por isso não é router.push.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
       window.location.href = '/';
     });
   }, []);
