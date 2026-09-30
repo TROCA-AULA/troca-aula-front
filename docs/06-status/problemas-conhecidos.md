@@ -84,7 +84,7 @@ Lista consolidada de problemas identificados na análise do frontend.
 
 ### P12 — Cobertura de testes incompleta — ✅ Corrigido
 - Todas as lacunas listadas foram cobertas: páginas `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/{auditoria,dashboard,redes,diretores,administradores,escolas,professores,politicas-carga-horaria}`, `/minha-jornada`, `/escola/{indicadores,prioridade,fechamento-ponto,jornada-docente}`, `/minhas-preferencias`; contextos/hooks `SchoolContext`, `useUserHook`, `useNotifications`, `useEnrollments`, `useEnrollment`, `useMasterDashboard`, `useSubjects`, `useMaster` e os demais hooks de dados; services `auth`, `classes`, `enrollment`, `teacher`, `master`, `eligibility`, `account`, `indicators`; `ErrorBoundary` e o helper de PDF. Suíte: **619 testes em 84 arquivos**, todos passando (cobertura 98,6% de statements / 99,1% de linhas).
-- Observação: segue sem meta de % de cobertura configurada (apenas 100% nas pastas cobertas) — decisão de qualidade, não lacuna de teste.
+- Observação: o projeto tem meta global de **90%** de cobertura (statements/branches/functions/lines) configurada no `vitest.config.ts` e **verificada no CI** (`pnpm run test:coverage`); a medição atual está em 98,56% de statements / 99,05% de linhas.
 
 ### P13 — Sem biblioteca de componentes / theming — ✅ Corrigido
 - Tema central (`src/styles/theme.ts` + `src/components/ThemeProvider.tsx`, montado no layout raiz); primitivos de container/header/tabela/estados em `src/components/ui/AdminTable.tsx`; `Skeleton`/`SkeletonRows`; `ErrorBoundary` global.
