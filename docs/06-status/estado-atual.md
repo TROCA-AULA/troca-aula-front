@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O frontend Troca-Aula tem a maioria das funcionalidades principais implementadas; as pendências restantes estão concentradas em cobertura de testes (P12) e na migração das telas antigas para a infraestrutura de UI (P13 — tema, `AdminTable`, `Skeleton` e `ErrorBoundary` já existem).
+O frontend Troca-Aula tem as funcionalidades principais implementadas e testadas (P12 e P13 fechados). A verificação de 2026-10-22, feita com o sistema rodando, encontrou defeitos de tela e de integração; os graves foram corrigidos em 22–23/10 (telas novas: `/escola/professores`, `/master/coordenadores`, `/escola/prioridade` refeita e disciplina no `/cadastro`; menu do coordenador municipal). O que resta está listado — junto com o que é do backend — em [`docs/status-funcionalidades.md`](../../../docs/status-funcionalidades.md) (raiz do projeto), que passa a ser a fonte única de status.
 
 ```mermaid
 pie title Progresso do Frontend
@@ -21,14 +21,17 @@ pie title Progresso do Frontend
 | Logout | ✅ Completo | Limpa cookie + estado |
 | Sessão com cookies | ✅ Completo | `SchoolContext` + `/api/auth/me` |
 | Proxy de proteção | ✅ Completo | Valida assinatura/expiração do JWT (`jose.jwtVerify`); ausente ou inválido → `/` (P6) |
-| Login Gov.br | ✅ Completo | Mesmo cookie httpOnly via `POST /api/auth/govbr-session` (P2) |
-| Alteração de senha | ✅ Completo | `/alterar-senha` (`PATCH /auth/change-password`); reset pelo Master via `POST /users/:id/reset-password` |
+| Login Gov.br | ⏸️ Só no front | Botão, callback e `POST /api/auth/govbr-session` prontos (P2), mas o **backend ainda é stub** (`/auth/govbr-auth-url` → 501): o login Gov.br **não funciona** de ponta a ponta |
+| Alteração de senha | ✅ Completo | `/alterar-senha` (`PATCH /auth/change-password`); reset pelo gestor via `POST /users/:id/reset-password` (enviada por e-mail quando há SMTP) |
+| Sessão com validade | ✅ Completo | Login vale 12h; renovado ao abrir/recarregar (`/api/auth/me?refresh=1` → `POST /auth/refresh`); aviso "Sua sessão expirou" no 401 |
+| Catálogo de disciplinas | ✅ Completo | `/master/disciplinas` (MASTER) |
+| Município onde mora | ✅ Completo | `/minhas-preferencias` → "Onde você mora" (`PATCH /users/:id {residenceNetworkId}`) |
 
 ### ✅ Gestão de Aulas e Candidaturas
 | Funcionalidade | Status |
 |----------------|--------|
 | Criar aula vaga (dashboard) | ✅ Completo |
-| Listar aulas disponíveis | ✅ Completo (matéria + janela de prioridade aplicadas pelo servidor, P16) |
+| Listar aulas disponíveis | ✅ Completo (matéria + grupos de prioridade + regra do município aplicados pelo servidor) |
 | Candidatar-se a aula (`/classes`) | ✅ Completo |
 | Minhas candidaturas (`/minhas-aulas`) | ✅ Completo |
 | Aprovar/rejeitar candidaturas | ✅ Completo |
@@ -59,7 +62,7 @@ pie title Progresso do Frontend
 | Página minhas aulas | ✅ Completo |
 | Minha jornada do professor | ✅ Completo (`/minha-jornada`, `GET /teacher-workload-records/me`) |
 | Indicadores da escola | ✅ Completo (`/escola/indicadores`: coverage-stats + histórico + CSV/impressão) |
-| Sidebar/header da área master | ✅ Completo (`MasterHeader` com nome real e sino) |
+| Menu e cabeçalho | ✅ Moldura única (`AppShell`) em todas as telas logadas: menu por perfil, nome real, sino e "Sair"; gaveta no celular |
 | Notificações toast | ✅ Completo |
 | Notificações in-app | ✅ Completo (`NotificationBell` + `useNotifications`) |
 | Loading e erros padronizados | ✅ Completo (`Skeleton` nas telas novas + `ErrorBoundary` global no layout) |
@@ -80,12 +83,13 @@ pie title Progresso do Frontend
 
 | Área | Status |
 |------|--------|
-| Suíte completa | ✅ 619/619 testes em 84 arquivos (cobertura ≥ 92,8% em todas as métricas; mínimo de 90% no CI) |
+| Suíte completa | ✅ 709/709 testes em 94 arquivos (cobertura ≥ 92,8% em todas as métricas; mínimo de 90% no CI) |
 | Páginas cobertas | login/cadastro, dashboard legado, `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/{auditoria,dashboard,redes,diretores,administradores,escolas,professores,politicas-carga-horaria}`, `/minha-jornada`, `/escola/{indicadores,prioridade,fechamento-ponto,jornada-docente}`, `/minhas-preferencias` |
 | Hooks/contextos cobertos | `SchoolContext`, `useUserHook`, `useNotifications`, `useGovbrAuth`, `useSubstitutionLimit`, `useSchools`, `useUsers`, `useTeachers`, `useEnrollments`, `useEnrollment`, `useMasterDashboard`, `useSubjects`, hooks de relatórios/fechamento/eligibility |
 | Services cobertos | `auth`, `classes`, `enrollment`, `teacher`, `master`, `eligibility`, `account`, `indicators` |
-| Pendentes | páginas master restantes (`diretores`, `administradores`, `escolas`, `professores`, `políticas-carga-horaria`), fluxos de escola (`fechamento-ponto`, `jornada-docente`) e hooks `useMaster` (P12) |
-| Cobertura | Parcial (configurado para 100% nas pastas cobertas) |
+| Pendentes | Nenhuma área sem teste (P12 fechado) |
+| Cobertura | 98,6% statements / 92,8% branches / 98,6% funções / 99,1% linhas; mínimo de 90% exigido no CI |
+| E2E (Playwright) | ✅ 33/33 contra backend + PostgreSQL reais (`pnpm run e2e`, ~30 s; job `e2e` no CI). Fluxos: login/sessão, cadastro, aula vaga com 3 perfis, gestão da escola, prioridade, jornada/fechamento, Área Master, coordenador, preferências, menu/cabeçalho em todas as telas. Ver [`e2e/README.md`](../../e2e/README.md) |
 
 ## Dependências Principais
 
@@ -106,10 +110,9 @@ pie title Progresso do Frontend
 
 ## Próximos Passos Imediatos
 
-1. Testes das páginas master restantes, dos fluxos de escola, do service `master` e dos hooks pendentes (P12)
-2. Migrar as telas antigas para o tema/`AdminTable`/`Skeleton` (P13)
-3. Notificações por e-mail/push (o in-app já está entregue)
-4. Exportação em PDF nativo (CSV/impressão já entregues)
-5. App mobile e integração IoT (longo prazo)
+1. Commitar e publicar a `v2` na `main` (o trabalho de 22–23/10 está só na cópia local). Os defeitos D1–D24 estão todos corrigidos e as telas novas foram percorridas num navegador (ver `docs/status-funcionalidades.md`)
+2. Gov.br de ponta a ponta (depende do backend)
+3. Push notifications (o in-app e o e-mail já estão entregues)
+4. App mobile e integração IoT (longo prazo, fora do escopo deste ciclo)
 
 Mais detalhes em [roadmap.md](./roadmap.md) e [problemas-conhecidos.md](./problemas-conhecidos.md).

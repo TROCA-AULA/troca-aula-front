@@ -72,6 +72,7 @@ export function useNotifications() {
   const showsVacancies =
     isProfessor ||
     profileId === PROFILE.DIRETOR ||
+    profileId === PROFILE.COORDENADOR_MUNICIPAL ||
     profileId === PROFILE.AUXILIAR_ADMIN;
 
   // Primeira visita: marca "agora" como visto — não notifica

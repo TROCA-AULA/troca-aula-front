@@ -7,22 +7,20 @@ import { toast } from 'react-toastify';
 import { useSchoolContext } from '@/contexts/SchoolContext';
 import { accountService } from '@/services/account.service';
 
+// Dentro do AppShell: o cartão fica no topo da área de conteúdo.
 const Wrapper = styled.div`
-  min-height: 100vh;
   display: flex;
-  align-items: center;
   justify-content: center;
-  background: #f5f5f5;
-  padding: 24px;
+  padding: 40px 24px;
 `;
 
 const Card = styled.form`
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   border-radius: 12px;
   padding: 32px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: ${({ theme }) => theme.shadow.modal};
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -31,13 +29,13 @@ const Card = styled.form`
 const Title = styled.h1`
   font-size: 22px;
   font-weight: 700;
-  color: #1e3a5f;
+  color: ${({ theme }) => theme.colors.text};
   margin: 0;
 `;
 
 const Subtitle = styled.p`
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
   margin: 0;
 `;
 
@@ -50,20 +48,20 @@ const FormGroup = styled.div`
 const Label = styled.label`
   font-size: 13px;
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const Input = styled.input`
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   border-radius: 6px;
   font-size: 14px;
 `;
 
 const Button = styled.button`
   padding: 12px;
-  background: #1e3a5f;
-  color: white;
+  background: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: 8px;
   font-size: 15px;
@@ -71,18 +69,18 @@ const Button = styled.button`
   cursor: pointer;
 
   &:hover {
-    background: #2a4a73;
+    background: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:disabled {
-    background: #ccc;
+    background: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
   }
 `;
 
 const ErrorMessage = styled.span`
   font-size: 13px;
-  color: #c62828;
+  color: ${({ theme }) => theme.colors.danger};
 `;
 
 export default function AlterarSenhaPage() {

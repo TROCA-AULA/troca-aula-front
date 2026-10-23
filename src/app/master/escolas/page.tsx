@@ -4,6 +4,8 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { useSchools } from '@/hooks/useSchools';
 import { useNetworks } from '@/hooks/useNetworks';
+import { useCoordinatorOnly } from '@/hooks/useCoordinatorOnly';
+import { useOptionalSchoolContext } from '@/contexts/SchoolContext';
 import { SchoolForm } from './components/SchoolForm';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import type { School } from '@/types/master';
@@ -21,8 +23,8 @@ import { SkeletonRows } from '@/components/ui/Skeleton';
 
 const AddButton = styled.button`
   padding: 10px 20px;
-  background-color: #1e3a5f;
-  color: white;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -31,11 +33,11 @@ const AddButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #2a4a73;
+    background-color: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
@@ -49,34 +51,43 @@ const ActionButton = styled.button`
   margin-right: 8px;
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
 
 const EditButton = styled(ActionButton)`
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background-color: ${({ theme }) => theme.colors.primarySoft};
+  color: ${({ theme }) => theme.colors.primary};
 
   &:hover {
-    background-color: #bbdefb;
+    background-color: ${({ theme }) => theme.colors.primarySoftHover};
   }
 `;
 
 const DeleteButton = styled(ActionButton)`
-  background-color: #ffebee;
-  color: #c62828;
+  background-color: ${({ theme }) => theme.colors.dangerBg};
+  color: ${({ theme }) => theme.colors.danger};
 
   &:hover {
-    background-color: #ffcdd2;
+    background-color: ${({ theme }) => theme.colors.dangerBorder};
   }
 `;
 
 export default function EscolasPage() {
-  const { schools, loading, deleteSchool } = useSchools();
+  const { schools, loading, deleteSchool, refetch } = useSchools();
+  const schoolContext = useOptionalSchoolContext();
+  // Depois de salvar: recarrega a lista (D14) e renova a sessão, para uma
+  // escola nova da rede já aparecer no seletor do coordenador (D23).
+  const handleSaved = () => {
+    refetch();
+    schoolContext?.refreshUserData();
+  };
   const { networks } = useNetworks();
   const networkName = (networkId: number) =>
     networks.find((n) => n.id === networkId)?.name ?? `Rede #${networkId}`;
+  // Coordenador cria e edita escolas da rede dele; excluir é do Master.
+  const coordinatorOnly = useCoordinatorOnly();
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedSchool, setSelectedSchool] = useState<School | null>(null);
@@ -145,7 +156,9 @@ export default function EscolasPage() {
                 <Td>{new Date(school.createdAt).toLocaleDateString('pt-BR')}</Td>
                 <Td>
                   <EditButton onClick={() => handleEdit(school)}>Editar</EditButton>
-                  <DeleteButton onClick={() => handleDelete(school)}>Excluir</DeleteButton>
+                  {!coordinatorOnly && (
+                    <DeleteButton onClick={() => handleDelete(school)}>Excluir</DeleteButton>
+                  )}
                 </Td>
               </tr>
             ))}
@@ -158,6 +171,7 @@ export default function EscolasPage() {
         mode={formMode}
         initialData={selectedSchool}
         onClose={() => setFormOpen(false)}
+        onSaved={handleSaved}
       />
 
       <ConfirmModal

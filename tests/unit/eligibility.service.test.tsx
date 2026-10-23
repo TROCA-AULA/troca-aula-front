@@ -93,4 +93,26 @@ describe('eligibilityService', () => {
       allowedNetworkIds: [5],
     });
   });
+
+  it('lista todas as redes e escolas para as preferências (D5)', async () => {
+    (api.get as any).mockResolvedValue({
+      data: { networks: [{ id: 1, name: 'A' }], schools: [] },
+    });
+
+    await expect(eligibilityService.getPreferenceOptions()).resolves.toEqual({
+      networks: [{ id: 1, name: 'A' }],
+      schools: [],
+    });
+    expect(api.get).toHaveBeenCalledWith('/professor-preferences/options');
+  });
+});
+
+describe('eligibilityService.setResidence', () => {
+  it('manda o município (ou null) no PATCH do próprio usuário', async () => {
+    vi.mocked(api.patch).mockResolvedValue({ data: {} });
+    await eligibilityService.setResidence(7, 3);
+    expect(api.patch).toHaveBeenCalledWith('/users/7', { residenceNetworkId: 3 });
+    await eligibilityService.setResidence(7, null);
+    expect(api.patch).toHaveBeenCalledWith('/users/7', { residenceNetworkId: null });
+  });
 });

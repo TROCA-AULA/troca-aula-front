@@ -11,7 +11,7 @@ import type { Network } from '@/types/master';
 const Overlay = styled.div`
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: ${({ theme }) => theme.colors.overlay};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -19,7 +19,7 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   border-radius: 12px;
   padding: 24px;
   width: 100%;
@@ -68,20 +68,20 @@ const Button = styled.button`
   font-weight: 500;
   cursor: pointer;
   background: ${({ theme }) => theme.colors.primary};
-  color: white;
+  color: ${({ theme }) => theme.colors.onPrimary};
 
   &:hover {
     background: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:disabled {
-    background: #ccc;
+    background: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
   }
 `;
 
 const SecondaryButton = styled(Button)`
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   color: ${({ theme }) => theme.colors.primary};
   border: 1px solid ${({ theme }) => theme.colors.primary};
 

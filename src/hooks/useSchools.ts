@@ -53,19 +53,6 @@ export function useSchools() {
     }
   };
 
-  const updatePriorityWindow = async (id: number, priorityWindowHours: number | null) => {
-    try {
-      const updated = await masterService.updateSchoolPriorityWindow(id, priorityWindowHours);
-      setSchools((prev) => prev.map((s) => (s.id === id ? updated : s)));
-      toast.success('Regra de prioridade atualizada');
-      return updated;
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Erro ao atualizar regra de prioridade';
-      toast.error(message);
-      throw err;
-    }
-  };
-
   const deleteSchool = async (id: number) => {
     try {
       await masterService.deleteSchool(id);
@@ -84,7 +71,6 @@ export function useSchools() {
     error,
     createSchool,
     updateSchool,
-    updatePriorityWindow,
     deleteSchool,
     refetch: fetchSchools,
   };

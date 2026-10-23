@@ -2,12 +2,10 @@ import { render, screen, fireEvent, waitFor } from '@/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PrioridadePage from './page';
 import { useSchoolContext } from '@/contexts/SchoolContext';
-import { useNetworks } from '@/hooks/useNetworks';
 import { useTeacherGroups } from '@/hooks/useEligibility';
 import { useTeachers } from '@/hooks/useTeachers';
 
 vi.mock('@/contexts/SchoolContext', () => ({ useSchoolContext: vi.fn() }));
-vi.mock('@/hooks/useNetworks', () => ({ useNetworks: vi.fn() }));
 vi.mock('@/hooks/useEligibility', () => ({ useTeacherGroups: vi.fn() }));
 vi.mock('@/hooks/useTeachers', () => ({ useTeachers: vi.fn() }));
 
@@ -20,12 +18,14 @@ const updateSettings = vi.fn();
 const data = {
   schoolId: 6,
   ungroupedDelayMinutes: 60,
-  fallbackPriorityWindowHours: null,
+  ungroupedEffectiveDelayMinutes: 120,
   allowedNetworkIds: [5],
+  allowedNetworks: [{ id: 5, name: 'Rede A' }],
   acceptedNetworkIds: null,
+  // Vem fora de ordem de propósito: a tela ordena por prioridade.
   groups: [
-    { id: 1, name: 'Professores da casa', delayMinutes: 0, professorIds: [17] },
-    { id: 2, name: 'Menor prioridade', delayMinutes: 120, professorIds: [] },
+    { id: 2, name: 'Menor prioridade', priority: 1, delayMinutes: 120, professorIds: [] },
+    { id: 1, name: 'Professores da casa', priority: 0, delayMinutes: 0, professorIds: [17] },
   ],
 };
 
@@ -42,14 +42,6 @@ describe('PrioridadePage (grupos)', () => {
       activeProfileId: 1,
       activeNetworkId: 6,
       setActiveSchoolId: vi.fn(),
-    } as any);
-    vi.mocked(useNetworks).mockReturnValue({
-      networks: [{ id: 5, name: 'Rede A', createdAt: '2026-01-01' }],
-      loading: false,
-      error: null,
-      createNetwork: vi.fn(),
-      updateNetwork: vi.fn(),
-      refetch: vi.fn(),
     } as any);
     vi.mocked(useTeachers).mockReturnValue({
       linkedTeachers: [
@@ -85,7 +77,8 @@ describe('PrioridadePage (grupos)', () => {
     expect(screen.getByDisplayValue('Professores da casa')).toBeInTheDocument();
     expect(screen.getByDisplayValue('Menor prioridade')).toBeInTheDocument();
     // Maria está no grupo 1 (marcada) e fora do grupo 2; João fora dos dois.
-    const mariaCheckboxes = screen.getAllByLabelText('Maria') as HTMLInputElement[];
+    // No grupo 2 o rótulo de Maria ganha "(também em Professores da casa)".
+    const mariaCheckboxes = screen.getAllByLabelText(/^Maria/) as HTMLInputElement[];
     expect(mariaCheckboxes[0].checked).toBe(true);
     expect(mariaCheckboxes[1].checked).toBe(false);
     expect((screen.getAllByLabelText('João') as HTMLInputElement[])[0].checked).toBe(false);
@@ -103,8 +96,9 @@ describe('PrioridadePage (grupos)', () => {
     });
     fireEvent.click(screen.getByText('Criar grupo'));
 
+    // Prioridade em branco = o backend põe depois do último grupo.
     await waitFor(() =>
-      expect(createGroup).toHaveBeenCalledWith('Novo grupo', 30),
+      expect(createGroup).toHaveBeenCalledWith('Novo grupo', 30, undefined),
     );
   });
 
@@ -128,7 +122,7 @@ describe('PrioridadePage (grupos)', () => {
     updateSettings.mockResolvedValue(data);
     render(<PrioridadePage />);
 
-    fireEvent.change(screen.getByLabelText(/Espera de quem/, { exact: false }), {
+    fireEvent.change(screen.getByLabelText(/Espera mínima de quem/), {
       target: { value: '45' },
     });
     fireEvent.click(screen.getByLabelText('Aceitar professores de Rede A'));
@@ -157,6 +151,7 @@ describe('PrioridadePage (grupos)', () => {
     render(<PrioridadePage />);
 
     expect(screen.getByText(/Nenhum grupo criado/)).toBeInTheDocument();
+    expect(screen.getByText(/Esta escola não tem grupos/)).toBeInTheDocument();
   });
 
   it('salva as alterações de nome e espera de um grupo', async () => {
@@ -169,11 +164,15 @@ describe('PrioridadePage (grupos)', () => {
     fireEvent.change(screen.getAllByLabelText('Espera (minutos)')[0], {
       target: { value: '15' },
     });
+    fireEvent.change(screen.getAllByLabelText('Prioridade')[0], {
+      target: { value: '2' },
+    });
     fireEvent.click(screen.getAllByText('Salvar grupo')[0]);
 
     await waitFor(() =>
       expect(updateGroup).toHaveBeenCalledWith(1, {
         name: 'Professores da casa (editado)',
+        priority: 2,
         delayMinutes: 15,
       }),
     );
@@ -212,9 +211,31 @@ describe('PrioridadePage (grupos)', () => {
     );
   });
 
-  it('mostra a janela única com horas quando não há grupos e há fallback configurado', () => {
+  it('mostra a ordem de recebimento: prioridade 0 primeiro e sem grupo por último', () => {
+    render(<PrioridadePage />);
+
+    const items = screen
+      .getByRole('list', { name: 'Ordem de recebimento' })
+      .querySelectorAll('li');
+    expect(items).toHaveLength(3);
+    expect(items[0]).toHaveTextContent('Professores da casa — vê na hora');
+    expect(items[1]).toHaveTextContent('Menor prioridade — vê 2h depois de publicada');
+    // João (18) não está em grupo nenhum.
+    expect(items[2]).toHaveTextContent(
+      'Sem grupo — vê 2h depois de publicada (1 professor(es) desta escola)',
+    );
+  });
+
+  it('calcula a espera de quem está sem grupo quando o backend não manda', () => {
     vi.mocked(useTeacherGroups).mockReturnValue({
-      data: { ...data, groups: [], fallbackPriorityWindowHours: 8 },
+      data: {
+        ...data,
+        ungroupedEffectiveDelayMinutes: undefined,
+        ungroupedDelayMinutes: 0,
+        groups: [
+          { id: 1, name: 'Casa', priority: 0, delayMinutes: 0, professorIds: [] },
+        ],
+      },
       loading: false,
       createGroup,
       updateGroup,
@@ -226,7 +247,53 @@ describe('PrioridadePage (grupos)', () => {
 
     render(<PrioridadePage />);
 
-    expect(screen.getByText(/janela única/)).toHaveTextContent('(8h)');
+    const items = screen
+      .getByRole('list', { name: 'Ordem de recebimento' })
+      .querySelectorAll('li');
+    expect(items[1]).toHaveTextContent(
+      'vê na hora (2 professor(es) desta escola)',
+    );
+  });
+
+  it('cria grupo com prioridade escolhida', async () => {
+    createGroup.mockResolvedValue(data);
+    render(<PrioridadePage />);
+
+    fireEvent.change(screen.getByLabelText('Novo grupo'), {
+      target: { value: 'Urgente' },
+    });
+    fireEvent.change(screen.getAllByLabelText('Prioridade')[2], {
+      target: { value: '0' },
+    });
+    fireEvent.click(screen.getByText('Criar grupo'));
+
+    await waitFor(() =>
+      expect(createGroup).toHaveBeenCalledWith('Urgente', 0, 0),
+    );
+  });
+
+  it('avisa quando o professor está em mais de um grupo', () => {
+    vi.mocked(useTeacherGroups).mockReturnValue({
+      data: {
+        ...data,
+        groups: [
+          { id: 1, name: 'Casa', priority: 0, delayMinutes: 0, professorIds: [17] },
+          { id: 2, name: 'Rede', priority: 1, delayMinutes: 30, professorIds: [17] },
+        ],
+      },
+      loading: false,
+      createGroup,
+      updateGroup,
+      removeGroup,
+      setGroupMembers,
+      updateSettings,
+      refetch: vi.fn(),
+    } as any);
+
+    render(<PrioridadePage />);
+
+    expect(screen.getByText(/também em Rede/)).toBeInTheDocument();
+    expect(screen.getByText(/também em Casa/)).toBeInTheDocument();
   });
 
   it('não mostra seção de redes quando o município não configurou interconexão', () => {
@@ -248,7 +315,7 @@ describe('PrioridadePage (grupos)', () => {
     ).toBeInTheDocument();
   });
 
-  it('usa "Rede #id" quando a rede permitida não está na lista de redes', () => {
+  it('usa "Rede #id" quando a rede permitida vem sem nome', () => {
     vi.mocked(useTeacherGroups).mockReturnValue({
       data: { ...data, allowedNetworkIds: [5, 99] },
       loading: false,
@@ -315,7 +382,7 @@ describe('PrioridadePage (grupos)', () => {
     );
   });
 
-  it('mostra o modo de janela única quando os dados ainda não chegaram', () => {
+  it('mostra "sem grupos" quando os dados ainda não chegaram', () => {
     vi.mocked(useTeacherGroups).mockReturnValue({
       data: null,
       loading: false,

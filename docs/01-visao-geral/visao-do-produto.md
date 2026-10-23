@@ -77,7 +77,7 @@ Projetar e evoluir uma plataforma digital dedicada à administração de substit
 
 | Componente | Tecnologia |
 |------------|------------|
-| Frontend | Next.js 15, React 19, TypeScript, styled-components |
+| Frontend | Next.js 16, React 19, TypeScript, styled-components |
 | Backend | NestJS (API REST) |
 | Banco de Dados | PostgreSQL (Prisma ORM) |
 | Autenticação | JWT + Gov.br API |
@@ -117,7 +117,7 @@ C4Context
     Person(professor, "Professor", "Busca e se candidata a vagas")
 
     System_Boundary(sistema, "Sistema Troca Aula") {
-        System(webapp, "Aplicação Web (Frontend)", "Interface Next.js 15")
+        System(webapp, "Aplicação Web (Frontend)", "Interface Next.js 16")
         System(api, "API REST (Backend)", "Processa requisições NestJS")
         System(db, "Banco de Dados", "Armazena dados em PostgreSQL")
     }

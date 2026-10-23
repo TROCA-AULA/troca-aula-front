@@ -10,6 +10,7 @@ A área master é o painel de administração global, acessível apenas pelo per
 ├── page.tsx              # Redireciona para /master/dashboard
 ├── dashboard/            # Estatísticas
 ├── escolas/              # CRUD de escolas
+├── disciplinas/          # Catálogo global de disciplinas (só MASTER)
 ├── diretores/            # Gestão de diretores
 ├── administradores/      # Gestão de administradores
 └── professores/          # Gestão de professores + candidaturas
@@ -17,7 +18,7 @@ A área master é o painel de administração global, acessível apenas pelo per
 
 ## Layout e Guarda (`src/app/master/layout.tsx`)
 
-- Renderiza `MasterSidebar` + `MasterHeader` + children
+- Renderiza `AppShell` (menu lateral + cabeçalho comuns a todas as telas logadas, ver `docs/05-referencia/componentes.md`) + children
 - Se `user.profileId !== 1`:
   - Sem usuário → redirect `/login`
   - Perfil errado → redirect `/dashboard`
@@ -37,6 +38,14 @@ A área master é o painel de administração global, acessível apenas pelo per
 - Tabela: ID, nome, limite de substituições por semestre, data de criação
 - Ações: criar (modal `SchoolForm`), editar, excluir (`ConfirmModal`)
 - Hook: `useSchools` → `masterService` (getSchools, createSchool, updateSchool, deleteSchool)
+
+### Disciplinas (`/master/disciplinas`)
+
+- Só MASTER (fora de `COORDINATOR_MASTER_ROUTES`; o coordenador não vê o item no menu)
+- Tabela com nome; ações: criar, **Renomear** (edição na linha; Enter salva, Esc cancela) e **Remover** (`ConfirmModal`)
+- Recusa no cliente nome repetido (sem diferenciar maiúsculas)
+- Remover é lógico no backend: some das listas, mas quem já tinha a disciplina continua com ela
+- Serviço: `masterService.getSubjects/createSubject/renameSubject/deleteSubject` (`/subjects`)
 
 ### Diretores (`/master/diretores`)
 
@@ -62,7 +71,7 @@ Duas abas:
 
 | Componente | Arquivo | Campos |
 |------------|---------|--------|
-| `SchoolForm` | `src/app/master/escolas/components/SchoolForm.tsx` | nome (obrigatório), `substitutionLimitPerSemester` (opcional) |
+| `SchoolForm` | `src/app/master/escolas/components/SchoolForm.tsx` | nome (obrigatório), rede de ensino (obrigatório). A antiga janela de prioridade foi removida: a prioridade agora é por grupos, em `/escola/prioridade` |
 | `UserForm` | `src/app/master/{diretores,administradores}/components/UserForm.tsx` | nome, email, telefone (opcional), escola (obrigatório) |
 
 ## Hooks e Serviços
@@ -82,7 +91,7 @@ Duas abas:
 flowchart TB
     A[Acessa /master] --> L{layout guard}
     L -->|profileId !== 1| R[Redirect /dashboard ou /login]
-    L -->|profileId === 1| S[MasterSidebar + página]
+    L -->|profileId === 1| S[AppShell + página]
     S --> D[Dashboard]
     S --> E[Escolas]
     S --> DIR[Diretores]
@@ -94,5 +103,5 @@ flowchart TB
 
 1. **`schoolId` hardcoded** em `/master/professores` (`'school-1'`), com TODO para vir da sessão.
 2. **Dois `UserForm` idênticos** duplicados (diretores e administradores) — candidato a refatoração.
-3. **`MasterHeader` não é importado** por nenhuma página — somente o `MasterSidebar` é usado no layout.
+3. Menu e cabeçalho vêm do `AppShell` (`src/components/app-shell/`); a seção "Administração" do menu só aparece para o MASTER.
 4. **Mapeamento de perfis novo**: `1` = master, `2` = diretor, `3` = administrador, `4` = professor (diverge do dashboard legado).

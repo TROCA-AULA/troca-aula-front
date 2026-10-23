@@ -21,6 +21,7 @@ import {
   LoadingState,
 } from '@/components/ui/AdminTable';
 import { SkeletonRows } from '@/components/ui/Skeleton';
+import { toneCss } from '@/styles/tones';
 
 // Fase 4 do Design Doc: indicador estatístico simples de risco de aula vaga
 // (GET /classes/coverage-stats) + histórico de substituições aprovadas da
@@ -34,15 +35,15 @@ const Cards = styled.div`
 `;
 
 const Card = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   border-radius: 8px;
   padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: ${({ theme }) => theme.shadow.card};
 `;
 
 const CardLabel = styled.div`
   font-size: 12px;
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
   text-transform: uppercase;
   letter-spacing: 0.04em;
 `;
@@ -50,7 +51,7 @@ const CardLabel = styled.div`
 const CardValue = styled.div`
   font-size: 28px;
   font-weight: 700;
-  color: #1e3a5f;
+  color: ${({ theme }) => theme.colors.text};
   margin-top: 6px;
 `;
 
@@ -62,10 +63,7 @@ const NivelBadge = styled.span<{ $nivel: 'baixo' | 'medio' | 'alto' }>`
   font-size: 13px;
   font-weight: 700;
   text-transform: capitalize;
-  background: ${({ $nivel }) =>
-    $nivel === 'baixo' ? '#e8f5e9' : $nivel === 'medio' ? '#fff3e0' : '#ffebee'};
-  color: ${({ $nivel }) =>
-    $nivel === 'baixo' ? '#2e7d32' : $nivel === 'medio' ? '#e65100' : '#c62828'};
+  ${({ $nivel }) => toneCss($nivel === 'baixo' ? 'success' : $nivel === 'medio' ? 'warning' : 'danger')}
 `;
 
 const FilterBar = styled.div`
@@ -85,22 +83,22 @@ const FormGroup = styled.div`
 const Label = styled.label`
   font-size: 12px;
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const Select = styled.select`
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   border-radius: 6px;
   font-size: 14px;
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   min-width: 180px;
 `;
 
 const Button = styled.button`
   padding: 9px 16px;
-  background: #1e3a5f;
-  color: white;
+  background: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -108,35 +106,35 @@ const Button = styled.button`
   cursor: pointer;
 
   &:hover {
-    background: #2a4a73;
+    background: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:disabled {
-    background: #ccc;
+    background: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
   }
 `;
 
 const SecondaryButton = styled(Button)`
-  background: white;
-  color: #1e3a5f;
-  border: 1px solid #1e3a5f;
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.primary};
+  border: 1px solid ${({ theme }) => theme.colors.primary};
 
   &:hover {
-    background: #f0f4f8;
+    background: ${({ theme }) => theme.colors.primarySoft};
   }
 `;
 
 const SectionTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
   margin: 24px 0 12px;
 `;
 
 const Hint = styled.p`
   font-size: 12px;
-  color: #777;
+  color: ${({ theme }) => theme.colors.textMuted};
   margin: 0 0 16px;
 `;
 

@@ -259,6 +259,30 @@ describe('ClassesPage', () => {
     expect(screen.getByText('Indisponível')).toBeDisabled();
   });
 
+  it('usa o nome da disciplina que vem em subject (formato da API)', () => {
+    mockUser();
+    vi.mocked(useEnrollments).mockReturnValue({
+      classes: [
+        {
+          id: 22,
+          subjectId: 2,
+          subject: { id: 2, name: 'Matemática' },
+          statededAt: null,
+          available: true,
+        },
+      ],
+      enrollments: [],
+      loading: false,
+      error: null,
+      refetch,
+    });
+
+    render(<ClassesPage />);
+
+    expect(screen.getByText('Matemática')).toBeInTheDocument();
+    expect(screen.queryByText('Aula #22')).not.toBeInTheDocument();
+  });
+
   it('usa "Aula #id" e "-" quando faltam dados da aula', () => {
     mockUser();
     vi.mocked(useEnrollments).mockReturnValue({

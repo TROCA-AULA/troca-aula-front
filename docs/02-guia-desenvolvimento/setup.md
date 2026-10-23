@@ -38,7 +38,7 @@ pnpm install
 Crie um arquivo `.env.local` na raiz do projeto:
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:5000
 SECRET=s0//P4$$w0rD
 ```
 
@@ -52,7 +52,7 @@ pnpm dev
 
 O servidor estará disponível em **http://localhost:3000**.
 
-> ⚠️ O backend precisa estar rodando em `http://localhost:3001` (ou na URL definida em `NEXT_PUBLIC_API_URL`).
+> ⚠️ O backend precisa estar rodando em `http://localhost:5000` (ou na URL definida em `NEXT_PUBLIC_API_URL`).
 
 ## Scripts Disponíveis
 
@@ -113,7 +113,7 @@ pnpm dev -- -p 3002
 
 ### Backend indisponível (Network Error)
 
-Confirme que o backend está rodando e que `NEXT_PUBLIC_API_URL` aponta para ele (por padrão `http://localhost:3001`).
+Confirme que o backend está rodando e que `NEXT_PUBLIC_API_URL` aponta para ele (por padrão `http://localhost:5000`).
 
 ### Erro de login (401)
 

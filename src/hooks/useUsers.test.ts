@@ -82,7 +82,7 @@ describe('useUsers Hook - US3', () => {
     expect(masterService.createUser).toHaveBeenCalledWith(newUser);
     expect(result.current.users).toEqual([...mockUsers, createdDirector]);
     expect(toast.success).toHaveBeenCalledWith(
-      'Diretor "Novo Diretor" criado. Senha temporária: tempPass123 (repasse manualmente, essa senha não fica salva em nenhum outro lugar).',
+      'Diretor "Novo Diretor" criado. Senha temporária de Novo Diretor: tempPass123 (o e-mail não foi enviado; repasse à pessoa — a senha não fica salva em outro lugar).',
       { autoClose: false },
     );
   });

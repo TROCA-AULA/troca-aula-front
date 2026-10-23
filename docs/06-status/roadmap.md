@@ -15,7 +15,7 @@
 - [x] Atualizar `user.types.tsx` / `/api/auth/me` para expor perfil consistente (e todos os vínculos do usuário, `schoolLinks`)
 - [x] Atualizar guards (`/classes`, `/minhas-aulas`, `/master`) — corrigido bug real: `/master` liberava DIRETOR e bloqueava MASTER
 
-### 2. Corrigir Sessão Gov.br (Alta prioridade) — ✅ Concluído
+### 2. Corrigir Sessão Gov.br (Alta prioridade) — ✅ Concluído no front (o backend ainda é stub: o login Gov.br não funciona de ponta a ponta)
 
 - [x] Unificar persistência de token (cookie httpOnly vs localStorage) — nova rota `POST /api/auth/govbr-session` grava o JWT do Gov.br como cookie httpOnly, igual ao login tradicional
 - [x] Fazer o proxy reconhecer sessões Gov.br — automático, já que agora é o mesmo cookie
@@ -28,10 +28,10 @@
 - [x] Dashboard: mapeamento legado de perfis substituído por `src/constants/profile.ts`
 - [x] **P15** (era achado novo, agora corrigido): módulo de vínculo/criação de professores reescrito em dois passos (`POST /users` + `assign-profile`/`unassign-profile`) — ver `problemas-conhecidos.md`
 
-### 4. Testes — 🟡 Em andamento (202/202 em 45 arquivos)
+### 4. Testes — ✅ Concluído (619/619 em 84 arquivos; cobertura mínima de 90% no CI)
 
 - [x] Já cobertos: login/cadastro, dashboard legado, `/classes`, `/minhas-aulas`, `/alterar-senha`, `/master/auditoria`, `/master/dashboard`, `/minha-jornada`, `/escola/indicadores`, `SchoolContext`, `useUserHook`, `useNotifications`, `useGovbrAuth`, `useSubstitutionLimit`, `useSchools`, `useUsers`, `useTeachers`, services `auth`/`classes`/`enrollment`/`teacher`, `ErrorBoundary` e hooks de relatórios/fechamento
-- [ ] Faltam: páginas master restantes (`diretores`, `administradores`, `escolas`, `professores`, `redes`, `políticas-carga-horaria`); fluxos de escola (`fechamento-ponto`, `jornada-docente`); service `master`; hooks `useEnrollments`, `useEnrollment`, `useMaster`/`useMasterDashboard`, `useSubjects`
+- [x] Completados depois: páginas master restantes, fluxos de escola (`fechamento-ponto`, `jornada-docente`), service `master` e os hooks que faltavam (P12 fechado)
 
 ### 5. Correções de Rotas e Navegação — ✅ Concluído
 
@@ -61,7 +61,7 @@
 ### Notificações
 - [x] Notificação in-app de novas vagas (professores/gestão), aprovação/rejeição (professor) e candidaturas pendentes (MASTER) — `useNotifications` + `NotificationBell` no dashboard e no MasterHeader
 - [x] Notificação por e-mail de aprovação/rejeição e de nova vaga — `EmailService` no backend (nodemailer), opcional: sem `SMTP_HOST`, vira no-op
-- [ ] Notificações por e-mail/push
+- [ ] Notificações push (app mobile) — e-mail já entregue (item acima)
 
 ### Relatórios
 - [x] Dashboard com estatísticas detalhadas por escola — `/escola/indicadores` (coverage-stats da Fase 4)

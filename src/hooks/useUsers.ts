@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { masterService } from '@/services/master.service';
 import { PROFILE } from '@/constants/profile';
 import type { User, CreateUserRequest } from '@/types/master';
+import { tempPasswordMessage } from '@/utils/temp-password';
 
 // Correção: o tipo antigo era `2 | 3` seguindo um mapeamento próprio deste
 // módulo (2=Diretor, 3=Administrador) que não batia com o valor real do
@@ -39,11 +40,14 @@ export function useUsers(
       const newUser = await masterService.createUser(data);
       setUsers((prev) => [...prev, newUser]);
       const role = profileId === PROFILE.DIRETOR ? 'Diretor' : 'Administrador';
-      // Não há fluxo de convite/definição de senha por e-mail no backend —
-      // a senha temporária precisa ser repassada manualmente. Toast mais
-      // longo (sem timeout automático) para dar tempo de copiar.
+      // Toast sem timeout automático, para dar tempo de copiar a senha.
       toast.success(
-        `${role} "${newUser.name}" criado. Senha temporária: ${newUser.tempPassword} (repasse manualmente, essa senha não fica salva em nenhum outro lugar).`,
+        tempPasswordMessage(
+          newUser.name,
+          newUser.tempPassword,
+          newUser.emailSent,
+          `${role} "${newUser.name}" criado.`,
+        ),
         { autoClose: false },
       );
       return newUser;

@@ -15,21 +15,60 @@ export const PROFILE = {
   AUXILIAR_ADMIN: 2,
   PROFESSOR: 3,
   MASTER: 4,
+  // Coordenador municipal: gere TODAS as escolas das redes (municípios) que
+  // coordena. O backend gera um vínculo sintético por escola no JWT.
+  COORDENADOR_MUNICIPAL: 5,
 } as const;
+
+export const PROFILE_LABELS: Record<number, string> = {
+  [PROFILE.DIRETOR]: 'Diretor',
+  [PROFILE.AUXILIAR_ADMIN]: 'Auxiliar administrativo',
+  [PROFILE.PROFESSOR]: 'Professor',
+  [PROFILE.MASTER]: 'Master',
+  [PROFILE.COORDENADOR_MUNICIPAL]: 'Coordenador municipal',
+};
 
 export type ProfileId = (typeof PROFILE)[keyof typeof PROFILE];
 
 /** Perfis com alguma capacidade de gestão (tudo que não é professor). */
 export const STAFF_PROFILE_IDS: ProfileId[] = [
   PROFILE.MASTER,
+  PROFILE.COORDENADOR_MUNICIPAL,
   PROFILE.DIRETOR,
   PROFILE.AUXILIAR_ADMIN,
 ];
 
-/** Perfis com escopo em UMA escola (diferente do Master, que enxerga todas). */
+/**
+ * Perfis que operam escola a escola na área /escola (diferente do Master,
+ * que enxerga tudo). O coordenador entra aqui porque o token traz um
+ * vínculo por escola da rede dele.
+ */
 export const SCHOOL_SCOPED_STAFF_PROFILE_IDS: ProfileId[] = [
+  PROFILE.COORDENADOR_MUNICIPAL,
   PROFILE.DIRETOR,
   PROFILE.AUXILIAR_ADMIN,
+];
+
+/**
+ * Coordenador municipal SEM ser Master: tem algum vínculo de coordenador e
+ * nenhum de Master. Usado para mostrar só as telas de rede que ele pode usar.
+ */
+export function isCoordinatorOnly(
+  links?: Array<{ profileId: number }> | null,
+): boolean {
+  const list = links ?? [];
+  return (
+    list.some((link) => link.profileId === PROFILE.COORDENADOR_MUNICIPAL) &&
+    !list.some((link) => link.profileId === PROFILE.MASTER)
+  );
+}
+
+/** Telas de /master que o coordenador municipal também usa (na rede dele). */
+export const COORDINATOR_MASTER_ROUTES = [
+  '/master/escolas',
+  '/master/redes',
+  '/master/politicas-carga-horaria',
+  '/master/auditoria',
 ];
 
 export function isStaffProfile(profileId?: number | null): boolean {

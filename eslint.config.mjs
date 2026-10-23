@@ -13,6 +13,9 @@ const eslintConfig = [
       'build/**',
       'coverage/**',
       '.next/**',
+      '.next-e2e/**',
+      'test-results/**',
+      'playwright-report/**',
       'out/**',
       '*.min.js',
       'next-env.d.ts',
@@ -56,6 +59,16 @@ const eslintConfig = [
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/ban-ts-comment': 'off',
+    },
+  },
+
+  // Testes E2E (Playwright): `any` nas respostas da API e o `use` das
+  // fixtures, que a regra de hooks do React confunde com um hook.
+  {
+    files: ['e2e/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-hooks/rules-of-hooks': 'off',
     },
   },
 ];

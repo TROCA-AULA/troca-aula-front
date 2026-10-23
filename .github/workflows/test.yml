@@ -35,3 +35,82 @@ jobs:
       # Aqui rodamos os testes sem precisar da DATABASE_URL real.
       # O script com cobertura aplica os thresholds globais (90%) do vitest.config.ts.
       run: pnpm run test:coverage
+
+  # Testes de ponta a ponta (Playwright): front + backend + Postgres com RLS,
+  # dirigindo o navegador como as pessoas usam. Ver e2e/README.md.
+  e2e:
+    runs-on: ubuntu-latest
+    needs: build
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: ci_owner
+          POSTGRES_PASSWORD: ci_owner_pw
+          POSTGRES_DB: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci_owner"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      CI: true
+      # Branch do backend testada junto com este front.
+      BACKEND_REF: v2
+      E2E_DB: troca_aula_ci
+      E2E_PG_OWNER: ci_owner
+      E2E_PG_OWNER_PASSWORD: ci_owner_pw
+      E2E_APP_PASSWORD: ci_app_pw
+      E2E_SECRET: ci-secret-only-for-tests
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: troca-aula-front
+
+    - uses: actions/checkout@v4
+      with:
+        repository: misaku/troca-aula-backend
+        ref: ${{ env.BACKEND_REF }}
+        path: troca-aula-backend
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        package_json_file: troca-aula-front/package.json
+
+    - name: Use Node.js 22.x
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22.x
+        cache: 'pnpm'
+        cache-dependency-path: |
+          troca-aula-front/pnpm-lock.yaml
+          troca-aula-backend/pnpm-lock.yaml
+
+    - name: Install dependencies (front e backend)
+      run: |
+        (cd troca-aula-front && pnpm install --frozen-lockfile)
+        (cd troca-aula-backend && pnpm install --frozen-lockfile)
+
+    - name: Navegador do Playwright
+      working-directory: troca-aula-front
+      run: pnpm exec playwright install --with-deps chromium
+
+    - name: Testes E2E
+      working-directory: troca-aula-front
+      run: pnpm run e2e
+
+    - name: Relatório do Playwright (vídeo e trace das falhas)
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playwright-report
+        path: |
+          troca-aula-front/playwright-report
+          troca-aula-front/test-results
+        retention-days: 7

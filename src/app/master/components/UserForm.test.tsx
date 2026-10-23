@@ -142,9 +142,10 @@ describe('UserForm', () => {
     expect(createUser).not.toHaveBeenCalled();
   });
 
-  it('cria o usuário com telefone preenchido', async () => {
+  it('cria o usuário com telefone preenchido e avisa a página para recarregar a lista', async () => {
     createUser.mockResolvedValue({ id: 1 });
     const onClose = vi.fn();
+    const onCreated = vi.fn();
 
     render(
       <UserForm
@@ -152,6 +153,7 @@ describe('UserForm', () => {
         profileId={PROFILE.DIRETOR}
         schools={escolas}
         onClose={onClose}
+        onCreated={onCreated}
       />,
     );
 
@@ -177,6 +179,7 @@ describe('UserForm', () => {
         schoolId: 10,
         profileId: PROFILE.DIRETOR,
       });
+      expect(onCreated).toHaveBeenCalledTimes(1);
       expect(onClose).toHaveBeenCalledTimes(1);
     });
   });

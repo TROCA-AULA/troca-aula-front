@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import axios from 'axios';
 import api from '@/api.service';
+import { describeError } from '@/utils/describe-error';
 
 // Proxy genérico server-side para o backend. Existe porque o cookie de
 // sessão é httpOnly (proteção contra roubo de token via XSS) — o JS do
@@ -37,7 +38,7 @@ async function forward(req: NextRequest, params: RouteParams['params']) {
     if (axios.isAxiosError(error) && error.response) {
       return NextResponse.json(error.response.data, { status: error.response.status });
     }
-    console.error(error);
+    console.error('[proxy]', describeError(error));
     return NextResponse.json({ error: 'Erro ao comunicar com o backend.' }, { status: 502 });
   }
 }

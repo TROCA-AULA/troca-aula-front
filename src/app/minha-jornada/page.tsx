@@ -17,6 +17,7 @@ import {
   LoadingState,
 } from '@/components/ui/AdminTable';
 import { SkeletonRows } from '@/components/ui/Skeleton';
+import { formatDateOnly } from '@/utils/date';
 
 // Contraparte de /escola/jornada-docente (visão de gestão, por escola):
 // aqui é a visão do próprio professor sobre os registros dele -
@@ -75,8 +76,8 @@ export default function MinhaJornadaPage() {
                 <Td>{workloadTypeName(r.workloadTypeId)}</Td>
                 <Td>{r.hours}h</Td>
                 <Td>
-                  {new Date(r.validFrom).toLocaleDateString('pt-BR')}
-                  {r.validTo ? ` até ${new Date(r.validTo).toLocaleDateString('pt-BR')}` : ' (sem fim)'}
+                  {formatDateOnly(r.validFrom)}
+                  {r.validTo ? ` até ${formatDateOnly(r.validTo)}` : ' (sem fim)'}
                 </Td>
                 <Td>{r.ataOficialRef ?? '-'}</Td>
               </tr>

@@ -23,13 +23,13 @@ const Title = styled.h1`
 
 const Message = styled.p`
   font-size: 16px;
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
   margin-bottom: 24px;
 `;
 
 const ErrorMessage = styled.p`
   font-size: 16px;
-  color: #d32f2f;
+  color: ${({ theme }) => theme.colors.danger};
   margin-bottom: 24px;
 `;
 
@@ -37,7 +37,7 @@ const LinkButton = styled.a`
   display: inline-block;
   padding: 12px 24px;
   background-color: #1351B4;
-  color: white;
+  color: ${({ theme }) => theme.colors.onPrimary};
   border-radius: 5px;
   text-decoration: none;
   cursor: pointer;

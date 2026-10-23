@@ -1,19 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { serialize } from 'cookie';
+import { NextResponse } from 'next/server';
+import { clearedSessionCookie } from '../session-cookie';
 
 export async function POST() {
-    const res = NextResponse.json({ ok: true });
-
-    res.headers.set(
-        'Set-Cookie',
-        serialize('token', '', {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            path: '/',
-            sameSite: 'strict',
-            maxAge: 0, // expira imediatamente
-        })
-    );
-
-    return res;
+  const res = NextResponse.json({ ok: true });
+  res.headers.set('Set-Cookie', clearedSessionCookie());
+  return res;
 }

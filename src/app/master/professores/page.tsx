@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import { useTeachers } from '@/hooks/useTeachers';
+import { useSubjects } from '@/hooks/useSubjects';
 import { useSchoolContext } from '@/contexts/SchoolContext';
 import { toast } from 'react-toastify';
 import { accountService } from '@/services/account.service';
@@ -16,11 +17,14 @@ import {
   LoadingState,
 } from '@/components/ui/AdminTable';
 import { SkeletonRows } from '@/components/ui/Skeleton';
+import { tempPasswordMessage } from '@/utils/temp-password';
+import { toneCss } from '@/styles/tones';
+import { ENROLLMENT_TONE, toneOf } from '@/constants/status-tones';
 
 const AddButton = styled.button`
   padding: 10px 20px;
-  background-color: #1e3a5f;
-  color: white;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -29,11 +33,11 @@ const AddButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #2a4a73;
+    background-color: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
@@ -45,13 +49,13 @@ const ActionButton = styled.button<{ $variant?: 'danger' | 'success' }>`
   font-size: 12px;
   cursor: pointer;
   margin-right: 8px;
-  background-color: ${({ $variant }) =>
+  background-color: ${({ $variant, theme }) =>
     $variant === 'danger'
-      ? '#dc3545'
+      ? theme.colors.danger
       : $variant === 'success'
-        ? '#28a745'
-        : '#6c757d'};
-  color: white;
+        ? theme.colors.success
+        : theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   transition: opacity 0.2s;
 
   &:hover {
@@ -59,7 +63,7 @@ const ActionButton = styled.button<{ $variant?: 'danger' | 'success' }>`
   }
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
@@ -68,7 +72,7 @@ const Tabs = styled.div`
   display: flex;
   gap: 8px;
   margin-bottom: 24px;
-  border-bottom: 2px solid #eee;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.borderLight};
 `;
 
 const Tab = styled.button<{ $active: boolean }>`
@@ -77,18 +81,18 @@ const Tab = styled.button<{ $active: boolean }>`
   background: none;
   font-size: 14px;
   font-weight: 500;
-  color: ${({ $active }) => ($active ? '#1e3a5f' : '#666')};
-  border-bottom: 2px solid ${({ $active }) => ($active ? '#1e3a5f' : 'transparent')};
+  color: ${({ $active, theme }) => ($active ? theme.colors.primary : theme.colors.textMuted)};
+  border-bottom: 2px solid ${({ $active, theme }) => ($active ? theme.colors.primary : 'transparent')};
   margin-bottom: -2px;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    color: #1e3a5f;
+    color: ${({ theme }) => theme.colors.primary};
   }
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
@@ -99,7 +103,7 @@ const Modal = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: ${({ theme }) => theme.colors.overlay};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -107,7 +111,7 @@ const Modal = styled.div`
 `;
 
 const ModalContent = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   border-radius: 8px;
   padding: 24px;
   max-width: 600px;
@@ -126,7 +130,7 @@ const ModalHeader = styled.div`
 const ModalTitle = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
   margin: 0;
 `;
 
@@ -135,18 +139,18 @@ const CloseButton = styled.button`
   border: none;
   font-size: 24px;
   cursor: pointer;
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
   padding: 0;
   line-height: 1;
 
   &:hover {
-    color: #333;
+    color: ${({ theme }) => theme.colors.text};
   }
 `;
 
 const TeacherItem = styled.div`
   padding: 12px;
-  border: 1px solid #eee;
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
   border-radius: 4px;
   margin-bottom: 8px;
   display: flex;
@@ -154,7 +158,7 @@ const TeacherItem = styled.div`
   align-items: center;
 
   &:hover {
-    background-color: #f8f9fa;
+    background-color: ${({ theme }) => theme.colors.surfaceAlt};
   }
 `;
 
@@ -164,12 +168,12 @@ const TeacherInfo = styled.div`
 
 const TeacherName = styled.div`
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const TeacherDetails = styled.div`
   font-size: 12px;
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
   margin-top: 4px;
 `;
 
@@ -178,24 +182,19 @@ const StatusBadge = styled.span<{ $status: string }>`
   border-radius: 4px;
   font-size: 12px;
   font-weight: 500;
-  background-color: ${({ $status }) =>
-    $status === 'PENDING'
-      ? '#ffc107'
-      : $status === 'APPROVED'
-        ? '#28a745'
-        : '#dc3545'};
-  color: ${({ $status }) => ($status === 'PENDING' ? '#000' : '#fff')};
+  font-weight: 600;
+  ${({ $status }) => toneCss(toneOf(ENROLLMENT_TONE, $status))}
 `;
 
 const ErrorMessage = styled.div`
   text-align: center;
   padding: 24px;
-  color: #dc3545;
+  color: ${({ theme }) => theme.colors.danger};
 `;
 
 const FilterSelect = styled.select`
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   border-radius: 4px;
   font-size: 14px;
   margin-bottom: 16px;
@@ -214,6 +213,11 @@ export default function ProfessoresPage() {
   // esse hardcode não resolve esse gap maior, que fica documentado como
   // pendência separada.
   const { activeSchoolId } = useSchoolContext();
+  // D18: GET /users traz só o subjectId (sem o nome da disciplina).
+  const { subjects } = useSubjects();
+  const subjectName = (teacher: { subject?: { name: string } | null; subjectId?: number | null }) =>
+    teacher.subject?.name ??
+    subjects.find((subject) => subject.id === teacher.subjectId)?.name;
   const schoolId = activeSchoolId ?? 0;
   const {
     linkedTeachers,
@@ -251,8 +255,8 @@ export default function ProfessoresPage() {
   const handleResetPassword = async (userId: number, name: string) => {
     if (!confirm(`Gerar uma nova senha temporária para ${name}?`)) return;
     try {
-      const { tempPassword } = await accountService.resetUserPassword(userId);
-      toast.success(`Senha temporária de ${name}: ${tempPassword}`, {
+      const { tempPassword, emailSent } = await accountService.resetUserPassword(userId);
+      toast.success(tempPasswordMessage(name, tempPassword, emailSent), {
         autoClose: false,
       });
     } catch {
@@ -334,7 +338,7 @@ export default function ProfessoresPage() {
                     <tr key={teacher.id}>
                       <Td>{teacher.name}</Td>
                       <Td>{teacher.email}</Td>
-                      <Td>{teacher.subject?.name || '-'}</Td>
+                      <Td>{subjectName(teacher) || '-'}</Td>
                       <Td>{teacher.totalSubstitutions}</Td>
                       <Td>
                         <ActionButton
@@ -459,7 +463,7 @@ export default function ProfessoresPage() {
                   <TeacherInfo>
                     <TeacherName>{teacher.name}</TeacherName>
                     <TeacherDetails>
-                      {teacher.email} • {teacher.subject?.name || 'Sem disciplina'} •{' '}
+                      {teacher.email} • {subjectName(teacher) || 'Sem disciplina'} •{' '}
                       {teacher.totalSubstitutions} substituições
                     </TeacherDetails>
                   </TeacherInfo>

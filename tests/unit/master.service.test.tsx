@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { masterService } from '@/services/master.service';
+import { masterService, generateTempPassword } from '@/services/master.service';
 import api from '@/api-client.service';
 
 vi.mock('@/api-client.service', () => ({
@@ -38,16 +38,6 @@ describe('masterService', () => {
     } as any);
 
     expect(api.post).toHaveBeenCalledWith('/users', expect.objectContaining({ email: 'd@e.com' }));
-  });
-
-  it('updateSchoolPriorityWindow usa o endpoint dedicado da escola', async () => {
-    (api.patch as any).mockResolvedValue({ data: { id: 1 } });
-
-    await masterService.updateSchoolPriorityWindow(1, 24);
-
-    expect(api.patch).toHaveBeenCalledWith('/schools/1/priority-window', {
-      priorityWindowHours: 24,
-    });
   });
 
   it('getAuditLogByNetwork consulta a auditoria por rede', async () => {
@@ -142,16 +132,6 @@ describe('masterService', () => {
     expect(api.post).toHaveBeenCalledWith('/schools', { name: 'Escola Nova' });
     expect(api.patch).toHaveBeenCalledWith('/schools/8', { name: 'Escola Editada' });
     expect(api.delete).toHaveBeenCalledWith('/schools/8');
-  });
-
-  it('updateSchoolPriorityWindow aceita null para voltar ao padrão', async () => {
-    (api.patch as any).mockResolvedValue({ data: { id: 1 } });
-
-    await masterService.updateSchoolPriorityWindow(1, null);
-
-    expect(api.patch).toHaveBeenCalledWith('/schools/1/priority-window', {
-      priorityWindowHours: null,
-    });
   });
 
   it('getUsers achata o vínculo que bate com os filtros de perfil e escola', async () => {
@@ -293,6 +273,7 @@ describe('masterService', () => {
       profileId: 3,
       schoolId: 2,
     });
+    expect(api.post).toHaveBeenNthCalledWith(3, '/users/12/reset-password');
     expect(criado.tempPassword).toMatch(/^[A-Za-z0-9]{1,12}$/);
     expect(criado).toMatchObject({
       id: 12,
@@ -468,5 +449,161 @@ describe('masterService', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+  });
+
+  it('generateTempPassword sempre tem 12 caracteres sem símbolos', () => {
+    for (let i = 0; i < 50; i++) {
+      expect(generateTempPassword()).toMatch(/^[A-Za-z0-9]{12}$/);
+    }
+  });
+
+  it('generateTempPassword funciona sem crypto.getRandomValues', () => {
+    const original = globalThis.crypto;
+    vi.stubGlobal('crypto', undefined);
+    try {
+      expect(generateTempPassword()).toHaveLength(12);
+    } finally {
+      vi.stubGlobal('crypto', original);
+    }
+  });
+
+  it('updateUser manda só os campos de cadastro', async () => {
+    (api.patch as any).mockResolvedValue({ data: { id: 3 } });
+
+    await masterService.updateUser(3, { name: 'Novo' });
+
+    expect(api.patch).toHaveBeenCalledWith('/users/3', { name: 'Novo' });
+  });
+
+  it('getCoordinators e removeCoordinator usam /network-coordinators', async () => {
+    (api.get as any).mockResolvedValue({ data: [{ userId: 1 }] });
+    (api.delete as any).mockResolvedValue({ data: {} });
+
+    await expect(masterService.getCoordinators()).resolves.toEqual([{ userId: 1 }]);
+    await masterService.removeCoordinator(1, 2);
+
+    expect(api.get).toHaveBeenCalledWith('/network-coordinators');
+    expect(api.delete).toHaveBeenCalledWith('/network-coordinators/1/2');
+  });
+
+  it('findUserByEmail devolve o básico ou null', async () => {
+    (api.get as any).mockResolvedValueOnce({
+      data: [{ id: 4, name: 'Ana', email: 'ana@x.com', phone: '1' }],
+    });
+    await expect(masterService.findUserByEmail(' ana@x.com ')).resolves.toEqual({
+      id: 4,
+      name: 'Ana',
+      email: 'ana@x.com',
+    });
+    expect(api.get).toHaveBeenCalledWith('/users', { params: { email: 'ana@x.com' } });
+
+    (api.get as any).mockResolvedValueOnce({ data: [] });
+    await expect(masterService.findUserByEmail('x@x.com')).resolves.toBeNull();
+  });
+
+  it('addCoordinator vincula quem já tem cadastro sem criar conta', async () => {
+    (api.get as any).mockResolvedValue({
+      data: [{ id: 4, name: 'Ana', email: 'ana@x.com' }],
+    });
+    (api.post as any).mockResolvedValue({ data: {} });
+
+    const result = await masterService.addCoordinator({
+      name: 'Ana',
+      email: 'ana@x.com',
+      phone: '1',
+      networkId: 2,
+    });
+
+    expect(result).toEqual({ userId: 4, created: false, tempPassword: undefined });
+    expect(api.post).toHaveBeenCalledTimes(1);
+    expect(api.post).toHaveBeenCalledWith('/network-coordinators', {
+      userId: 4,
+      networkId: 2,
+    });
+  });
+
+  it('addCoordinator cria a conta com senha temporária quando o e-mail é novo', async () => {
+    (api.get as any).mockResolvedValue({ data: [] });
+    (api.post as any)
+      .mockResolvedValueOnce({ data: { id: 9 } })
+      .mockResolvedValueOnce({ data: {} });
+
+    const result = await masterService.addCoordinator({
+      name: 'Rui',
+      email: 'rui@x.com',
+      phone: '2',
+      networkId: 3,
+    });
+
+    expect(result.userId).toBe(9);
+    expect(result.created).toBe(true);
+    expect(result.tempPassword).toHaveLength(12);
+    expect(api.post).toHaveBeenNthCalledWith(1, '/users', {
+      name: 'Rui',
+      email: 'rui@x.com',
+      phone: '2',
+      password: result.tempPassword,
+    });
+    expect(api.post).toHaveBeenNthCalledWith(2, '/network-coordinators', {
+      userId: 9,
+      networkId: 3,
+    });
+    // A senha é gerada de novo no servidor (e enviada por e-mail se houver SMTP).
+    expect(api.post).toHaveBeenNthCalledWith(3, '/users/9/reset-password');
+    expect(result.emailSent).toBe(false);
+  });
+});
+
+describe('masterService — disciplinas', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('lista em ordem alfabética', async () => {
+    vi.mocked(api.get).mockResolvedValue({
+      data: [
+        { id: 2, name: 'Português' },
+        { id: 1, name: 'Artes' },
+      ],
+    });
+    expect(await masterService.getSubjects()).toEqual([
+      { id: 1, name: 'Artes' },
+      { id: 2, name: 'Português' },
+    ]);
+    expect(api.get).toHaveBeenCalledWith('/subjects');
+  });
+
+  it('cria, renomeia e remove', async () => {
+    vi.mocked(api.post).mockResolvedValue({ data: { id: 3, name: 'X' } });
+    vi.mocked(api.patch).mockResolvedValue({ data: { data: { id: 3, name: 'Y' } } });
+    vi.mocked(api.delete).mockResolvedValue({ data: {} });
+
+    expect(await masterService.createSubject(' X ')).toEqual({ id: 3, name: 'X' });
+    expect(api.post).toHaveBeenCalledWith('/subjects', { name: 'X' });
+    expect(await masterService.renameSubject(3, ' Y')).toEqual({ id: 3, name: 'Y' });
+    expect(api.patch).toHaveBeenCalledWith('/subjects/3', { name: 'Y' });
+    await masterService.deleteSubject(3);
+    expect(api.delete).toHaveBeenCalledWith('/subjects/3');
+  });
+});
+
+describe('masterService.issueTempPassword', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('usa a senha gerada no servidor e informa o e-mail', async () => {
+    vi.mocked(api.post).mockResolvedValue({
+      data: { tempPassword: 'Srv123', emailSent: true },
+    });
+    expect(await masterService.issueTempPassword(9, 'Local1')).toEqual({
+      tempPassword: 'Srv123',
+      emailSent: true,
+    });
+    expect(api.post).toHaveBeenCalledWith('/users/9/reset-password');
+  });
+
+  it('se falhar, mantém a senha da criação e sem e-mail', async () => {
+    vi.mocked(api.post).mockRejectedValue(new Error('500'));
+    expect(await masterService.issueTempPassword(9, 'Local1')).toEqual({
+      tempPassword: 'Local1',
+      emailSent: false,
+    });
   });
 });

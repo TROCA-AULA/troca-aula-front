@@ -2,6 +2,15 @@
 
 Este documento descreve a estratégia de testes do frontend Troca-Aula.
 
+São duas camadas:
+
+- **Unitários/integração** (vitest, este documento): rápidos, com a API
+  simulada. Cobrem cada tela, hook e service.
+- **Ponta a ponta — E2E** (Playwright, [`e2e/README.md`](../../e2e/README.md)):
+  o navegador usa as telas contra o backend e o PostgreSQL de verdade, com
+  vários perfis no mesmo fluxo. `pnpm run e2e` sobe tudo sozinho num banco
+  só de teste (`troca_aula_e2e`). 33 testes, ~35 s; roda no CI (job `e2e`).
+
 ## Stack de Testes
 
 | Ferramenta | Papel |
@@ -23,6 +32,8 @@ Configuração em `vitest.config.ts`.
 | `pnpm test:watch` | Executa em modo watch |
 | `pnpm test:coverage` | Executa com relatório de cobertura |
 | `pnpm test <caminho>` | Executa um arquivo/rodada específica |
+| `pnpm run e2e` | Testes E2E (Playwright) — ver [`e2e/README.md`](../../e2e/README.md) |
+| `pnpm run e2e:ui` | E2E no modo interativo |
 
 Exemplo:
 ```bash
@@ -79,4 +90,4 @@ afterAll(() => server.close());
 
 ## Cobertura Atual
 
-Medição de 28/09/2026 (`pnpm run test:coverage`): **84 arquivos / 619 testes**, com **98,56% de statements, 92,79% de branches, 98,59% de functions e 99,05% de lines**. O mínimo de 90% é exigido no CI; o que ainda não está coberto está listado em [problemas-conhecidos.md](../06-status/problemas-conhecidos.md) (branches comprovadamente inalcançáveis, ex.: guardas de SSR no `SchoolContext`).
+Medição de 23/10/2026 (`pnpm run test:coverage`): **94 arquivos / 709 testes**, com **98,55% de statements, 92,87% de branches, 98,83% de functions e 99,19% de lines**. O mínimo de 90% é exigido no CI; o que ainda não está coberto está listado em [problemas-conhecidos.md](../06-status/problemas-conhecidos.md) (branches comprovadamente inalcançáveis, ex.: guardas de SSR no `SchoolContext`).

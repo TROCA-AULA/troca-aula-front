@@ -33,21 +33,21 @@ const Content = styled.div`
         width: 100%;
     }
     p {
-        color: #993535;
+        color: ${({ theme }) => theme.colors.danger};
         text-transform: uppercase;
     }
 
     dt {
         margin-top: 20px;
         margin-bottom: 10px;
-        color: ${({ theme }) => theme.colors.accent};
+        color: ${({ theme }) => theme.colors.primary};
         font-weight: bold;
         text-transform: uppercase;
     }
 
     dd {
         text-align: justify;
-        color: #959595;
+        color: ${({ theme }) => theme.colors.textMuted};
     }
 
     input {
@@ -56,18 +56,19 @@ const Content = styled.div`
         padding: 5px 10px;
         border-radius: 5px;
 
-        background-color: #336367;
-        border: 2px solid #336367;
-        color: ${({ theme }) => theme.colors.surface};
+        /* Um tom abaixo do painel verde, para o campo aparecer. */
+        background-color: ${({ theme }) => theme.colors.primaryHover};
+        border: 2px solid ${({ theme }) => theme.colors.primaryHover};
+        color: ${({ theme }) => theme.colors.onPrimary};
         box-sizing: border-box;
 
         &:focus {
             outline: none;
-            border: 2px solid #6bcdd5;
+            border: 2px solid ${({ theme }) => theme.colors.sidebarSection};
         }
 
         &::placeholder {
-            color: #6bcdd5;
+            color: ${({ theme }) => theme.colors.sidebarText};
             text-transform: uppercase;
             opacity: 1; /* Garante visibilidade total, especialmente no Firefox */
         }
@@ -79,14 +80,14 @@ const Content = styled.div`
         height: 40px;
         border-radius: 5px;
         border: none;
-        color: #336367;
+        color: ${({ theme }) => theme.colors.primary};
         text-transform: uppercase;
         cursor: pointer;
         background-color: ${({ theme }) => theme.colors.surface};
         transition: background-color 0.2s;
 
         &:hover {
-            background-color: #daf3f3;
+            background-color: ${({ theme }) => theme.colors.primarySoft};
         }
 
     }
@@ -114,7 +115,7 @@ const Card = styled.div`
 
     ${Content} {
         &:nth-child(2) {
-            background-color: ${({ theme }) => theme.colors.accent};
+            background-color: ${({ theme }) => theme.colors.primary};
             max-width: 400px;
         }
     }
@@ -153,8 +154,10 @@ export default function Home() {
                 if (response.ok) {
                     router.push('/dashboard');
                     toast.success('Login realizado com sucesso');
+                } else if (response.status === 503) {
+                    toast.error('Serviço indisponível. Tente de novo em instantes.');
                 } else {
-                    toast.error( 'Erro ao fazer login');
+                    toast.error('Erro ao fazer login');
                 }
             } catch (error) {
                 toast.error('Erro ao fazer login');

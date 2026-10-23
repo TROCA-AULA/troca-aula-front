@@ -9,25 +9,27 @@ import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { useState } from 'react';
 import type { EnrollmentStatus } from '@/types/enrollment';
+import { toneCss } from '@/styles/tones';
+import { ENROLLMENT_TONE, toneOf } from '@/constants/status-tones';
 
 const Wrapper = styled.div`
   display: flex;
   flex: 1;
   flex-direction: column;
   width: 100%;
-  min-height: calc(100vh - 60px);
-  padding: 20px;
+  padding: 24px;
 `;
 
 const Title = styled.h1`
-  color: ${({ theme }) => theme.colors.accent};
+  color: ${({ theme }) => theme.colors.text};
   font-size: 24px;
+  font-weight: 600;
   margin-bottom: 20px;
 `;
 
 const TabHeader = styled.div`
   display: flex;
-  background-color: #f4f4f4;
+  background-color: ${({ theme }) => theme.colors.surfaceAlt};
   width: 100%;
   height: 50px;
   margin-bottom: 20px;
@@ -41,17 +43,17 @@ const TabHeader = styled.div`
     border-top-right-radius: 10px;
     text-transform: uppercase;
     cursor: pointer;
-    color: #989a9a;
+    color: ${({ theme }) => theme.colors.textMuted};
     font-size: 12px;
 
     &:hover {
-      background-color: #dff4f4;
-      color: ${({ theme }) => theme.colors.accent};
+      background-color: ${({ theme }) => theme.colors.primarySoft};
+      color: ${({ theme }) => theme.colors.primary};
     }
 
     &.active {
       background-color: ${({ theme }) => theme.colors.surface};
-      color: ${({ theme }) => theme.colors.accent};
+      color: ${({ theme }) => theme.colors.primary};
     }
   }
 `;
@@ -64,19 +66,19 @@ const EnrollmentsTable = styled.table`
   background: ${({ theme }) => theme.colors.surface};
 
   thead {
-    background-color: ${({ theme }) => theme.colors.accentHover};
+    background-color: ${({ theme }) => theme.colors.tableHeader};
   }
 
   th {
     padding: 10px;
-    color: ${({ theme }) => theme.colors.surface};
+    color: ${({ theme }) => theme.colors.tableHeaderText};
     text-transform: uppercase;
     font-size: 12px;
   }
 
   tbody {
     tr:nth-child(even) {
-      background-color: #f4f4f4;
+      background-color: ${({ theme }) => theme.colors.surfaceAlt};
     }
   }
 
@@ -91,20 +93,12 @@ const StatusBadge = styled.span<{ $status: EnrollmentStatus }>`
   border-radius: 3px;
   font-size: 12px;
   text-transform: uppercase;
-  background-color: ${({ $status }) => {
-    switch ($status) {
-      case 'PENDING': return '#f0ad4e';
-      case 'APPROVED': return '#5cb85c';
-      case 'REJECTED': return '#d9534f';
-      case 'CANCELLED': return '#999';
-      default: return '#ccc';
-    }
-  }};
-  color: ${({ theme }) => theme.colors.surface};
+  font-weight: 600;
+  ${({ $status }) => toneCss(toneOf(ENROLLMENT_TONE, $status))}
 `;
 
 const ActionButton = styled.button`
-  background-color: #d9534f;
+  background-color: ${({ theme }) => theme.colors.danger};
   border: none;
   padding: 5px 10px;
   border-radius: 3px;
@@ -114,23 +108,23 @@ const ActionButton = styled.button`
   text-transform: uppercase;
 
   &:hover {
-    background-color: #c9302c;
+    background-color: ${({ theme }) => theme.colors.dangerHover};
   }
 
   &:disabled {
-    background-color: #ccc;
+    background-color: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
   }
 `;
 
 const Loading = styled.div`
-  color: ${({ theme }) => theme.colors.accent};
+  color: ${({ theme }) => theme.colors.primary};
   text-align: center;
   padding: 40px;
 `;
 
 const ErrorMessage = styled.div`
-  color: #f00;
+  color: ${({ theme }) => theme.colors.danger};
   text-align: center;
   padding: 20px;
 `;
@@ -138,7 +132,7 @@ const ErrorMessage = styled.div`
 const EmptyState = styled.div`
   text-align: center;
   padding: 40px;
-  color: #989a9a;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const FILTER_OPTIONS: { label: string; value: EnrollmentStatus | 'ALL' }[] = [

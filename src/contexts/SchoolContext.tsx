@@ -61,7 +61,10 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     const fetchUserData = useCallback(async () => {
         try {
             setIsLoading(true);
-            const response = await fetch('/api/auth/me', { credentials: 'include' });
+            // refresh=1: o servidor renova o token antes de ler os dados, então
+            // mudanças feitas pela direção (disciplina, vínculos) já aparecem
+            // sem precisar sair e entrar de novo (D23).
+            const response = await fetch('/api/auth/me?refresh=1', { credentials: 'include' });
             if (response.ok) {
                 const data: UserData = await response.json();
                 setUserData(data);
@@ -165,6 +168,14 @@ export function SchoolProvider({ children }: { children: React.ReactNode }) {
     };
 
     return <SchoolContext.Provider value={value}>{children}</SchoolContext.Provider>;
+}
+
+/**
+ * Igual a useSchoolContext, mas devolve undefined fora do <SchoolProvider>
+ * em vez de lançar erro (útil em componentes que também rodam isolados).
+ */
+export function useOptionalSchoolContext(): SchoolContextValue | undefined {
+    return useContext(SchoolContext);
 }
 
 /**

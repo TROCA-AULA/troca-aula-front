@@ -31,6 +31,17 @@ export interface EnrollmentRequest {
   schoolSince?: string | null;
   professor?: EnrollmentCandidate;
   user?: EnrollmentCandidate;
+  /** Dados da aula, para a lista mostrar algo legível em vez de "#8" (D15). */
+  class?: EnrollmentClassSummary;
+}
+
+export interface EnrollmentClassSummary {
+  id: number;
+  statededAt: string | null;
+  finishedAt: string | null;
+  schoolId: number | null;
+  schoolName: string | null;
+  subjectName: string | null;
 }
 
 export interface Class {

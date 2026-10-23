@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Este arquivo cria a instância axios já no import, então o próprio 'axios' é
 // mockado para capturar os interceptors registrados.
@@ -98,5 +98,60 @@ describe('api-client.service', () => {
     for (let i = 0; i < erros.length; i++) {
       expect(toastError).toHaveBeenNthCalledWith(i + 1, 'Erro inesperado na requisicao');
     }
+  });
+
+  describe('sessão expirada (D19)', () => {
+    const originalLocation = window.location;
+    const assign = vi.fn();
+
+    function setPath(pathname: string) {
+      Object.defineProperty(window, 'location', {
+        configurable: true,
+        value: { pathname, assign },
+      });
+    }
+
+    afterEach(() => {
+      Object.defineProperty(window, 'location', {
+        configurable: true,
+        value: originalLocation,
+      });
+    });
+
+    it('401 sem explicação leva para o login uma única vez', () => {
+      setPath('/dashboard');
+      const erro = { response: { status: 401, data: { message: 'Unauthorized' } } };
+
+      for (let i = 0; i < 2; i++) {
+        try {
+          onError(erro);
+        } catch (e) {
+          expect(e).toBe(erro);
+        }
+      }
+
+      expect(assign).toHaveBeenCalledTimes(1);
+      expect(assign).toHaveBeenCalledWith('/');
+      expect(toastError).toHaveBeenCalledTimes(1);
+      expect(toastError).toHaveBeenCalledWith('Sua sessão expirou. Entre de novo.');
+    });
+
+    it('na própria tela de login, ou com mensagem de negócio, não redireciona', () => {
+      setPath('/');
+      try {
+        onError({ response: { status: 401, data: {} } });
+      } catch {
+        // relança
+      }
+      setPath('/alterar-senha');
+      try {
+        onError({ response: { status: 401, data: { message: 'Senha atual incorreta' } } });
+      } catch {
+        // relança
+      }
+
+      expect(assign).not.toHaveBeenCalled();
+      expect(toastError).toHaveBeenLastCalledWith('Senha atual incorreta');
+    });
   });
 });

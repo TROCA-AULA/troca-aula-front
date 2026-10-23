@@ -74,23 +74,54 @@ Indicador visual do limite de substituições.
 
 Cores: verde (`<80%`), amarelo (`>=80%`), vermelho (`>=100%`).
 
-## `src/app/master/components/` — Área Master
+## Tema e paleta — `src/styles/theme.ts`
 
-### MasterSidebar — `src/app/master/components/MasterSidebar.tsx`
+Fonte única das cores. Os componentes nunca usam cor fixa: só `theme.colors.*`
+(nome pelo papel da cor) e `theme.tones.*` (etiquetas e avisos).
 
-Sidebar de navegação (250px) com itens: Dashboard, Escolas, Diretores, Administradores, Professores.
+| Grupo | Tokens | Uso |
+|---|---|---|
+| Marca | `brand` (`#509BA1`, logo), `primary`/`primaryHover` | Botão principal, links, abas ativas |
+| Verde-água claro | `primarySoft`, `primarySoftHover`, `primaryBorder` | Ações de linha ("Editar"), hover de botão secundário |
+| Menu | `sidebar`, `sidebarText`, `sidebarSection`, `sidebarHover`, `sidebarActive` | Menu lateral |
+| Texto | `text`, `textMuted`, `placeholder`, `onPrimary` | Títulos/corpo, texto secundário, texto sobre verde |
+| Superfícies | `background`, `surface`, `surfaceAlt`, `overlay` | Fundo da página, cartões, faixas, fundo de modal |
+| Bordas | `border`, `borderLight`, `borderStrong` | Cartões/divisórias, campos de formulário (3:1) |
+| Tabelas | `tableHeader`, `tableHeaderText`, `rowHover` | Cabeçalho de toda tabela |
+| Estados | `success*`, `warning*`, `danger*`, `info*` | Botões aprovar/rejeitar/excluir, avisos |
+| Foco | `focus`, `focusRing` | Contorno de foco e brilho dos campos |
 
-- Destaca a rota ativa via `usePathname`
+Etiquetas de status: `toneCss(tom)` (`src/styles/tones.ts`) aplica fundo, texto e
+borda de `theme.tones.<tom>` (`primary`, `neutral`, `success`, `warning`, `danger`,
+`info`). O status → tom fica em `src/constants/status-tones.ts`
+(`ENROLLMENT_TONE`, `CLOSING_TONE`, `toneOf`).
 
-### MasterHeader — `src/app/master/components/MasterHeader.tsx`
+## Moldura das telas logadas — `src/components/app-shell/`
 
-Barra de cabeçalho da área master.
+`AppShell` envolve **toda** tela logada (cada rota tem um `layout.tsx` que o usa;
+`/escola` e `/master` também, depois da checagem de acesso). Substituiu
+`EscolaSidebar`, `MasterSidebar`, `MasterHeader` e o cabeçalho próprio do `/dashboard`.
 
-| Prop | Tipo | Padrão |
-|------|------|--------|
-| `title` | `string` | `'Área Administrativa'` |
+| Arquivo | O que tem |
+|---|---|
+| `app-shell.view.tsx` | Estrutura: menu lateral + cabeçalho + conteúdo |
+| `app-shell.controller.tsx` | `useAppShellController`: usuário, menu, gaveta aberta/fechada, contador |
+| `app-shell.utils.tsx` | `buildMenu` (menu por perfil), `isActiveRoute`, `initialOf` |
+| `app-shell.constants.tsx` | Itens de cada seção, textos, largura em que vira gaveta (900px) |
+| `app-shell.styles.tsx` | styled-components, só com cores do `theme.ts` |
 
-> ⚠️ **Não é importado por nenhuma página** — o layout master usa apenas o `MasterSidebar`.
+Menu por perfil:
+
+| Perfil | Seções |
+|---|---|
+| Professor | Painel · Minhas aulas (aulas disponíveis, candidaturas, jornada, preferências) · Conta |
+| Diretor / Auxiliar | Painel · Escola (professores, jornada, fechamento, indicadores, prioridade) · Conta |
+| Coordenador municipal | Painel · Escola · Rede (escolas, redes, políticas, auditoria) · Conta |
+| MASTER | Painel · Escola · Administração (Área Master e cadastros) · Conta |
+
+Cabeçalho: escola ativa (`SchoolSelector`, só com mais de uma escola), contador de
+substituições (professor com escola), `NotificationBell`, nome e perfil, "Sair".
+O item da tela atual tem `aria-current="page"`; no celular o botão ☰ abre o menu.
 
 ## Formulários (Modal Forms)
 

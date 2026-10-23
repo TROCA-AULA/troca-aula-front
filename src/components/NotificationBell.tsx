@@ -20,7 +20,7 @@ const BellButton = styled.button`
   border-radius: 8px;
 
   &:hover {
-    background: #f0f4f8;
+    background: ${({ theme }) => theme.colors.surfaceAlt};
   }
 `;
 
@@ -32,8 +32,8 @@ const Badge = styled.span`
   height: 16px;
   padding: 0 4px;
   border-radius: 8px;
-  background: #d32f2f;
-  color: white;
+  background: ${({ theme }) => theme.colors.danger};
+  color: ${({ theme }) => theme.colors.onPrimary};
   font-size: 10px;
   font-weight: 700;
   display: flex;
@@ -48,19 +48,19 @@ const Dropdown = styled.div`
   width: 320px;
   max-height: 380px;
   overflow-y: auto;
-  background: white;
-  border: 1px solid #e0e0e0;
+  background: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: ${({ theme }) => theme.shadow.modal};
   z-index: 50;
 `;
 
 const DropdownHeader = styled.div`
   padding: 10px 14px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
   font-size: 12px;
   font-weight: 600;
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
   text-transform: uppercase;
   letter-spacing: 0.04em;
 `;
@@ -69,28 +69,28 @@ const ItemLink = styled(Link)`
   display: block;
   padding: 10px 14px;
   text-decoration: none;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
 
   &:hover {
-    background: #f7fafc;
+    background: ${({ theme }) => theme.colors.surfaceAlt};
   }
 `;
 
 const ItemTitle = styled.div`
   font-size: 13px;
   font-weight: 600;
-  color: #1e3a5f;
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const ItemDescription = styled.div`
   font-size: 12px;
-  color: #555;
+  color: ${({ theme }) => theme.colors.text};
   margin-top: 2px;
 `;
 
 const ItemTime = styled.div`
   font-size: 11px;
-  color: #999;
+  color: ${({ theme }) => theme.colors.textMuted};
   margin-top: 4px;
 `;
 
@@ -98,7 +98,7 @@ const EmptyState = styled.div`
   padding: 24px 14px;
   text-align: center;
   font-size: 13px;
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 function relativeTime(iso: string): string {

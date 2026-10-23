@@ -44,18 +44,18 @@ docs/
 |---------|------------|
 | **Novos membros** | [Visão do Produto](./01-visao-geral/visao-do-produto.md) → [Setup](./02-guia-desenvolvimento/setup.md) |
 | **Desenvolvedores** | [Arquitetura](./03-arquitetura/arquitetura.md) → [Integração Backend](./03-arquitetura/integracao-backend.md) → [Referência](./05-referencia/servicos.md) |
-| **QA / Testadores** | [Testes](./02-guia-desenvolvimento/testes.md) → [Estado Atual](./06-status/estado-atual.md) → [Problemas Conhecidos](./06-status/problemas-conhecidos.md) |
+| **QA / Testadores** | [Guias de teste (raiz)](../../docs/guias-de-teste/README.md) → [Status das funcionalidades](../../docs/status-funcionalidades.md) → [Testes](./02-guia-desenvolvimento/testes.md) → [Estado Atual](./06-status/estado-atual.md) → [Problemas Conhecidos](./06-status/problemas-conhecidos.md) |
 | **Gestores** | [Visão do Produto](./01-visao-geral/visao-do-produto.md) → [Estado Atual](./06-status/estado-atual.md) → [Roadmap](./06-status/roadmap.md) |
 
 ## Stack Resumida
 
 | Camada | Tecnologia |
 |--------|------------|
-| Framework | Next.js 15.3.2 (App Router, Turbopack) |
+| Framework | Next.js 16.3.6 (App Router, Turbopack) |
 | UI | React 19 + styled-components 6 |
 | Formulários | react-hook-form + Yup |
 | HTTP | Axios |
-| Autenticação | JWT (jose), cookie httpOnly, Gov.br OAuth2 |
+| Autenticação | JWT (jose), cookie httpOnly; Gov.br OAuth2 com tela pronta, mas o backend ainda é stub (não autentica) |
 | Testes | Vitest + Testing Library + MSW |
 | Package Manager | pnpm 10 |
 
@@ -75,6 +75,6 @@ docs/
 
 ---
 
-**Última atualização**: 2026-08-18  
+**Última atualização**: 2026-10-22  
 **Versão do projeto**: 0.1.0  
-**Stack**: Next.js 15 + React 19 + styled-components + NestJS + PostgreSQL
+**Stack**: Next.js 16 + React 19 + styled-components + NestJS + PostgreSQL

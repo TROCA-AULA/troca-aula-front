@@ -44,7 +44,7 @@ const Select = styled.select`
 const DetailsToggle = styled.button`
   border: none;
   background: transparent;
-  color: ${({ theme }) => theme.colors.info};
+  color: ${({ theme }) => theme.colors.primary};
   cursor: pointer;
   font-size: 12px;
   padding: 0;

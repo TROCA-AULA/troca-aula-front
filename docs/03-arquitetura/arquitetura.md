@@ -2,7 +2,7 @@
 
 ## Visão Geral
 
-O frontend é um projeto **Next.js 15 com App Router**, TypeScript e styled-components. A comunicação com o backend NestJS é feita via **axios**, em parte diretamente (browser) e em parte via **API Routes do Next.js** (proxy, usadas onde o token httpOnly precisa ser repassado).
+O frontend é um projeto **Next.js 16 com App Router**, TypeScript e styled-components. A comunicação com o backend NestJS é feita via **axios**, em parte diretamente (browser) e em parte via **API Routes do Next.js** (proxy, usadas onde o token httpOnly precisa ser repassado).
 
 ```mermaid
 flowchart TB

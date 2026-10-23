@@ -12,7 +12,19 @@ vi.mock('next/navigation', () => ({
   usePathname: vi.fn(),
 }));
 
-vi.mock('@/contexts/SchoolContext', () => ({ useSchoolContext: vi.fn() }));
+vi.mock('@/contexts/SchoolContext', () => ({
+  useSchoolContext: vi.fn(),
+  useOptionalSchoolContext: vi.fn(),
+}));
+
+vi.mock('@/components/app-shell', () => ({
+  AppShell: ({ children }: { children: React.ReactNode }) => (
+    <div>
+      <nav>moldura</nav>
+      {children}
+    </div>
+  ),
+}));
 
 function mockContext(user: unknown, isLoading = false) {
   vi.mocked(useSchoolContext).mockReturnValue({
@@ -72,7 +84,7 @@ describe('EscolaLayout', () => {
     expect(screen.queryByText('conteúdo da escola')).not.toBeInTheDocument();
   });
 
-  it('renderiza a sidebar e o conteúdo para DIRETOR', () => {
+  it('renderiza a moldura e o conteúdo para DIRETOR', () => {
     mockContext({ id: 1, name: 'Diretora', profileId: PROFILE.DIRETOR });
     render(
       <EscolaLayout>
@@ -81,7 +93,7 @@ describe('EscolaLayout', () => {
     );
 
     expect(screen.getByText('conteúdo da escola')).toBeInTheDocument();
-    expect(screen.getByText('Gestão Escolar')).toBeInTheDocument();
+    expect(screen.getByText('moldura')).toBeInTheDocument();
     expect(push).not.toHaveBeenCalled();
   });
 
@@ -105,5 +117,21 @@ describe('EscolaLayout', () => {
     );
 
     expect(screen.getByText('conteúdo da escola')).toBeInTheDocument();
+  });
+
+  it('renderiza para COORDENADOR_MUNICIPAL', () => {
+    mockContext({
+      id: 9,
+      name: 'Coordenadora',
+      profileId: PROFILE.COORDENADOR_MUNICIPAL,
+    });
+    render(
+      <EscolaLayout>
+        <span>conteúdo da escola</span>
+      </EscolaLayout>,
+    );
+
+    expect(screen.getByText('conteúdo da escola')).toBeInTheDocument();
+    expect(push).not.toHaveBeenCalled();
   });
 });

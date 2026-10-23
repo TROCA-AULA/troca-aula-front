@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import styled from 'styled-components';
 import { useNetworks } from '@/hooks/useNetworks';
+import { useCoordinatorOnly } from '@/hooks/useCoordinatorOnly';
 import { NetworkForm } from './components/NetworkForm';
 import { NetworkInterconnectionsModal } from './components/NetworkInterconnectionsModal';
 import type { Network } from '@/types/master';
@@ -23,8 +24,8 @@ import { SkeletonRows } from '@/components/ui/Skeleton';
 // só o que é específico desta tela (botões de ação) segue local.
 const AddButton = styled.button`
   padding: 10px 20px;
-  background-color: #1e3a5f;
-  color: white;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -33,11 +34,11 @@ const AddButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #2a4a73;
+    background-color: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
@@ -49,21 +50,24 @@ const ActionButton = styled.button`
   font-size: 12px;
   cursor: pointer;
   margin-right: 8px;
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background-color: ${({ theme }) => theme.colors.primarySoft};
+  color: ${({ theme }) => theme.colors.primary};
 
   &:hover {
-    background-color: #bbdefb;
+    background-color: ${({ theme }) => theme.colors.primarySoftHover};
   }
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
 
 export default function RedesPage() {
-  const { networks, loading } = useNetworks();
+  const { networks, loading, refetch } = useNetworks();
+  // Coordenador municipal só mexe nas interconexões da rede dele; criar e
+  // renomear rede é do Master.
+  const coordinatorOnly = useCoordinatorOnly();
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedNetwork, setSelectedNetwork] = useState<Network | null>(null);
@@ -101,7 +105,7 @@ export default function RedesPage() {
             Educação de um município) — cada escola pertence a uma rede.
           </PageSubtitle>
         </div>
-        <AddButton onClick={handleCreate}>+ Nova Rede</AddButton>
+        {!coordinatorOnly && <AddButton onClick={handleCreate}>+ Nova Rede</AddButton>}
       </PageHeader>
 
       {networks.length === 0 ? (
@@ -126,7 +130,9 @@ export default function RedesPage() {
                 <Td>{network.name}</Td>
                 <Td>{new Date(network.createdAt).toLocaleDateString('pt-BR')}</Td>
                 <Td>
-                  <ActionButton onClick={() => handleEdit(network)}>Editar</ActionButton>
+                  {!coordinatorOnly && (
+                    <ActionButton onClick={() => handleEdit(network)}>Editar</ActionButton>
+                  )}
                   <ActionButton onClick={() => setInterconnectionsFor(network)}>
                     Interconexões
                   </ActionButton>
@@ -142,6 +148,7 @@ export default function RedesPage() {
         mode={formMode}
         initialData={selectedNetwork}
         onClose={() => setFormOpen(false)}
+        onSaved={refetch}
       />
 
       <NetworkInterconnectionsModal

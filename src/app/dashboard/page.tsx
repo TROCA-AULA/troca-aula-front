@@ -1,6 +1,5 @@
 'use client'
 import styled from 'styled-components'
-import Logo from "@/app/components/Logo";
 import {useForm} from "react-hook-form";
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {format} from "date-fns";
@@ -9,12 +8,7 @@ import {yupResolver} from "@hookform/resolvers/yup";
 import {toast} from "react-toastify";
 import {useSchoolContext} from "@/contexts/SchoolContext";
 import {PROFILE, isStaffProfile, isSchoolScopedStaffProfile} from "@/constants/profile";
-import Link from "next/link";
 import {EnrollmentsList} from "@/components/EnrollmentsList";
-import {SubstitutionCounter} from "@/components/SubstitutionCounter";
-import {SchoolSelector} from "@/components/SchoolSelector";
-import {NotificationBell} from "@/components/NotificationBell";
-import {useSubstitutionLimit} from "@/hooks/useSubstitutionLimit";
 import {useSubjects} from "@/hooks/useSubjects";
 import {classesService} from "@/services/classes.service";
 import {schoolsService} from "@/services/schools.service";
@@ -43,10 +37,18 @@ const Wrapper = styled.div`
     display: flex;
     flex: 1;
     justify-content: center;
-    width: 100vw;
-    height: calc(100vh - 60px);
-
+    width: 100%;
 `
+const SubjectWarning = styled.div`
+    background: ${({ theme }) => theme.colors.warningBg};
+    color: ${({ theme }) => theme.colors.warning};
+    border: 1px solid ${({ theme }) => theme.colors.warningBorder};
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 14px;
+`
+
 const Container = styled.div`
     display: flex;
     flex: 1;
@@ -74,18 +76,18 @@ const Content = styled.div`
         overflow: hidden;
 
         thead {
-            background-color: ${({ theme }) => theme.colors.accentHover};
+            background-color: ${({ theme }) => theme.colors.tableHeader};
         }
 
         th {
             padding: 10px;
-            color: ${({ theme }) => theme.colors.surface};
+            color: ${({ theme }) => theme.colors.tableHeaderText};
             text-transform: uppercase;
         }
 
         tbody {
             tr:nth-child(even) {
-                background-color: #f4f4f4;
+                background-color: ${({ theme }) => theme.colors.surfaceAlt};
             }
         }
 
@@ -99,7 +101,7 @@ const Content = styled.div`
 
         button {
             cursor: pointer;
-            background-color: ${({ theme }) => theme.colors.accent};
+            background-color: ${({ theme }) => theme.colors.primary};
             border: none;
             padding: 5px 10px;
             margin-right: 5px;
@@ -107,7 +109,7 @@ const Content = styled.div`
             color: ${({ theme }) => theme.colors.surface};
 
             &:hover {
-                background-color: ${({ theme }) => theme.colors.accentHover};
+                background-color: ${({ theme }) => theme.colors.primaryHover};
             }
 
             &:last-child {
@@ -120,7 +122,8 @@ const Card = styled.section`
 
     display: flex;
     max-width: 1600px;
-    min-height: calc(100vh - 100px);
+    /* 64px do cabeçalho do AppShell + 2 x 20px de margem. */
+    min-height: calc(100vh - 104px);
     flex-direction: column;
     margin: 20px;
     border-radius: 10px;
@@ -148,100 +151,106 @@ const CardContent = styled.div`
 
     padding: 20px;
 `
-const Header = styled.header`
-    display: flex;
-    background-color: ${({ theme }) => theme.colors.surface};
-    width: 100vw;
-    height: 60px;
-    align-items: center;
-    justify-content: space-between;
-
-    .profile {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-end;
-        justify-content: center;
-        padding-right: 20px;
-
-        button {
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            color: #f00;
-        }
-    }
-
-
-`
 const Search = styled.div`
     display: flex;
     height: 40px;
     width: 100%;
-    border-radius: 5px;
+    border-radius: ${({ theme }) => theme.radius.md};
     overflow: hidden;
 
     input {
         flex: 1;
-        border: none;
-        background-color: #f4f4f4;
-        padding: 5px 20px;
-        outline: none;
+        min-width: 0;
+        border: 1px solid ${({ theme }) => theme.colors.borderStrong};
+        border-right: none;
+        border-radius: ${({ theme }) => theme.radius.md} 0 0 ${({ theme }) => theme.radius.md};
+        background-color: ${({ theme }) => theme.colors.surface};
+        color: ${({ theme }) => theme.colors.text};
+        padding: 5px 12px;
+
+        &:focus {
+            outline: none;
+            border-color: ${({ theme }) => theme.colors.primary};
+        }
     }
 
     & > button {
         border: none;
-        background-color: ${({ theme }) => theme.colors.accent};
+        background-color: ${({ theme }) => theme.colors.primary};
         padding: 5px 30px;
-        color: ${({ theme }) => theme.colors.surface};
+        font-weight: 600;
+        color: ${({ theme }) => theme.colors.onPrimary};
         text-transform: uppercase;
         cursor: pointer;
 
         &:hover {
-            background-color: ${({ theme }) => theme.colors.accentHover};
+            background-color: ${({ theme }) => theme.colors.primaryHover};
         }
     }
 `
 const Form = styled.form`
     display: flex;
+    flex-wrap: wrap;
     gap: 16px;
+
+    /* Os campos dividem a largura e só quebram linha quando não cabem. */
+    & > input, & > select, & > label {
+        flex: 1 1 170px;
+        min-width: 0;
+    }
+
+    label {
+        display: flex;
+        flex-direction: column;
+    }
+
+    label > input, label > select {
+        width: 100%;
+    }
 
     p {
         margin: 2px auto;
-        color: #f00;
+        color: ${({ theme }) => theme.colors.danger};
     }
 
     input, select {
         height: 40px;
-        background-color: #f4f4f4;
-        border: none;
-        outline: none;
-        border-radius: 5px;
-        padding: 5px 20px;
-    }
+        background-color: ${({ theme }) => theme.colors.surface};
+        border: 1px solid ${({ theme }) => theme.colors.borderStrong};
+        border-radius: ${({ theme }) => theme.radius.md};
+        padding: 5px 12px;
+        color: ${({ theme }) => theme.colors.text};
 
-    select {
-        position: relative;
-        display: grid;
-        border-right: 10px solid #f4f4f4;
+        &:focus {
+            outline: none;
+            border-color: ${({ theme }) => theme.colors.primary};
+            box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.focusRing};
+        }
+
+        &:disabled {
+            background-color: ${({ theme }) => theme.colors.surfaceAlt};
+            color: ${({ theme }) => theme.colors.textMuted};
+        }
     }
 
     & > button {
         cursor: pointer;
         padding: 5px 20px;
         border: none;
-        border-radius: 5px;
-        background-color: #f4f4f4;
-        color: ${({ theme }) => theme.colors.accent};
+        border-radius: ${({ theme }) => theme.radius.md};
+        background-color: ${({ theme }) => theme.colors.primary};
+        color: ${({ theme }) => theme.colors.onPrimary};
+        font-weight: 600;
         text-transform: uppercase;
 
         &:hover {
-            background-color: #cdebed;
+            background-color: ${({ theme }) => theme.colors.primaryHover};
         }
     }
 `
 const TabHeader = styled.div`
     display: flex;
-    background-color: #f4f4f4;
+    background-color: ${({ theme }) => theme.colors.surfaceAlt};
     width: 100%;
     height: 60px;
 
@@ -253,16 +262,16 @@ const TabHeader = styled.div`
         border-top-right-radius: 10px;
         text-transform: uppercase;
         cursor: pointer;
-        color: #989a9a;
+        color: ${({ theme }) => theme.colors.textMuted};
 
         &:hover {
-            background-color: #dff4f4;
-            color: ${({ theme }) => theme.colors.accent};
+            background-color: ${({ theme }) => theme.colors.primarySoft};
+            color: ${({ theme }) => theme.colors.primary};
         }
 
         &.active {
             background-color: ${({ theme }) => theme.colors.surface};
-            color: ${({ theme }) => theme.colors.accent};
+            color: ${({ theme }) => theme.colors.primary};
         }
     }
 
@@ -270,7 +279,7 @@ const TabHeader = styled.div`
 const Divider = styled.div`
     width: 100%;
     height: 1px;
-    background-color: #f4f4f4;
+    background-color: ${({ theme }) => theme.colors.surfaceAlt};
 `
 
 
@@ -293,13 +302,9 @@ export default function Home() {
         resolver: yupResolver(validationSchema),
     });
 
-    const {user, logout, refreshUserData} = useSchoolContext();
+    const {user, refreshUserData} = useSchoolContext();
     const {subjects} = useSubjects();
     
-    const { current, limit, percentage, canApply, loading: limitLoading } = useSubstitutionLimit(
-        user?.profileId === PROFILE.PROFESSOR ? user?.id : undefined,
-    );
-
     const loadClasses = useCallback(() => {
         // P9: chamada centralizada no service (via proxy), sem axios direto
         // na página. O backend injeta o userId do token (P16).
@@ -355,9 +360,11 @@ export default function Home() {
         if (!user) refreshUserData();
     }, [user]);
 
+    // Recarrega ao trocar de aba (D14): uma candidatura aprovada na aba
+    // "Candidaturas" já aparece em "Aulas aceitas" sem precisar de F5.
     useEffect(() => {
         loadClasses();
-    }, [loadClasses]);
+    }, [loadClasses, all]);
 
     useEffect(() => {
         if (!user) return;
@@ -388,42 +395,19 @@ export default function Home() {
         return classes.filter(item => item?.enrolledById != null).filter((item) => `${item?.subject?.name} ${item?.school?.name}`.toLowerCase().includes(search.toLowerCase()));
     }, [all, classes, search, user])
     return (<>
-            <Header>
-                <Logo size={60}/>
-                <div className={'profile'}>
-                    <NotificationBell />
-                    <SchoolSelector />
-                    {(isSchoolScopedStaffProfile(user?.profileId) || user?.profileId === PROFILE.MASTER) && (
-                        <>
-                            <Link href="/escola/jornada-docente">Jornada Docente</Link>
-                            <Link href="/escola/fechamento-ponto">Fechamento de Ponto</Link>
-                            <Link href="/escola/indicadores">Indicadores</Link>
-                            <Link href="/escola/prioridade">Prioridade de Vagas</Link>
-                        </>
-                    )}
-                    {user?.profileId === PROFILE.PROFESSOR && (
-                        <Link href="/minha-jornada">Minha Jornada</Link>
-                    )}
-                    {user?.profileId === PROFILE.PROFESSOR && (
-                        <Link href="/minhas-preferencias">Minhas Preferências</Link>
-                    )}
-                    {user?.profileId === PROFILE.PROFESSOR && user?.schoolId && (
-                        <SubstitutionCounter 
-                            current={current} 
-                            limit={limit} 
-                            percentage={percentage}
-                            loading={limitLoading}
-                        />
-                    )}
-                    <p>
-                        Olá, {user?.name}
-                    </p>
-                    <Link href="/alterar-senha">Alterar senha</Link>
-                    <button onClick={logout}>Sair</button>
-                </div>
-            </Header>
+            {/* Menu, escola ativa, notificações e "Sair" ficam no AppShell
+                (src/components/app-shell), comum a todas as telas logadas. */}
             <Wrapper>
                 <Container>
+                    {/* D9: professor sem disciplina não vê nenhuma vaga — avisa
+                        em vez de mostrar uma lista vazia sem explicação. */}
+                    {user?.profileId === PROFILE.PROFESSOR && user?.subjectId == null && (
+                        <SubjectWarning role="alert">
+                            Sua disciplina não está cadastrada, por isso nenhuma vaga aparece.
+                            Peça para a direção da escola definir sua disciplina e depois
+                            recarregue a página.
+                        </SubjectWarning>
+                    )}
                     <Card>
 
                         <TabHeader>

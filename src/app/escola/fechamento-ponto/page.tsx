@@ -6,9 +6,11 @@ import { useForm } from 'react-hook-form';
 import { useSchoolContext } from '@/contexts/SchoolContext';
 import { useMonthlyClosingReports } from '@/hooks/useMonthlyClosingReports';
 import { useTeachers } from '@/hooks/useTeachers';
-import { workloadTypeName } from '@/types/workload';
+import { workloadBreakdownLabel } from '@/types/workload';
 import type { MonthlyClosingReport } from '@/types/workload';
 import { downloadPdfTable } from '@/utils/pdf';
+import { toneCss } from '@/styles/tones';
+import { CLOSING_TONE, toneOf } from '@/constants/status-tones';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -17,7 +19,7 @@ const PageContainer = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
   margin: 0 0 24px 0;
 `;
 
@@ -25,11 +27,11 @@ const GeneratePanel = styled.form`
   display: flex;
   gap: 12px;
   align-items: flex-end;
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   border-radius: 8px;
   padding: 16px;
   margin-bottom: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: ${({ theme }) => theme.shadow.card};
   flex-wrap: wrap;
 `;
 
@@ -42,28 +44,28 @@ const FormGroup = styled.div`
 const Label = styled.label`
   font-size: 12px;
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const Select = styled.select`
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   border-radius: 6px;
   font-size: 14px;
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
 `;
 
 const Input = styled.input`
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   border-radius: 6px;
   font-size: 14px;
 `;
 
 const Button = styled.button`
   padding: 10px 20px;
-  background-color: #1e3a5f;
-  color: white;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -72,31 +74,31 @@ const Button = styled.button`
   height: 40px;
 
   &:hover {
-    background-color: #2a4a73;
+    background-color: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:disabled {
-    background: #ccc;
+    background: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
   }
 `;
 
 const SecondaryButton = styled(Button)`
-  background: white;
-  color: #1e3a5f;
-  border: 1px solid #1e3a5f;
+  background: ${({ theme }) => theme.colors.surface};
+  color: ${({ theme }) => theme.colors.primary};
+  border: 1px solid ${({ theme }) => theme.colors.primary};
 
   &:hover {
-    background: #f0f4f8;
+    background: ${({ theme }) => theme.colors.primarySoft};
   }
 `;
 
 const Card = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   border-radius: 8px;
   padding: 20px;
   margin-bottom: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: ${({ theme }) => theme.shadow.card};
 `;
 
 const CardHeader = styled.div`
@@ -111,10 +113,7 @@ const StatusBadge = styled.span<{ $status: string }>`
   border-radius: 12px;
   font-size: 12px;
   font-weight: 600;
-  background: ${({ $status }) =>
-    $status === 'CLOSED' ? '#e8f5e9' : $status === 'REVIEWED' ? '#fff3e0' : '#e3f2fd'};
-  color: ${({ $status }) =>
-    $status === 'CLOSED' ? '#2e7d32' : $status === 'REVIEWED' ? '#e65100' : '#1976d2'};
+  ${({ $status }) => toneCss(toneOf(CLOSING_TONE, $status))}
 `;
 
 const BreakdownList = styled.ul`
@@ -130,9 +129,9 @@ const BreakdownItem = styled.li`
   display: flex;
   justify-content: space-between;
   font-size: 14px;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
   padding: 4px 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
 
   &:last-child {
     font-weight: 700;
@@ -143,7 +142,7 @@ const BreakdownItem = styled.li`
 const EmptyState = styled.div`
   text-align: center;
   padding: 48px;
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 const ReopenPanel = styled.div`
@@ -152,12 +151,12 @@ const ReopenPanel = styled.div`
   gap: 8px;
   margin-top: 8px;
   padding-top: 12px;
-  border-top: 1px dashed #ddd;
+  border-top: 1px dashed ${({ theme }) => theme.colors.border};
 `;
 
 const TextArea = styled.textarea`
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   border-radius: 6px;
   font-size: 14px;
   font-family: inherit;
@@ -167,7 +166,7 @@ const TextArea = styled.textarea`
 
 const ReopenError = styled.span`
   font-size: 12px;
-  color: #c62828;
+  color: ${({ theme }) => theme.colors.danger};
 `;
 
 interface GenerateFormData {
@@ -222,7 +221,7 @@ function ReportCard({
       <BreakdownList>
         {entries.map(([key, value]) => (
           <BreakdownItem key={key}>
-            <span>{key === 'total' ? 'Total' : workloadTypeName(Number(key)) || key}</span>
+            <span>{workloadBreakdownLabel(key)}</span>
             <span>{value}h</span>
           </BreakdownItem>
         ))}
@@ -266,7 +265,7 @@ function ReportCard({
         disabled={busy}
         onClick={async () => {
           const rows = entries.map(([key, value]) => [
-            key === 'total' ? 'Total' : workloadTypeName(Number(key)) || key,
+            workloadBreakdownLabel(key),
             `${value}h`,
           ]);
           await downloadPdfTable(

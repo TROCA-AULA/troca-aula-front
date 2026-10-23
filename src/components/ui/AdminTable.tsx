@@ -37,7 +37,7 @@ export const PageSubtitle = styled.p`
 export const PrimaryButton = styled.button`
   padding: 10px 20px;
   background-color: ${({ theme }) => theme.colors.primary};
-  color: white;
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: ${({ theme }) => theme.radius.lg};
   font-size: 14px;
@@ -72,9 +72,9 @@ export const Table = styled.table`
 export const Th = styled.th`
   text-align: left;
   padding: 16px;
-  background-color: ${({ theme }) => theme.colors.surfaceAlt};
+  background-color: ${({ theme }) => theme.colors.tableHeader};
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.text};
+  color: ${({ theme }) => theme.colors.tableHeaderText};
   font-size: 14px;
 `;
 
@@ -92,11 +92,11 @@ export const ActionButton = styled.button`
   font-size: 12px;
   cursor: pointer;
   margin-right: 8px;
-  background-color: ${({ theme }) => theme.colors.infoBg};
-  color: ${({ theme }) => theme.colors.info};
+  background-color: ${({ theme }) => theme.colors.primarySoft};
+  color: ${({ theme }) => theme.colors.primary};
 
   &:hover {
-    filter: brightness(0.95);
+    background-color: ${({ theme }) => theme.colors.primarySoftHover};
   }
 
   &:focus {

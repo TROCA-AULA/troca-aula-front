@@ -118,7 +118,7 @@ stateDiagram-v2
 ## Regras de Limite de Substituições
 
 ### R015 - Teto por Semestre
-- Cada usuário tem `substitutionLimitPerSemester` (definido no cadastro/gestão)
+- Cada professor tem `substitutionLimitPerSemester` (hoje só configurável direto no banco — não há tela nem rota; ver D6 em `docs/status-funcionalidades.md`)
 - O limite é contado sobre candidaturas **APROVADAS** no semestre corrente (jan/01 ou jul/01)
 - Se `percentage >= 100`, o professor não pode mais se candidatar (`canApply = false`)
 - Se o limite for `null`, não há restrição

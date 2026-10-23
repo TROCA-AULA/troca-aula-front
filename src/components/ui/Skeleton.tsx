@@ -14,7 +14,7 @@ export const Skeleton = styled.div<{ $width?: string; $height?: string }>`
   width: ${({ $width }) => $width ?? '100%'};
   height: ${({ $height }) => $height ?? '16px'};
   border-radius: 6px;
-  background: ${({ theme }) => theme.colors.surfaceAlt ?? '#e9ecef'};
+  background: ${({ theme }) => theme.colors.surfaceAlt};
   animation: ${pulse} 1.4s ease-in-out infinite;
 `;
 

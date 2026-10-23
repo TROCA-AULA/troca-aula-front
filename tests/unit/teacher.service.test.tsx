@@ -55,9 +55,12 @@ describe('teacherService', () => {
           id: 1,
           name: 'João Silva',
           email: 'joao@escola.com',
+          phone: null,
           schoolId: 1,
           profileId: PROFILE.PROFESSOR,
           subject: { id: 'subj-1', name: 'Matemática' },
+          subjectId: null,
+          substitutionLimitPerSemester: null,
           totalSubstitutions: 15,
         },
       ]);
@@ -281,6 +284,67 @@ describe('teacherService', () => {
       await expect(
         teacherService.updateEnrollmentStatus(999, 'APPROVED')
       ).rejects.toThrow();
+    });
+  });
+
+  describe('findByEmail / updateTeacher (D6/D8/D9)', () => {
+    it('busca por e-mail exato e devolve o básico', async () => {
+      mockApi.get = vi.fn().mockResolvedValue({
+        data: [
+          {
+            id: 5,
+            name: 'Ana',
+            email: 'ana@x.com',
+            subjectId: 2,
+            upsUser: [{ schoolId: 1, profileId: PROFILE.PROFESSOR }],
+          },
+        ],
+      });
+
+      const result = await teacherService.findByEmail(' ana@x.com ');
+
+      expect(mockApi.get).toHaveBeenCalledWith('/users', {
+        params: { email: 'ana@x.com' },
+      });
+      expect(result).toEqual({
+        id: 5,
+        name: 'Ana',
+        email: 'ana@x.com',
+        subjectId: 2,
+        schoolIds: [1],
+      });
+    });
+
+    it('devolve null quando ninguém tem esse e-mail', async () => {
+      mockApi.get = vi.fn().mockResolvedValue({ data: [] });
+      await expect(teacherService.findByEmail('x@x.com')).resolves.toBeNull();
+    });
+
+    it('sem subjectId e sem vínculos vem com null/undefined', async () => {
+      mockApi.get = vi.fn().mockResolvedValue({
+        data: { data: [{ id: 6, name: 'B', email: 'b@x.com' }] },
+      });
+      await expect(teacherService.findByEmail('b@x.com')).resolves.toEqual({
+        id: 6,
+        name: 'B',
+        email: 'b@x.com',
+        subjectId: null,
+        schoolIds: undefined,
+      });
+    });
+
+    it('atualiza disciplina e limite pelo PATCH /users/:id', async () => {
+      mockApi.patch = vi.fn().mockResolvedValue({ data: {} });
+
+      await teacherService.updateTeacher(5, {
+        subjectId: 2,
+        substitutionLimitPerSemester: null,
+      });
+
+      expect(mockApi.patch).toHaveBeenCalledWith('/users/5', {
+        subjectId: 2,
+        substitutionLimitPerSemester: null,
+      });
     });
   });
 });

@@ -102,7 +102,7 @@ describe('EnrollmentsList', () => {
 
     expect(screen.getByText('#1')).toBeInTheDocument();
     expect(screen.getByText('Professor #7')).toBeInTheDocument();
-    expect(screen.getByText('#10')).toBeInTheDocument();
+    expect(screen.getByText('Aula #10')).toBeInTheDocument();
     expect(screen.getByText('Pendente')).toBeInTheDocument();
     expect(screen.getByText('Aprovada')).toBeInTheDocument();
     expect(screen.getByText('Rejeitada')).toBeInTheDocument();
@@ -172,56 +172,109 @@ describe('EnrollmentsList', () => {
     );
   });
 
-  it('rejeita uma candidatura com o motivo informado', async () => {
-    const promptSpy = vi.fn().mockReturnValue('Professor já lotado');
-    vi.stubGlobal('prompt', promptSpy);
+  function rejectWith(reason: string | null) {
+    fireEvent.click(screen.getByText('Rejeitar'));
+    if (reason !== null) {
+      fireEvent.change(screen.getByLabelText('Motivo da rejeição (opcional)'), {
+        target: { value: reason },
+      });
+    }
+    // O último botão "Rejeitar" é o de confirmar, dentro da janela.
+    fireEvent.click(screen.getAllByRole('button', { name: 'Rejeitar' }).at(-1)!);
+  }
+
+  it('rejeita uma candidatura com o motivo informado (D20)', async () => {
     rejectEnrollment.mockResolvedValue({ id: 1 });
     render(<EnrollmentsList />);
 
-    fireEvent.click(screen.getByText('Rejeitar'));
+    rejectWith('  Professor já lotado  ');
 
     await waitFor(() => {
-      expect(promptSpy).toHaveBeenCalledWith('Motivo da rejeição (opcional):');
       expect(rejectEnrollment).toHaveBeenCalledWith(1, 'Professor já lotado');
       expect(toast.success).toHaveBeenCalledWith('Candidatura rejeitada!');
       expect(refetch).toHaveBeenCalled();
     });
-    vi.unstubAllGlobals();
   });
 
-  it('rejeita sem motivo quando o prompt é cancelado', async () => {
-    vi.stubGlobal('prompt', vi.fn().mockReturnValue(null));
+  it('rejeita sem motivo quando o campo fica vazio', async () => {
     rejectEnrollment.mockResolvedValue({ id: 1 });
     render(<EnrollmentsList />);
 
-    fireEvent.click(screen.getByText('Rejeitar'));
+    rejectWith(null);
 
     await waitFor(() => expect(rejectEnrollment).toHaveBeenCalledWith(1, undefined));
-    vi.unstubAllGlobals();
+  });
+
+  it('cancelar a janela não rejeita', () => {
+    render(<EnrollmentsList />);
+
+    fireEvent.click(screen.getByText('Rejeitar'));
+    fireEvent.click(screen.getByText('Cancelar'));
+
+    expect(rejectEnrollment).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('Motivo da rejeição (opcional)')).not.toBeInTheDocument();
   });
 
   it('mostra o erro ao falhar a rejeição', async () => {
-    vi.stubGlobal('prompt', vi.fn().mockReturnValue('motivo'));
     rejectEnrollment.mockRejectedValue(new Error('Falha na rejeição'));
     render(<EnrollmentsList />);
 
-    fireEvent.click(screen.getByText('Rejeitar'));
+    rejectWith('motivo');
 
     await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Falha na rejeição'));
-    vi.unstubAllGlobals();
   });
 
   it('usa a mensagem padrão quando a falha de rejeição não é um Error', async () => {
-    vi.stubGlobal('prompt', vi.fn().mockReturnValue(null));
     rejectEnrollment.mockRejectedValue('falha');
     render(<EnrollmentsList />);
 
-    fireEvent.click(screen.getByText('Rejeitar'));
+    rejectWith(null);
 
     await waitFor(() =>
       expect(toast.error).toHaveBeenCalledWith('Erro ao rejeitar candidatura'),
     );
-    vi.unstubAllGlobals();
+  });
+
+  it('mostra o nome do professor e os dados da aula quando o servidor manda (D15)', () => {
+    mockList({
+      enrollments: [
+        {
+          ...enrollments[0],
+          user: { id: 7, name: 'Ana Souza', email: 'a@x', totalSubstitutions: 0 },
+          class: {
+            id: 10,
+            statededAt: '2026-10-20T13:00:00Z',
+            finishedAt: '2026-10-20T14:00:00Z',
+            schoolId: 4,
+            schoolName: 'EMEF Alfa',
+            subjectName: 'Matemática',
+          },
+        },
+        {
+          ...enrollments[1],
+          class: {
+            id: 11,
+            statededAt: '2026-10-21T13:00:00Z',
+            finishedAt: null,
+            schoolId: 4,
+            schoolName: null,
+            subjectName: null,
+          },
+        },
+      ],
+    });
+    render(<EnrollmentsList />);
+
+    expect(screen.getByText('Ana Souza')).toBeInTheDocument();
+    const start = format(new Date('2026-10-20T13:00:00Z'), 'dd/MM/yyyy HH:mm');
+    const end = format(new Date('2026-10-20T14:00:00Z'), 'HH:mm');
+    expect(screen.getByText(`Matemática · ${start}–${end}`)).toBeInTheDocument();
+    expect(screen.getByText('EMEF Alfa')).toBeInTheDocument();
+    expect(
+      screen.getByText(format(new Date('2026-10-21T13:00:00Z'), 'dd/MM/yyyy HH:mm'), {
+        selector: 'td',
+      }),
+    ).toBeInTheDocument();
   });
 
   it('desabilita as ações enquanto uma candidatura está sendo processada', () => {

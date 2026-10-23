@@ -6,7 +6,7 @@ Este documento descreve como o frontend se comunica com o backend NestJS.
 
 - O cliente axios compartilhado (`src/api.service.tsx`) usa:
   - `baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'`
-- No ambiente local atual, `.env.local` define `NEXT_PUBLIC_API_URL=http://localhost:3001`
+- No ambiente local atual, `.env.local` define `NEXT_PUBLIC_API_URL=http://localhost:5000`
 - Interceptor de request: adiciona `Authorization: Bearer <token>` lido do cookie `token`
 - Interceptor de response: mostra `toast.error` com a mensagem de erro do backend
 

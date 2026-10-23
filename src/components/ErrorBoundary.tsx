@@ -21,13 +21,13 @@ const Fallback = styled.div`
 const FallbackTitle = styled.h2`
   font-size: 20px;
   font-weight: 700;
-  color: ${({ theme }) => theme.colors.text ?? '#333'};
+  color: ${({ theme }) => theme.colors.text};
   margin: 0;
 `;
 
 const FallbackText = styled.p`
   font-size: 14px;
-  color: ${({ theme }) => theme.colors.textMuted ?? '#666'};
+  color: ${({ theme }) => theme.colors.textMuted};
   margin: 0;
 `;
 
@@ -36,8 +36,8 @@ const RetryButton = styled.button`
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
-  background: ${({ theme }) => theme.colors.primary ?? '#1e3a5f'};
-  color: white;
+  background: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;

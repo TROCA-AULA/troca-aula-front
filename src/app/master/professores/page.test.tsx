@@ -7,6 +7,9 @@ import { accountService } from '@/services/account.service';
 import { toast } from 'react-toastify';
 
 vi.mock('@/hooks/useTeachers', () => ({ useTeachers: vi.fn() }));
+vi.mock('@/hooks/useSubjects', () => ({
+  useSubjects: () => ({ subjects: [{ id: 2, name: 'História' }] }),
+}));
 vi.mock('@/contexts/SchoolContext', () => ({ useSchoolContext: vi.fn() }));
 vi.mock('@/services/account.service', () => ({
   accountService: { resetUserPassword: vi.fn() },
@@ -464,5 +467,23 @@ describe('ProfessoresPage', () => {
     fireEvent.click(screen.getByText('Candidaturas'));
 
     expect(screen.getByText('Rejeitada')).toBeInTheDocument();
+  });
+
+  it('D18: mostra a disciplina pelo subjectId quando não vem o objeto', () => {
+    mockTeachers({
+      linkedTeachers: [
+        {
+          id: 8,
+          name: 'Rui',
+          email: 'rui@x.com',
+          profileId: 3,
+          subjectId: 2,
+          totalSubstitutions: 0,
+        },
+      ],
+    });
+    render(<ProfessoresPage />);
+
+    expect(screen.getByText('História')).toBeInTheDocument();
   });
 });

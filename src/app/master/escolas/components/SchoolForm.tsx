@@ -13,7 +13,7 @@ const Overlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: ${({ theme }) => theme.colors.overlay};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,18 +21,18 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   border-radius: 12px;
   padding: 24px;
   width: 100%;
   max-width: 480px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: ${({ theme }) => theme.shadow.modal};
 `;
 
 const Title = styled.h2`
   font-size: 20px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
   margin: 0 0 24px 0;
 `;
 
@@ -51,39 +51,39 @@ const FormGroup = styled.div`
 const Label = styled.label`
   font-size: 14px;
   font-weight: 500;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const Input = styled.input`
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   border-radius: 6px;
   font-size: 14px;
 
   &:focus {
     outline: none;
-    border-color: #1e3a5f;
-    box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.1);
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.focusRing};
   }
 `;
 
 const Select = styled.select`
   padding: 10px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   border-radius: 6px;
   font-size: 14px;
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
 
   &:focus {
     outline: none;
-    border-color: #1e3a5f;
-    box-shadow: 0 0 0 2px rgba(30, 58, 95, 0.1);
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.colors.focusRing};
   }
 `;
 
 const ErrorText = styled.span`
   font-size: 12px;
-  color: #c62828;
+  color: ${({ theme }) => theme.colors.danger};
 `;
 
 const ButtonGroup = styled.div`
@@ -102,32 +102,32 @@ const Button = styled.button`
   transition: all 0.2s;
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
 
 const CancelButton = styled(Button)`
-  background: white;
-  border: 1px solid #ddd;
-  color: #666;
+  background: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.textMuted};
 
   &:hover {
-    background: #f5f5f5;
+    background: ${({ theme }) => theme.colors.surfaceAlt};
   }
 `;
 
 const SubmitButton = styled(Button)`
-  background: #1e3a5f;
+  background: ${({ theme }) => theme.colors.primary};
   border: none;
-  color: white;
+  color: ${({ theme }) => theme.colors.onPrimary};
 
   &:hover {
-    background: #2a4a73;
+    background: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:disabled {
-    background: #ccc;
+    background: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
   }
 `;
@@ -137,16 +137,17 @@ interface SchoolFormProps {
   mode: 'create' | 'edit';
   initialData?: School | null;
   onClose: () => void;
+  /** Chamado depois de salvar, para a página recarregar a lista (D14). */
+  onSaved?: () => void;
 }
 
 interface FormData {
   name: string;
   networkId: number;
-  priorityWindowHours?: number;
 }
 
-export function SchoolForm({ open, mode, initialData, onClose }: SchoolFormProps) {
-  const { createSchool, updateSchool, updatePriorityWindow } = useSchools();
+export function SchoolForm({ open, mode, initialData, onClose, onSaved }: SchoolFormProps) {
+  const { createSchool, updateSchool } = useSchools();
   const { networks, loading: networksLoading } = useNetworks();
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -161,9 +162,8 @@ export function SchoolForm({ open, mode, initialData, onClose }: SchoolFormProps
       ? {
           name: initialData.name,
           networkId: initialData.networkId,
-          priorityWindowHours: initialData.priorityWindowHours ?? undefined,
         }
-      : { name: '', networkId: undefined, priorityWindowHours: undefined },
+      : { name: '', networkId: undefined },
   });
 
   const onSubmit = async (data: FormData) => {
@@ -185,13 +185,8 @@ export function SchoolForm({ open, mode, initialData, onClose }: SchoolFormProps
         await createSchool({ name: data.name, networkId: Number(data.networkId) });
       } else if (initialData) {
         await updateSchool(initialData.id, { name: data.name, networkId: Number(data.networkId) });
-        // Endpoint dedicado (fora do PATCH /schools/:id genérico) - só faz
-        // a chamada se o valor mudou, pra não gerar uma request à toa.
-        const newWindow = data.priorityWindowHours ? Number(data.priorityWindowHours) : null;
-        if (newWindow !== (initialData.priorityWindowHours ?? null)) {
-          await updatePriorityWindow(initialData.id, newWindow);
-        }
       }
+      onSaved?.();
       onClose();
       reset();
     } finally {
@@ -229,26 +224,9 @@ export function SchoolForm({ open, mode, initialData, onClose }: SchoolFormProps
             {errors.networkId && <ErrorText>Selecione uma rede</ErrorText>}
           </FormGroup>
 
-          {mode === 'edit' && (
-            <FormGroup>
-              <Label htmlFor="priorityWindowHours">
-                Janela de prioridade (horas)
-              </Label>
-              <Input
-                id="priorityWindowHours"
-                type="number"
-                min={0}
-                step={1}
-                {...register('priorityWindowHours', { valueAsNumber: true })}
-                placeholder="Deixe em branco para não ter janela (abre geral na hora)"
-              />
-              <span style={{ fontSize: 12, color: '#666' }}>
-                Por quantas horas uma aula vaga fica visível só para
-                professores vinculados a esta escola antes de abrir para os
-                demais.
-              </span>
-            </FormGroup>
-          )}
+          {/* A "janela de prioridade" em horas saiu: a ordem de quem vê a
+              vaga agora é definida pelos grupos de prioridade da escola
+              (tela Gestão Escolar → Prioridade de Vagas). */}
 
           {error && <ErrorText>{error}</ErrorText>}
 

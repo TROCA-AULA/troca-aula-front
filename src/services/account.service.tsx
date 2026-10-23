@@ -18,8 +18,11 @@ export const accountService = {
   },
 
   // POST /users/:id/reset-password (gestor) — gera senha temporária no
-  // servidor e devolve uma única vez para repassar ao usuário.
-  resetUserPassword: async (userId: number): Promise<{ tempPassword: string }> => {
+  // servidor, envia por e-mail quando há SMTP (emailSent) e devolve uma
+  // única vez para repassar se o e-mail não sair.
+  resetUserPassword: async (
+    userId: number,
+  ): Promise<{ tempPassword: string; emailSent?: boolean }> => {
     const response = await api.post(`/users/${userId}/reset-password`);
     return response.data?.data ?? response.data;
   },

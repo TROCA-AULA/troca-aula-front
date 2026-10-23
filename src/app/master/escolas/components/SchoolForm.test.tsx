@@ -10,7 +10,6 @@ vi.mock('@/hooks/useNetworks', () => ({ useNetworks: vi.fn() }));
 
 const createSchool = vi.fn();
 const updateSchool = vi.fn();
-const updatePriorityWindow = vi.fn();
 
 const networks = [
   { id: 1, name: 'Rede A', createdAt: '2026-01-01' },
@@ -22,7 +21,6 @@ const escola: School = {
   name: 'Escola A',
   networkId: 1,
   substitutionLimitPerSemester: null,
-  priorityWindowHours: 4,
   createdAt: '2026-01-01',
 };
 
@@ -33,7 +31,6 @@ function mockHooks(networksLoading = false) {
     error: null,
     createSchool,
     updateSchool,
-    updatePriorityWindow,
     deleteSchool: vi.fn(),
     refetch: vi.fn(),
   } as any);
@@ -61,7 +58,7 @@ describe('SchoolForm', () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it('renderiza em modo de criação, sem o campo de janela de prioridade', () => {
+  it('renderiza em modo de criação', () => {
     render(<SchoolForm open mode="create" onClose={vi.fn()} />);
 
     expect(screen.getByText('Nova Escola')).toBeInTheDocument();
@@ -82,7 +79,10 @@ describe('SchoolForm', () => {
     expect(screen.getByText('Editar Escola')).toBeInTheDocument();
     expect(screen.getByLabelText('Nome *')).toHaveValue('Escola A');
     expect(screen.getByLabelText('Rede de Ensino *')).toHaveValue('1');
-    expect(screen.getByLabelText(/janela de prioridade/i)).toHaveValue(4);
+    // A janela em horas foi trocada pelos grupos de prioridade da escola.
+    expect(
+      screen.queryByLabelText(/janela de prioridade/i),
+    ).not.toBeInTheDocument();
   });
 
   it('desabilita o select de redes enquanto elas carregam', () => {
@@ -127,7 +127,8 @@ describe('SchoolForm', () => {
     createSchool.mockResolvedValue({ id: 1 });
     const onClose = vi.fn();
 
-    render(<SchoolForm open mode="create" onClose={onClose} />);
+    const onSaved = vi.fn();
+    render(<SchoolForm open mode="create" onClose={onClose} onSaved={onSaved} />);
 
     fireEvent.change(screen.getByLabelText('Nome *'), {
       target: { value: 'Escola Nova' },
@@ -143,6 +144,7 @@ describe('SchoolForm', () => {
         networkId: 2,
       });
       expect(onClose).toHaveBeenCalledTimes(1);
+      expect(onSaved).toHaveBeenCalledTimes(1);
     });
     expect(updateSchool).not.toHaveBeenCalled();
   });
@@ -178,59 +180,26 @@ describe('SchoolForm', () => {
     );
   });
 
-  it('edita a escola e atualiza a janela quando o valor muda', async () => {
+  it('edita a escola com nome e rede', async () => {
     updateSchool.mockResolvedValue({});
-    updatePriorityWindow.mockResolvedValue({});
     const onClose = vi.fn();
 
     render(
       <SchoolForm open mode="edit" initialData={escola} onClose={onClose} />,
     );
 
-    fireEvent.change(screen.getByLabelText(/janela de prioridade/i), {
-      target: { value: '8' },
+    fireEvent.change(screen.getByLabelText('Nome *'), {
+      target: { value: 'Escola A2' },
     });
     fireEvent.click(screen.getByText('Salvar'));
 
     await waitFor(() => {
       expect(updateSchool).toHaveBeenCalledWith(10, {
-        name: 'Escola A',
+        name: 'Escola A2',
         networkId: 1,
       });
-      expect(updatePriorityWindow).toHaveBeenCalledWith(10, 8);
       expect(onClose).toHaveBeenCalledTimes(1);
     });
-  });
-
-  it('não atualiza a janela quando o valor não mudou', async () => {
-    updateSchool.mockResolvedValue({});
-
-    render(
-      <SchoolForm open mode="edit" initialData={escola} onClose={vi.fn()} />,
-    );
-
-    fireEvent.click(screen.getByText('Salvar'));
-
-    await waitFor(() => expect(updateSchool).toHaveBeenCalled());
-    expect(updatePriorityWindow).not.toHaveBeenCalled();
-  });
-
-  it('remove a janela quando o campo é apagado', async () => {
-    updateSchool.mockResolvedValue({});
-    updatePriorityWindow.mockResolvedValue({});
-
-    render(
-      <SchoolForm open mode="edit" initialData={escola} onClose={vi.fn()} />,
-    );
-
-    fireEvent.change(screen.getByLabelText(/janela de prioridade/i), {
-      target: { value: '' },
-    });
-    fireEvent.click(screen.getByText('Salvar'));
-
-    await waitFor(() =>
-      expect(updatePriorityWindow).toHaveBeenCalledWith(10, null),
-    );
   });
 
   it('em modo de edição sem dados iniciais apenas fecha o modal', async () => {

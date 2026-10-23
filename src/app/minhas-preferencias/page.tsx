@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styled from 'styled-components';
 import { useSchoolContext } from '@/contexts/SchoolContext';
-import { useNetworks } from '@/hooks/useNetworks';
 import { useProfessorPreferences } from '@/hooks/useEligibility';
-import { schoolsService } from '@/services/schools.service';
-import type { School } from '@/types/master';
+import {
+  eligibilityService,
+  type PreferenceOptionsResponse,
+} from '@/services/eligibility.service';
 import {
   PageContainer,
   PageHeader,
@@ -77,7 +78,7 @@ const Select = styled.select`
 const Button = styled.button`
   padding: 9px 16px;
   background: ${({ theme }) => theme.colors.primary};
-  color: white;
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: ${({ theme }) => theme.radius.lg};
   font-size: 14px;
@@ -89,7 +90,7 @@ const Button = styled.button`
   }
 
   &:disabled {
-    background: #ccc;
+    background: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
   }
 `;
@@ -107,7 +108,6 @@ const LinkButton = styled.button`
 export default function MinhasPreferenciasPage() {
   const router = useRouter();
   const { user, isLoading } = useSchoolContext();
-  const { networks } = useNetworks();
   const {
     preferences,
     loading,
@@ -115,12 +115,21 @@ export default function MinhasPreferenciasPage() {
     removeNetworkInterest,
     addSchoolExclusion,
     removeSchoolExclusion,
+    setResidence,
   } = useProfessorPreferences();
 
-  const [schools, setSchools] = useState<School[]>([]);
+  const [options, setOptions] = useState<PreferenceOptionsResponse>({
+    networks: [],
+    schools: [],
+  });
+  const { networks, schools } = options;
   const [selectedNetworkId, setSelectedNetworkId] = useState<number | null>(null);
   const [selectedSchoolId, setSelectedSchoolId] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  // undefined = ainda não mexeu: mostra o que está salvo.
+  const [residenceChoice, setResidenceChoice] = useState<number | null | undefined>(
+    undefined,
+  );
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -129,10 +138,10 @@ export default function MinhasPreferenciasPage() {
   }, [isLoading, user, router]);
 
   useEffect(() => {
-    schoolsService
-      .getSchools()
-      .then((data) => setSchools(data ?? []))
-      .catch(() => setSchools([]));
+    eligibilityService
+      .getPreferenceOptions()
+      .then((data) => setOptions(data ?? { networks: [], schools: [] }))
+      .catch(() => setOptions({ networks: [], schools: [] }));
   }, []);
 
   if (isLoading || !user) {
@@ -159,6 +168,9 @@ export default function MinhasPreferenciasPage() {
     }
   };
 
+  const savedResidence = preferences.residenceNetworkId ?? null;
+  const residenceValue = residenceChoice === undefined ? savedResidence : residenceChoice;
+
   return (
     <PageContainer>
       <PageHeader>
@@ -169,6 +181,45 @@ export default function MinhasPreferenciasPage() {
           </PageSubtitle>
         </div>
       </PageHeader>
+
+      <Section>
+        <SectionTitle>Onde você mora</SectionTitle>
+        <Hint>
+          {preferences.hasContract
+            ? 'Você já tem contrato com uma escola: o contrato vale mais que a residência, então este campo não muda quais vagas você vê.'
+            : 'Sem contrato com nenhuma escola, o município onde você mora conta como a sua rede: você vê as vagas dele como se tivesse vínculo.'}
+        </Hint>
+        <Row>
+          <FormGroup>
+            <Label htmlFor="residenceSelect">Município onde mora</Label>
+            <Select
+              id="residenceSelect"
+              value={residenceValue ?? ''}
+              onChange={(e) =>
+                setResidenceChoice(e.target.value ? Number(e.target.value) : null)
+              }
+            >
+              <option value="">Não informado</option>
+              {networks.map((network) => (
+                <option key={network.id} value={network.id}>
+                  {network.name}
+                </option>
+              ))}
+            </Select>
+          </FormGroup>
+          <Button
+            disabled={busy || loading || residenceValue === savedResidence}
+            onClick={() =>
+              run(async () => {
+                await setResidence(user.id, residenceValue);
+                setResidenceChoice(undefined);
+              })
+            }
+          >
+            Salvar município
+          </Button>
+        </Row>
+      </Section>
 
       <Section>
         <SectionTitle>Redes de interesse</SectionTitle>

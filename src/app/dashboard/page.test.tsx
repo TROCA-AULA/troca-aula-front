@@ -73,8 +73,6 @@ describe('Dashboard Page', () => {
     it('renders and loads data', async () => {
         render(<Home />);
 
-        expect(screen.getByText(/Olá, Test User/)).toBeInTheDocument();
-
         await waitFor(() => {
             expect(api.get).toHaveBeenCalledWith('/classes');
             expect(api.get).toHaveBeenCalledWith('/schools');
@@ -102,6 +100,9 @@ describe('Dashboard Page', () => {
         await waitFor(() => expect(screen.getByRole('cell', { name: 'Math' })).toBeInTheDocument());
         expect(screen.getByText('Aulas Disponiveis')).toHaveClass('active');
     });
+
+    // Links por perfil (D12, coordenador) e "Sair" ficam no AppShell:
+    // src/components/app-shell/app-shell.test.tsx.
 
     it('handles search', async () => {
         render(<Home />);
@@ -209,12 +210,6 @@ describe('Dashboard Page', () => {
         expect(screen.getByText('deletar')).toBeInTheDocument();
     });
 
-    it('calls logout when button clicked', () => {
-        render(<Home />);
-        fireEvent.click(screen.getByText('Sair'));
-        expect(mockLogout).toHaveBeenCalled();
-    });
-
     it('refreshes user data if no user', () => {
         (useSchoolContext as any).mockReturnValue({
             user: null,
@@ -246,6 +241,25 @@ describe('Dashboard Page', () => {
             expect(api.post).toHaveBeenCalledWith('/enrollment-requests/request/1');
             expect(toast.success).toHaveBeenCalledWith('Candidatura enviada com sucesso');
         });
+    });
+
+    it('avisa o professor sem disciplina (D9) e some quando ele tem disciplina', async () => {
+        (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.PROFESSOR, schoolId: 1, subjectId: null },
+            logout: mockLogout,
+            refreshUserData: mockRefreshUserData,
+        });
+        const { unmount } = render(<Home />);
+        expect(screen.getByRole('alert')).toHaveTextContent('Sua disciplina não está cadastrada');
+        unmount();
+
+        (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.PROFESSOR, schoolId: 1, subjectId: 2 },
+            logout: mockLogout,
+            refreshUserData: mockRefreshUserData,
+        });
+        render(<Home />);
+        expect(screen.queryByText(/Sua disciplina não está cadastrada/)).not.toBeInTheDocument();
     });
 
     it('handles apply error for teacher', async () => {
@@ -333,6 +347,20 @@ describe('Dashboard Page', () => {
         fireEvent.click(acceptedButton);
 
         await waitFor(() => expect(screen.getByRole('cell', { name: 'Science' })).toBeInTheDocument());
+    });
+
+    it('recarrega as aulas ao trocar de aba (D14)', async () => {
+        render(<Home />);
+        const classCalls = () =>
+            (api.get as any).mock.calls.filter(([url]: [string]) =>
+                String(url).startsWith('/classes'),
+            ).length;
+        await waitFor(() => expect(classCalls()).toBeGreaterThan(0));
+        const before = classCalls();
+
+        fireEvent.click(screen.getByText('Aulas aceitas'));
+
+        await waitFor(() => expect(classCalls()).toBeGreaterThan(before));
     });
 
     it('abre a aba Candidaturas para a equipe', async () => {

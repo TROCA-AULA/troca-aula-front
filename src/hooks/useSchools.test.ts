@@ -9,7 +9,6 @@ vi.mock('@/services/master.service', () => ({
     getSchools: vi.fn(),
     createSchool: vi.fn(),
     updateSchool: vi.fn(),
-    updateSchoolPriorityWindow: vi.fn(),
     deleteSchool: vi.fn(),
   },
 }));
@@ -159,23 +158,6 @@ describe('useSchools Hook - US2', () => {
     expect(toast.error).toHaveBeenCalledWith('Erro ao carregar escolas');
   });
 
-  it('atualiza a janela de prioridade da escola', async () => {
-    const updated = { ...mockSchools[0], priorityWindowHours: 24 };
-    vi.mocked(masterService.getSchools).mockResolvedValue(mockSchools);
-    vi.mocked(masterService.updateSchoolPriorityWindow).mockResolvedValue(updated);
-
-    const { result } = renderHook(() => useSchools());
-    await waitFor(() => expect(result.current.schools).toEqual(mockSchools));
-
-    await act(async () => {
-      await result.current.updatePriorityWindow(1, 24);
-    });
-
-    expect(masterService.updateSchoolPriorityWindow).toHaveBeenCalledWith(1, 24);
-    expect(result.current.schools).toEqual([updated, mockSchools[1]]);
-    expect(toast.success).toHaveBeenCalledWith('Regra de prioridade atualizada');
-  });
-
   it('propaga erro e mostra toast ao criar escola', async () => {
     vi.mocked(masterService.getSchools).mockResolvedValue(mockSchools);
     vi.mocked(masterService.createSchool).mockRejectedValue(
@@ -282,34 +264,6 @@ describe('useSchools Hook - US2', () => {
     });
 
     expect(toast.error).toHaveBeenCalledWith('Erro ao excluir escola');
-  });
-
-  it('propaga erro ao atualizar a janela de prioridade e usa mensagem padrão sem Error', async () => {
-    vi.mocked(masterService.getSchools).mockResolvedValue(mockSchools);
-    vi.mocked(masterService.updateSchoolPriorityWindow).mockRejectedValue(
-      new Error('falha na regra'),
-    );
-
-    const { result } = renderHook(() => useSchools());
-    await waitFor(() => expect(result.current.schools).toEqual(mockSchools));
-
-    await act(async () => {
-      await expect(result.current.updatePriorityWindow(1, 12)).rejects.toThrow(
-        'falha na regra',
-      );
-    });
-    expect(toast.error).toHaveBeenCalledWith('falha na regra');
-
-    vi.mocked(masterService.updateSchoolPriorityWindow).mockRejectedValue(
-      'falhou' as unknown as Error,
-    );
-
-    await act(async () => {
-      await expect(result.current.updatePriorityWindow(1, null)).rejects.toBe(
-        'falhou',
-      );
-    });
-    expect(toast.error).toHaveBeenCalledWith('Erro ao atualizar regra de prioridade');
   });
 
   it('refaz a busca ao chamar refetch', async () => {

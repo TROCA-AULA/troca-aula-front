@@ -55,6 +55,17 @@ flowchart LR
 | Hook de sessão | `src/user/useUserHook.tsx` |
 | API Routes | `src/app/api/auth/login`, `logout`, `me`, `govbr-session` |
 
+## Sessão e validade do login
+
+- O backend emite o token com `exp` (`JWT_EXPIRES_IN`, padrão 12h). O cookie `token` (httpOnly) tem `maxAge` igual ao `exp` do token (`src/app/api/auth/session-cookie.ts`).
+- O `SchoolContext` chama `/api/auth/me?refresh=1` ao montar: a rota pede `POST /auth/refresh` ao backend e regrava o cookie com o token novo, que já traz a disciplina e os vínculos atuais (D23). Se o backend responder 401, o cookie é apagado; se ele estiver fora do ar, o token antigo continua valendo.
+- Quando qualquer chamada recebe 401 de sessão vencida, `api-client.service.tsx` mostra uma vez "Sua sessão expirou. Entre de novo." e volta para `/` (D19).
+
+## Senha temporária
+
+- Criar Diretor/Administrador (`masterService.createUser`) ou Coordenador (`addCoordinator`) e "Redefinir senha" usam `POST /users/:id/reset-password`: o servidor gera a senha, envia por e-mail se houver SMTP e responde `{tempPassword, emailSent}`.
+- O texto do aviso vem de `src/utils/temp-password.ts`: com `emailSent`, diz que foi por e-mail (e mostra a senha caso não chegue); sem, pede para repassar.
+
 ## Pontos de Atenção (resolvidos)
 
 1. **Sessão Gov.br** (P2): o token agora vai para o mesmo cookie httpOnly `token` via `POST /api/auth/govbr-session`; reconhecido pelo proxy.

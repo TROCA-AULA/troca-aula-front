@@ -14,13 +14,13 @@ const Wrapper = styled.div`
   flex: 1;
   flex-direction: column;
   width: 100%;
-  min-height: calc(100vh - 60px);
-  padding: 20px;
+  padding: 24px;
 `;
 
 const Title = styled.h1`
-  color: ${({ theme }) => theme.colors.accent};
+  color: ${({ theme }) => theme.colors.text};
   font-size: 24px;
+  font-weight: 600;
   margin-bottom: 20px;
 `;
 
@@ -32,7 +32,7 @@ const ClassesGrid = styled.div`
 
 const ClassCard = styled.div`
   background: ${({ theme }) => theme.colors.surface};
-  border: 1px solid #f4f4f4;
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
   border-radius: 8px;
   padding: 16px;
   display: flex;
@@ -48,17 +48,17 @@ const ClassInfo = styled.div`
 
 const ClassLabel = styled.span`
   font-size: 12px;
-  color: #989a9a;
+  color: ${({ theme }) => theme.colors.textMuted};
   text-transform: uppercase;
 `;
 
 const ClassValue = styled.span`
   font-size: 16px;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const ApplyButton = styled.button`
-  background-color: ${({ theme }) => theme.colors.accent};
+  background-color: ${({ theme }) => theme.colors.primary};
   color: ${({ theme }) => theme.colors.surface};
   border: none;
   padding: 10px 20px;
@@ -69,23 +69,23 @@ const ApplyButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: ${({ theme }) => theme.colors.accentHover};
+    background-color: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:disabled {
-    background-color: #ccc;
+    background-color: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
   }
 `;
 
 const Loading = styled.div`
-  color: ${({ theme }) => theme.colors.accent};
+  color: ${({ theme }) => theme.colors.primary};
   text-align: center;
   padding: 40px;
 `;
 
 const ErrorMessage = styled.div`
-  color: #f00;
+  color: ${({ theme }) => theme.colors.danger};
   text-align: center;
   padding: 20px;
 `;
@@ -152,7 +152,7 @@ export default function ClassesPage() {
             <ClassCard key={classItem.id}>
               <ClassInfo>
                 <ClassLabel>Disciplina</ClassLabel>
-                <ClassValue>{classItem.subjectName || `Aula #${classItem.id}`}</ClassValue>
+                <ClassValue>{classItem.subjectName || classItem.subject?.name || `Aula #${classItem.id}`}</ClassValue>
               </ClassInfo>
               <ClassInfo>
                 <ClassLabel>Data</ClassLabel>

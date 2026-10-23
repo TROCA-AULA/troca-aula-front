@@ -1,88 +1,70 @@
 # Perfis de Usuário e Permissões
 
-Este documento detalha os perfis de usuário, como são usados no frontend e a matriz de permissões por área do sistema.
+> Atualizado em 23/10/2026. A fonte dos ids é `src/constants/profile.ts`, que espelha o backend. Quem decide de verdade é sempre o **servidor**: o frontend só esconde o que a pessoa não pode usar.
 
-## Perfis de Usuário
-
-O sistema possui 4 perfis:
+## Perfis
 
 | ID | Nome | Papel no sistema |
 |----|------|------------------|
-| 1 | **Master** | Administrador global: gerencia escolas, diretores, administradores e professores |
-| 2 | **Diretor** | Governa uma escola específica: cria vagas, aprova candidaturas, gerencia professores |
-| 3 | **Administrador** | Coordena operações da escola: cria vagas, aprova/rejeita candidaturas |
-| 4 | **Professor** | Busca aulas disponíveis e se candidata a vagas |
+| 1 | **DIRETOR** | Governa uma escola: cria vagas, aprova candidaturas, gerencia professores e a prioridade |
+| 2 | **AUXILIAR_ADMIN** | Secretaria da escola: faz o mesmo que o diretor no dia a dia |
+| 3 | **PROFESSOR** | Vê as aulas vagas da sua disciplina e se candidata |
+| 4 | **MASTER** | Administrador global da plataforma |
+| 5 | **COORDENADOR_MUNICIPAL** | Secretaria municipal: gere **todas** as escolas das redes que coordena |
 
-## Como o Frontend Usa os Perfis
+Os perfis 1–4 vêm de vínculos com escolas (`UsersProfilesSchools`). O perfil 5 vem do vínculo com a rede (`UserNetworkLinks`); no login, o backend gera um vínculo de perfil 5 para **cada escola** da rede, por isso o coordenador aparece no seletor de escolas como gestor de todas elas.
 
-### Área Master (`/master/*`) — mapeamento novo
-A área master utiliza `profileId` com a seguinte lógica:
+**Hierarquia** (para conceder perfis ou mexer na conta de alguém): PROFESSOR < AUXILIAR_ADMIN < DIRETOR < COORDENADOR_MUNICIPAL < MASTER. Fora do MASTER, ninguém concede, remove ou altera perfil/conta de quem está no seu nível ou acima.
 
-| Código | Perfil | Onde é usado |
-|--------|--------|--------------|
-| `profileId === 1` | Master | Guard de acesso da área master (`src/app/master/layout.tsx`) |
-| `useUsers(2)` | Diretores | Página `/master/diretores` |
-| `useUsers(3)` | Administradores | Página `/master/administradores` |
-| `profileId: 4` | Professores | Página `/master/professores`, `teacher.service.tsx` |
+## Constantes e helpers
 
-### Módulo legado (dashboard) — mapeamento antigo
+| Item | Arquivo | Uso |
+|---|---|---|
+| `PROFILE`, `PROFILE_LABELS` | `src/constants/profile.ts` | Ids e nomes. Nunca use número mágico |
+| `STAFF_PROFILE_IDS` / `isSchoolScopedStaffProfile` | idem | Quem é gestão (tudo que não é professor) |
+| `isCoordinatorOnly(links)` | idem | Tem perfil 5 e não é MASTER |
+| `COORDINATOR_MASTER_ROUTES` | idem | Partes de `/master` que o coordenador pode abrir |
+| `useCoordinatorOnly()` | `src/hooks/useCoordinatorOnly.ts` | O mesmo, a partir do `SchoolContext` |
 
-| `profileId` | Perfil no código legado |
-|-------------|------------------------|
-| 1 | Admin (área master) |
-| 2 | Diretor (cria aulas no dashboard) |
-| 3 | Professor (vê contador de substituições, se candidata) |
+## Matriz de permissões
 
-> ⚠️ **Inconsistência crítica**: o dashboard legado trata `profileId 3` como professor, enquanto o módulo master trata `profileId 3` como administrador e `4` como professor. Essa divergência está documentada em [problemas-conhecidos.md](../06-status/problemas-conhecidos.md).
+| Ação | MASTER | COORD. | DIRETOR | AUXILIAR | PROFESSOR |
+|------|:-:|:-:|:-:|:-:|:-:|
+| Criar/editar redes, interconexões | ✅ | Só interconexões da sua rede | ❌ | ❌ | ❌ |
+| Criar/editar escolas | ✅ | Na sua rede | ❌ | ❌ | ❌ |
+| Excluir escolas | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Catálogo de disciplinas (`/master/disciplinas`) | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Políticas de carga horária | ✅ | Na sua rede | ❌ | ❌ | ❌ |
+| Auditoria da rede | ✅ | Da sua rede | ❌ | ❌ | ❌ |
+| Nomear coordenadores, gerenciar diretores e administradores | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Vincular/desvincular professor, definir disciplina e limite | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Grupos de prioridade da escola | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Criar/excluir aula vaga | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Aprovar/rejeitar candidatura | ✅ | ✅ | ✅ | ✅ | ❌ |
+| Jornada, fechamento mensal, indicadores | ✅ | ✅ | ✅ | ✅ | Só a própria jornada |
+| Candidatar-se / cancelar a própria candidatura | — | — | — | — | ✅ (só aulas da sua disciplina) |
+| Preferências (redes de interesse, escolas excluídas, município onde mora) | — | — | — | — | ✅ |
 
-## Matriz de Permissões (Área Master)
+Diretor, auxiliar e coordenador agem só nas escolas em que têm vínculo; o servidor responde 403 fora delas.
 
-| Ação | MASTER | DIRETOR | ADMIN | PROFESSOR |
-|------|--------|---------|-------|-----------|
-| **Gestão do Sistema** | | | | |
-| Criar/Editar/Excluir Escolas | ✅ | ❌ | ❌ | ❌ |
-| Gerenciar Diretores | ✅ | ❌ | ❌ | ❌ |
-| Gerenciar Administradores | ✅ | ❌ | ❌ | ❌ |
-| Gerenciar Professores (vincular/desvincular) | ✅ | ✅ | ❌ | ❌ |
-| Aprovar/Rejeitar Candidaturas | ✅ | ✅ | ✅ | ❌ |
-| **Gestão de Aulas** | | | | |
-| Criar Aula Vaga | ❌ | ✅ | ✅ | ❌ |
-| Excluir Aula Vaga | ❌ | ✅ | ✅ | ❌ |
-| **Candidaturas** | | | | |
-| Candidatar-se a uma aula | ❌ | ✅ | ✅ | ✅ |
-| Cancelar a própria candidatura | ❌ | ✅ | ✅ | ✅ |
-| Aprovar Candidatura | ❌ | ✅ | ✅ | ❌ |
-| Rejeitar Candidatura (com motivo) | ❌ | ✅ | ✅ | ❌ |
-| **Visualização** | | | | |
-| Listar Aulas Disponíveis | ✅ | ✅ | ✅ | ✅ |
-| Listar Minhas Candidaturas | ❌ | ✅ | ✅ | ✅ |
-| Ver Dashboard Estatístico | ✅ | ❌ | ❌ | ❌ |
-
-> **Nota**: o MASTER pode executar qualquer ação no sistema. É o perfil com privilégios totais.
-
-## Fluxo de Acesso por Perfil no Frontend
+## Para onde cada perfil vai
 
 ```mermaid
 flowchart TB
     INICIO[Usuário acessa] --> LOGIN{Tem token?}
     LOGIN -->|Não| REDIRECT[Redireciona para /]
-    LOGIN -->|Sim| ME[GET /api/auth/me]
-    ME --> PERFIL{profileId?}
-    PERFIL -->|1 - Master| MASTER[/master]
-    PERFIL -->|2/3 - Diretor/Admin| DASHBOARD[/dashboard ou /classes]
-    PERFIL -->|4 - Professor| TEACHER[/classes ou /minhas-aulas]
-
-    style PERFIL fill:#FF9800
-    style MASTER fill:#9C27B0,color:#fff
-    style DASHBOARD fill:#673AB7,color:#fff
-    style TEACHER fill:#3F51B5,color:#fff
+    LOGIN -->|Sim| DASH[/dashboard]
+    DASH -->|MASTER| MASTER["link Área Master → /master"]
+    DASH -->|Coordenador| COORD["link Rede (município) → /master/escolas"]
+    DASH -->|Diretor/Auxiliar| ESCOLA["/escola/* (Professores, Prioridade, Jornada...)"]
+    DASH -->|Professor| TEACHER["/classes, /minhas-aulas, /minhas-preferencias"]
 ```
 
-## Guardas Implementadas
+## Guardas
 
 | Guarda | Arquivo | Comportamento |
 |--------|---------|---------------|
-| Proxy global | `src/proxy.ts` | Valida o JWT do cookie `token` (`jose.jwtVerify`); ausente/inválido → `/` |
-| Área master | `src/app/master/layout.tsx` | Apenas `PROFILE.MASTER` (4); sem sessão → `/`, perfil errado → `/dashboard` |
-| Página de aulas | `src/app/classes/page.tsx` | Não autenticado → `/`; master → `/master` |
-| Página minhas aulas | `src/app/minhas-aulas/page.tsx` | Não autenticado → `/`; master → `/master` |
+| Proxy global | `src/proxy.ts` | Valida o JWT do cookie `token`; ausente/inválido → `/` |
+| Área master | `src/app/master/layout.tsx` | MASTER: tudo. Coordenador: só `COORDINATOR_MASTER_ROUTES` (fora delas → `/master/escolas`), com o menu "Coordenação Municipal". Demais → `/dashboard` |
+| Área da escola | `src/app/escola/layout.tsx` | MASTER ou gestão de escola (inclui o coordenador); professor → `/dashboard` |
+| Aulas / minhas aulas | `src/app/classes/page.tsx`, `src/app/minhas-aulas/page.tsx` | Sem sessão → `/`; MASTER → `/master` |

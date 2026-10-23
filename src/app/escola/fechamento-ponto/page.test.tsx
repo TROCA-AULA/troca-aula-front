@@ -5,7 +5,6 @@ import { useSchoolContext } from '@/contexts/SchoolContext';
 import { useMonthlyClosingReports } from '@/hooks/useMonthlyClosingReports';
 import { useTeachers } from '@/hooks/useTeachers';
 import { downloadPdfTable } from '@/utils/pdf';
-import { workloadTypeName } from '@/types/workload';
 
 vi.mock('@/contexts/SchoolContext', () => ({ useSchoolContext: vi.fn() }));
 vi.mock('@/hooks/useMonthlyClosingReports', () => ({
@@ -14,14 +13,6 @@ vi.mock('@/hooks/useMonthlyClosingReports', () => ({
 vi.mock('@/hooks/useTeachers', () => ({ useTeachers: vi.fn() }));
 vi.mock('@/utils/pdf', () => ({ downloadPdfTable: vi.fn() }));
 
-const actualWorkload = vi.hoisted(() => ({
-  name: undefined as ((id: number) => string) | undefined,
-}));
-vi.mock('@/types/workload', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/types/workload')>();
-  actualWorkload.name = actual.workloadTypeName;
-  return { ...actual, workloadTypeName: vi.fn(actual.workloadTypeName) };
-});
 
 const reviewReport = vi.fn();
 const closeReport = vi.fn();
@@ -70,7 +61,6 @@ function mockReports(reports: unknown[], loading = false) {
 describe('FechamentoPontoPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(workloadTypeName).mockImplementation((id: number) => actualWorkload.name!(id));
     vi.mocked(useTeachers).mockReturnValue({
       linkedTeachers: [{ id: 7, name: 'Maria', email: 'm@e.com', profileId: 3, totalSubstitutions: 0 }],
       availableTeachers: [],
@@ -227,7 +217,7 @@ describe('FechamentoPontoPage', () => {
           headers: ['Tipo de carga', 'Horas'],
           rows: expect.arrayContaining([
             ['Total', '6h'],
-            [expect.stringContaining('Tipo #'), '6h'],
+            ['Carga suplementar', '6h'],
           ]),
         }),
       ),
@@ -270,14 +260,15 @@ describe('FechamentoPontoPage', () => {
     expect(screen.getByText('Revisar')).toBeInTheDocument();
   });
 
-  it('usa a chave crua quando o tipo de carga não tem nome amigável', async () => {
-    vi.mocked(workloadTypeName).mockImplementation(() => '');
+  it('mostra o nome do tipo de carga, e a chave crua só se o tipo for desconhecido (D17)', async () => {
     mockSchool(4);
-    mockReports([draftReport]);
+    mockReports([{ ...draftReport, workloadBreakdown: { SUPLEMENTAR: 6, OUTRO: 2, total: 8 } }]);
 
     render(<FechamentoPontoPage />);
 
-    expect(screen.getByText('SUPLEMENTAR')).toBeInTheDocument();
+    expect(screen.getByText('Carga suplementar')).toBeInTheDocument();
+    expect(screen.getByText('OUTRO')).toBeInTheDocument();
+    expect(screen.queryByText(/Tipo #/)).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByText('Baixar PDF'));
 
@@ -285,7 +276,7 @@ describe('FechamentoPontoPage', () => {
       expect(downloadPdfTable).toHaveBeenCalledWith(
         expect.any(String),
         expect.objectContaining({
-          rows: expect.arrayContaining([['SUPLEMENTAR', '6h']]),
+          rows: expect.arrayContaining([['OUTRO', '2h']]),
         }),
       ),
     );

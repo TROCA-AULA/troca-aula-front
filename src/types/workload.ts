@@ -8,6 +8,21 @@ export function workloadTypeName(id: number): string {
   return WORKLOAD_TYPES.find((w) => w.id === id)?.name ?? `Tipo #${id}`;
 }
 
+// Rótulo de uma linha do `workloadBreakdown` do fechamento. O backend usa o
+// CÓDIGO do tipo como chave ("SUPLEMENTAR"), não o id — converter para
+// número dava "Tipo #NaN" (defeito D17).
+export function workloadBreakdownLabel(key: string): string {
+  if (key === 'total') return 'Total';
+  const byCode = WORKLOAD_TYPES.find((w) => w.code === key);
+  if (byCode) return byCode.name;
+  const id = Number(key);
+  if (Number.isInteger(id)) {
+    const byId = WORKLOAD_TYPES.find((w) => w.id === id);
+    if (byId) return byId.name;
+  }
+  return key;
+}
+
 export interface TeacherWorkloadRecord {
   id: number;
   userId: number;

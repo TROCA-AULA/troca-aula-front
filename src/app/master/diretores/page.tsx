@@ -22,8 +22,8 @@ import { SkeletonRows } from '@/components/ui/Skeleton';
 
 const AddButton = styled.button`
   padding: 10px 20px;
-  background-color: #1e3a5f;
-  color: white;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -32,11 +32,11 @@ const AddButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #2a4a73;
+    background-color: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
@@ -49,22 +49,22 @@ const ActionButton = styled.button`
   cursor: margin-right: 8px;
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
 
 const UnlinkButton = styled(ActionButton)`
-  background-color: #fff3e0;
-  color: #e65100;
+  background-color: ${({ theme }) => theme.colors.warningBg};
+  color: ${({ theme }) => theme.colors.warning};
 
   &:hover {
-    background-color: #ffe0b2;
+    background-color: ${({ theme }) => theme.colors.warningBorder};
   }
 `;
 
 export default function DiretoresPage() {
-  const { users, loading, unlinkUser } = useUsers(PROFILE.DIRETOR);
+  const { users, loading, unlinkUser, refetch } = useUsers(PROFILE.DIRETOR);
   const { schools } = useSchools();
   const [formOpen, setFormOpen] = useState(false);
   const [unlinkConfirm, setUnlinkConfirm] = useState<User | null>(null);
@@ -140,6 +140,7 @@ export default function DiretoresPage() {
         profileId={PROFILE.DIRETOR}
         schools={schools}
         onClose={() => setFormOpen(false)}
+        onCreated={refetch}
       />
 
       <ConfirmModal

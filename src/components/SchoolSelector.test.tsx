@@ -1,9 +1,14 @@
-import { render, screen, fireEvent } from '@/test-utils';
+import { render, screen, fireEvent, waitFor } from '@/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SchoolSelector } from './SchoolSelector';
 import { useSchoolContext } from '@/contexts/SchoolContext';
 
+import { schoolsService } from '@/services/schools.service';
+
 vi.mock('@/contexts/SchoolContext', () => ({ useSchoolContext: vi.fn() }));
+vi.mock('@/services/schools.service', () => ({
+  schoolsService: { getSchools: vi.fn() },
+}));
 
 const setActiveSchoolId = vi.fn();
 
@@ -24,6 +29,27 @@ function mockContext(schoolLinks: unknown[], activeSchoolId: number | null) {
 describe('SchoolSelector', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(schoolsService.getSchools).mockRejectedValue(new Error('offline'));
+  });
+
+  it('mostra o nome das escolas quando a API responde (coordenador)', async () => {
+    vi.mocked(schoolsService.getSchools).mockResolvedValue([
+      { id: 10, name: 'EMEF Alfa' },
+      { id: 20, name: 'EMEF Beta' },
+    ] as any);
+    mockContext(
+      [
+        { schoolId: 10, profileId: 5, approvedAt: '2026-01-01' },
+        { schoolId: 20, profileId: 5, approvedAt: '2026-01-01' },
+      ],
+      10,
+    );
+    render(<SchoolSelector />);
+
+    await waitFor(() =>
+      expect(screen.getByRole('option', { name: 'EMEF Beta' })).toBeInTheDocument(),
+    );
+    expect(screen.getByRole('option', { name: 'EMEF Alfa' })).toBeInTheDocument();
   });
 
   it('não renderiza nada quando o usuário não tem vínculos', () => {

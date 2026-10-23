@@ -7,6 +7,7 @@ import { useTeacherWorkloadRecords } from '@/hooks/useTeacherWorkloadRecords';
 import { useTeachers } from '@/hooks/useTeachers';
 import { workloadTypeName } from '@/types/workload';
 import { WorkloadRecordForm } from './components/WorkloadRecordForm';
+import { formatDateOnly } from '@/utils/date';
 
 const PageContainer = styled.div`
   padding: 24px;
@@ -22,14 +23,14 @@ const PageHeader = styled.div`
 const PageTitle = styled.h1`
   font-size: 24px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
   margin: 0;
 `;
 
 const AddButton = styled.button`
   padding: 10px 20px;
-  background-color: #1e3a5f;
-  color: white;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -37,39 +38,39 @@ const AddButton = styled.button`
   cursor: pointer;
 
   &:hover {
-    background-color: #2a4a73;
+    background-color: ${({ theme }) => theme.colors.primaryHover};
   }
 `;
 
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   border-radius: 8px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: ${({ theme }) => theme.shadow.card};
 `;
 
 const Th = styled.th`
   text-align: left;
   padding: 16px;
-  background-color: #f8f9fa;
+  background-color: ${({ theme }) => theme.colors.tableHeader};
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.colors.tableHeaderText};
   font-size: 14px;
 `;
 
 const Td = styled.td`
   padding: 16px;
-  border-bottom: 1px solid #eee;
-  color: #666;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLight};
+  color: ${({ theme }) => theme.colors.textMuted};
   font-size: 14px;
 `;
 
 const EmptyState = styled.div`
   text-align: center;
   padding: 48px;
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
 
 export default function JornadaDocentePage() {
@@ -130,8 +131,8 @@ export default function JornadaDocentePage() {
                 <Td>{workloadTypeName(r.workloadTypeId)}</Td>
                 <Td>{r.hours}h</Td>
                 <Td>
-                  {new Date(r.validFrom).toLocaleDateString('pt-BR')}
-                  {r.validTo ? ` até ${new Date(r.validTo).toLocaleDateString('pt-BR')}` : ' (sem fim)'}
+                  {formatDateOnly(r.validFrom)}
+                  {r.validTo ? ` até ${formatDateOnly(r.validTo)}` : ' (sem fim)'}
                 </Td>
                 <Td>{r.ataOficialRef ?? '-'}</Td>
               </tr>

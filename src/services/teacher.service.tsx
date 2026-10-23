@@ -5,7 +5,12 @@
 // ver src/api-client.service.tsx).
 import api from '@/api-client.service';
 import { PROFILE } from '@/constants/profile';
-import { Teacher, EnrollmentRequest } from '@/types/teacher';
+import {
+  Teacher,
+  EnrollmentRequest,
+  TeacherSearchResult,
+  UpdateTeacherRequest,
+} from '@/types/teacher';
 
 // `GET /users` agora aceita filtros reais de query (`schoolId`, `profileId`,
 // via UsersProfilesSchools) — corrigido no backend como parte do P15. O
@@ -19,6 +24,9 @@ interface RawTeacher {
   id: number;
   name: string;
   email: string;
+  phone?: string | null;
+  subjectId?: number | null;
+  substitutionLimitPerSemester?: number | null;
   subject?: Teacher['subject'];
   totalSubstitutions?: number;
   upsUser?: RawUpsLink[];
@@ -33,9 +41,12 @@ function flattenTeacher(raw: RawTeacher, schoolId?: number): Teacher {
     id: raw.id,
     name: raw.name,
     email: raw.email,
+    phone: raw.phone ?? null,
     schoolId: link ? link.schoolId : null,
     profileId: link?.profileId ?? PROFILE.PROFESSOR,
     subject: raw.subject ?? null,
+    subjectId: raw.subjectId ?? null,
+    substitutionLimitPerSemester: raw.substitutionLimitPerSemester ?? null,
     totalSubstitutions: raw.totalSubstitutions ?? 0,
   };
 }
@@ -62,6 +73,30 @@ export const teacherService = {
     return raw
       .map((t) => flattenTeacher(t))
       .filter((teacher) => teacher.schoolId !== schoolId);
+  },
+
+  // Busca exata por e-mail — é assim que a direção acha um professor que
+  // acabou de se cadastrar (o backend não deixa gestor listar todo mundo).
+  async findByEmail(email: string): Promise<TeacherSearchResult | null> {
+    const response = await api.get('/users', {
+      params: { email: email.trim() },
+    });
+    const raw: RawTeacher[] = response.data?.data ?? response.data ?? [];
+    const found = raw[0];
+    if (!found) return null;
+    return {
+      id: found.id,
+      name: found.name,
+      email: found.email,
+      subjectId: found.subjectId ?? null,
+      schoolIds: found.upsUser?.map((link) => link.schoolId),
+    };
+  },
+
+  // Disciplina e limite de substituições (D6/D9). O backend só deixa a
+  // direção mudar professor com vínculo aprovado na escola dela.
+  async updateTeacher(userId: number, data: UpdateTeacherRequest): Promise<void> {
+    await api.patch(`/users/${userId}`, data);
   },
 
   // Vincular = assign-profile com perfil PROFESSOR (guardado por

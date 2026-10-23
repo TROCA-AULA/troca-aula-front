@@ -13,7 +13,7 @@ Variáveis usadas pelo frontend.
 ## `.env.local` atual (projeto)
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
 ## Como configurar
@@ -22,7 +22,7 @@ Crie `.env.local` na raiz do projeto:
 
 ```env
 # URL do backend NestJS
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:5000
 
 # Segredo do JWT (deve coincidir com o backend)
 SECRET=s0//P4$$w0rD

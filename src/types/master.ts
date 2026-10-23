@@ -7,11 +7,9 @@ export interface School {
   // agora vem de WorkloadPolicies por rede (Design Doc, Fase 2). Continua
   // no tipo só para exibição (dado histórico), nunca enviado nas requests.
   substitutionLimitPerSemester: number | null;
-  // Design Doc, Seção 9.2: horas que uma vaga fica visível só para
-  // professores vinculados a esta escola antes de abrir geral. null = sem
-  // janela. Configurado via endpoint dedicado (updatePriorityWindow), não
-  // pelo PATCH /schools/:id genérico.
-  priorityWindowHours: number | null;
+  // Obsoleto: a janela de prioridade em horas foi trocada pelos grupos de
+  // prioridade da escola. A coluna ainda vem do backend, mas não é usada.
+  priorityWindowHours?: number | null;
   createdAt: string;
 }
 
@@ -33,12 +31,12 @@ export interface User {
   createdAt: string;
 }
 
-// Retornado só pelo fluxo de criação (masterService.createUser) — o backend
-// não tem convite/definição de senha por e-mail hoje, então uma senha
-// temporária é gerada no cliente e precisa ser repassada manualmente pelo
-// Master a quem foi cadastrado. Ver P15 em problemas-conhecidos.md.
+// Retornado só pelo fluxo de criação (masterService.createUser). A senha
+// temporária vem do servidor (reset-password), que também a envia por
+// e-mail quando há SMTP configurado (emailSent).
 export interface CreatedUser extends User {
   tempPassword: string;
+  emailSent?: boolean;
 }
 
 export interface CreateSchoolRequest {
@@ -159,4 +157,22 @@ export interface ApiState<T> {
   data: T | null;
   status: RequestStatus;
   error: string | null;
+}
+
+// PATCH /users/:id — só dados de cadastro (sem senha, escola ou perfil).
+export interface UpdateUserRequest {
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
+// Coordenador municipal: pessoa ↔ rede (município). Gerido só pelo MASTER.
+export interface NetworkCoordinator {
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userPhone: string | null;
+  networkId: number;
+  networkName: string | null;
+  approvedAt: string | null;
 }

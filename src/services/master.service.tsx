@@ -17,19 +17,30 @@ import type {
   CreateWorkloadPolicyRequest,
   UpdateWorkloadPolicyRequest,
   AuditLogEntry,
+  NetworkCoordinator,
+  UpdateUserRequest,
 } from '@/types/master';
+import type { Subject } from '@/types/teacher';
 
 // O backend não tem fluxo de convite/definição de senha por e-mail — gera
 // uma senha temporária forte o bastante para passar na validação do
 // servidor, que o Master precisa repassar manualmente à pessoa cadastrada.
-function generateTempPassword(): string {
-  const bytes = new Uint8Array(9);
+// Sempre 12 caracteres (o backend exige no mínimo 8). Antes, o base64 com
+// os símbolos removidos podia ficar mais curto.
+const TEMP_PASSWORD_ALPHABET =
+  'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+
+export function generateTempPassword(): string {
+  const bytes = new Uint8Array(12);
   if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
     crypto.getRandomValues(bytes);
   } else {
     for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
   }
-  return btoa(String.fromCharCode(...bytes)).replace(/[+/=]/g, '').slice(0, 12);
+  return Array.from(
+    bytes,
+    (byte) => TEMP_PASSWORD_ALPHABET[byte % TEMP_PASSWORD_ALPHABET.length],
+  ).join('');
 }
 
 // O `GET /users` real devolve cada usuário com `upsUser: [{schoolId,
@@ -130,19 +141,6 @@ export const masterService = {
     await api.delete(`/schools/${id}`);
   },
 
-  // Endpoint dedicado (não faz parte do PATCH /schools/:id genérico) -
-  // DIRETOR/AUXILIAR_ADMIN da própria escola também podem chamar, não só
-  // MASTER (Design Doc, Seção 9.2: "cada escola tem sua regra").
-  updateSchoolPriorityWindow: async (
-    id: number,
-    priorityWindowHours: number | null,
-  ): Promise<School> => {
-    const response = await api.patch(`/schools/${id}/priority-window`, {
-      priorityWindowHours,
-    });
-    return response.data?.data ?? response.data;
-  },
-
   // Rastreabilidade (MASTER-only no backend, RolesGuard) - só por rede
   // (não existe "listar tudo"; a rede é o recorte natural de auditoria).
   getAuditLogByNetwork: async (networkId: number): Promise<AuditLogEntry[]> => {
@@ -187,6 +185,8 @@ export const masterService = {
       );
     }
 
+    const issued = await masterService.issueTempPassword(user.id, tempPassword);
+
     return {
       id: user.id,
       name: user.name,
@@ -195,11 +195,31 @@ export const masterService = {
       schoolId: data.schoolId,
       profileId: data.profileId,
       createdAt: user.createdAt,
-      tempPassword,
+      ...issued,
     };
   },
 
-  updateUser: async (id: number, data: Partial<CreateUserRequest>): Promise<User> => {
+  /**
+   * Gera no servidor a senha temporária de uma conta recém-criada: o
+   * servidor a envia por e-mail quando há SMTP. Se a chamada falhar, fica
+   * valendo a senha usada na criação (e o gestor repassa).
+   */
+  issueTempPassword: async (
+    userId: number,
+    fallbackPassword: string,
+  ): Promise<{ tempPassword: string; emailSent: boolean }> => {
+    try {
+      const response = await api.post(`/users/${userId}/reset-password`);
+      const body = response?.data?.data ?? response?.data;
+      if (!body?.tempPassword) return { tempPassword: fallbackPassword, emailSent: false };
+      return { tempPassword: body.tempPassword, emailSent: Boolean(body.emailSent) };
+    } catch {
+      return { tempPassword: fallbackPassword, emailSent: false };
+    }
+  },
+
+  // Defeito D1: o PATCH /users/:id não aceita mais senha (nem escola/perfil).
+  updateUser: async (id: number, data: UpdateUserRequest): Promise<User> => {
     const response = await api.patch(`/users/${id}`, data);
     return response.data?.data ?? response.data;
   },
@@ -209,6 +229,86 @@ export const masterService = {
   // esse campo no UpdateUserDto).
   unlinkUser: async (id: number, profileId: number, schoolId: number): Promise<void> => {
     await api.post(`/users/${id}/unassign-profile`, { profileId, schoolId });
+  },
+
+  // ---- Catálogo global de disciplinas (escrita só do MASTER) ----
+
+  getSubjects: async (): Promise<Subject[]> => {
+    const response = await api.get('/subjects');
+    const list: Subject[] = response.data?.data ?? response.data ?? [];
+    return [...list].sort((x, y) => x.name.localeCompare(y.name, 'pt-BR'));
+  },
+
+  createSubject: async (name: string): Promise<Subject> => {
+    const response = await api.post('/subjects', { name: name.trim() });
+    return response.data?.data ?? response.data;
+  },
+
+  renameSubject: async (id: number, name: string): Promise<Subject> => {
+    const response = await api.patch(`/subjects/${id}`, { name: name.trim() });
+    return response.data?.data ?? response.data;
+  },
+
+  // Exclusão lógica: some das listas, mas quem já tinha a disciplina mantém
+  // o vínculo antigo até o gestor trocar.
+  deleteSubject: async (id: number): Promise<void> => {
+    await api.delete(`/subjects/${id}`);
+  },
+
+  // ---- Coordenador municipal (MASTER-only no backend) ----
+
+  getCoordinators: async (): Promise<NetworkCoordinator[]> => {
+    const response = await api.get('/network-coordinators');
+    return response.data?.data ?? response.data;
+  },
+
+  // Busca exata por e-mail — para vincular quem já tem cadastro.
+  findUserByEmail: async (
+    email: string,
+  ): Promise<{ id: number; name: string; email: string } | null> => {
+    const response = await api.get('/users', { params: { email: email.trim() } });
+    const raw: RawUser[] = response.data?.data ?? response.data ?? [];
+    return raw[0] ? { id: raw[0].id, name: raw[0].name, email: raw[0].email } : null;
+  },
+
+  /**
+   * Torna a pessoa coordenadora da rede. Se o e-mail ainda não tem
+   * cadastro, cria a conta com senha temporária (devolvida uma única vez).
+   */
+  addCoordinator: async (data: {
+    name: string;
+    email: string;
+    phone: string;
+    networkId: number;
+  }): Promise<{
+    userId: number;
+    created: boolean;
+    tempPassword?: string;
+    emailSent?: boolean;
+  }> => {
+    const existing = await masterService.findUserByEmail(data.email);
+    let userId = existing?.id;
+    let tempPassword: string | undefined;
+    if (!userId) {
+      tempPassword = generateTempPassword();
+      const created = await api.post('/users', {
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: tempPassword,
+      });
+      userId = (created.data?.data ?? created.data).id as number;
+    }
+    await api.post('/network-coordinators', { userId, networkId: data.networkId });
+    if (!existing && tempPassword) {
+      const issued = await masterService.issueTempPassword(userId, tempPassword);
+      return { userId, created: true, ...issued };
+    }
+    return { userId, created: !existing, tempPassword };
+  },
+
+  removeCoordinator: async (userId: number, networkId: number): Promise<void> => {
+    await api.delete(`/network-coordinators/${userId}/${networkId}`);
   },
 
   getClassesAvailable: async (): Promise<number> => {

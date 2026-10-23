@@ -195,11 +195,8 @@ describe('JornadaDocentePage', () => {
 
     expect(screen.getByText('Professor #99')).toBeInTheDocument();
     expect(
-      screen.getByText(
-        `${new Date('2026-01-01').toLocaleDateString('pt-BR')} até ${new Date(
-          '2026-06-30',
-        ).toLocaleDateString('pt-BR')}`,
-      ),
+      // D16: mostra o dia gravado, sem voltar 1 dia por causa do fuso.
+      screen.getByText('01/01/2026 até 30/06/2026'),
     ).toBeInTheDocument();
     expect(screen.getByText('ATA-2026-001')).toBeInTheDocument();
   });

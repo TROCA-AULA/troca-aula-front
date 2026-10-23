@@ -12,25 +12,11 @@ O limite de substituições (teto por semestre) controla quantas aulas aprovadas
 
 | Dado | Endpoint |
 |------|----------|
-| Limite do professor | `GET /users/:id` → `substitutionLimitPerSemester` |
-| Substituições aprovadas | `GET /enrollment-requests?userId=&status=APPROVED&createdAfter=<início do semestre>` |
+| Limite, contagem do semestre, percentual e "pode candidatar-se" | `GET /enrollment-requests/substitution-limit/:professorId` → `{current, limit, percentage, canApply}` |
+
+O cálculo é feito **no servidor** (correção P14): o semestre começa em 01/01 ou 01/07 pelo relógio do servidor, e a contagem considera só candidaturas `APPROVED` desde então. O front apenas exibe.
 
 ## Hook `useSubstitutionLimit` (`src/hooks/useSubstitutionLimit.ts`)
-
-### Semestre corrente
-
-```ts
-const getCurrentSemester = (): string => {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
-  if (month < 6) return `${year}-01-01`;
-  return `${year}-07-01`;
-};
-```
-
-- Janeiro–junho → início em `01/01`
-- Julho–dezembro → início em `01/07`
 
 ### Retorno
 
@@ -43,20 +29,17 @@ const getCurrentSemester = (): string => {
 | `loading` | boolean | Estado de carregamento |
 | `error` | string \| null | Mensagem de erro |
 
-## Cálculo
+## Cálculo (no servidor)
 
 ```mermaid
 flowchart TB
-    A[userId] --> B[GET /users/:id]
-    A --> C[GET /enrollment-requests<br/>status=APPROVED<br/>createdAfter=início semestre]
-    B --> D[limit]
-    C --> E[current]
-    D --> F{limit null ou 0?}
-    F -->|sim| G[percentage = 0, canApply = true]
-    F -->|não| H[percentage = current/limit*100]
-    H --> I{percentage < 100?}
-    I -->|sim| J[canApply = true]
-    I -->|não| K[canApply = false]
+    A[professorId] --> B[GET /enrollment-requests/substitution-limit/:professorId]
+    B --> C{limit nulo ou 0?}
+    C -->|sim| D[percentage = 0, canApply = true]
+    C -->|não| E[current = aprovadas desde o início do semestre]
+    E --> F{current < limit?}
+    F -->|sim| G[canApply = true]
+    F -->|não| H[canApply = false]
 ```
 
 ## Uso no Frontend
@@ -97,6 +80,6 @@ flowchart TB
 
 ## Pontos de Atenção
 
-1. O cálculo do semestre é feito **client-side** — depende do relógio do navegador.
+1. O cálculo do semestre é feito **no servidor** (P14) — não depende mais do relógio do navegador.
 2. O backend é a fonte de verdade; o bloqueio no frontend é apenas UX.
-3. `limit` vem do usuário (`substitutionLimitPerSemester`); o `SchoolForm` da área master permite definir o limite da escola — a relação exata usuário↔escola no cálculo é dependente do backend.
+3. `limit` vem do **professor** (`Users.substitutionLimitPerSemester`). Não existe tela nem rota da API para defini-lo — hoje só pelo banco (defeito D6 em `docs/status-funcionalidades.md`). A coluna homônima em `Schools` existe, mas não é usada no cálculo.

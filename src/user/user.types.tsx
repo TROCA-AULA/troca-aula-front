@@ -16,6 +16,10 @@ export interface UserData {
     id: number;
     name: string;
     email: string;
+    /** Disciplina do professor no momento do login (null = sem disciplina). */
+    subjectId?: number | null;
+    /** Município (rede) onde mora — só vale sem contrato em escola. */
+    residenceNetworkId?: number | null;
     /** Perfil no vínculo ativo (ver SchoolContext) — mantido para compatibilidade com código existente. */
     profileId?: number;
     /** Escola do vínculo ativo (ver SchoolContext) — mantido para compatibilidade com código existente. */

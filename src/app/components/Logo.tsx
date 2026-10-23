@@ -8,7 +8,7 @@ interface SetaProps {
 const Seta = styled.div<SetaProps>`
     width: 100%;
     height: 3px;
-    background-color: #636363;
+    background-color: ${({ theme }) => theme.colors.textMuted};
     position: absolute;
     bottom: 10px;
     &:after {
@@ -16,8 +16,8 @@ const Seta = styled.div<SetaProps>`
         display: block;
         width: 10px;
         height: 10px;
-        border-top: 3px solid #636363;
-        border-right: 3px solid #636363;
+        border-top: 3px solid ${({ theme }) => theme.colors.textMuted};
+        border-right: 3px solid ${({ theme }) => theme.colors.textMuted};
         transform: rotate(45deg);
         position: absolute;
         top: -5px;
@@ -25,7 +25,7 @@ const Seta = styled.div<SetaProps>`
     }
 
     ${({type}) => type==='inverse' && css`
-        background-color: #509BA1;
+        background-color: ${({ theme }) => theme.colors.brand};
         bottom: auto;
         top: 10px;
 
@@ -34,8 +34,8 @@ const Seta = styled.div<SetaProps>`
             display: block;
             width: 10px;
             height: 10px;
-            border-top: 3px solid #509BA1;
-            border-right: 3px solid #509BA1;
+            border-top: 3px solid ${({ theme }) => theme.colors.brand};
+            border-right: 3px solid ${({ theme }) => theme.colors.brand};
             transform: rotate(225deg);
             position: absolute;
             top: -5px;
@@ -50,7 +50,7 @@ const LogoMarca = styled.div`
     transform-origin: center center; /* Define o ponto de origem da transformação */
     position: relative;
     h1 {
-        color: #509BA1;
+        color: ${({ theme }) => theme.colors.brand};
         padding: 20px 0;
         position: relative;
         font-size: 30px;
@@ -58,7 +58,7 @@ const LogoMarca = styled.div`
         font-family: sans-serif;
         text-transform: uppercase;
         &:nth-child(2) {
-            color: #636363;
+            color: ${({ theme }) => theme.colors.textMuted};
         }
     }
 `

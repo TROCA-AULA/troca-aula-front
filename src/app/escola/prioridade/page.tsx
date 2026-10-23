@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { useSchoolContext } from '@/contexts/SchoolContext';
-import { useNetworks } from '@/hooks/useNetworks';
 import { useTeacherGroups } from '@/hooks/useEligibility';
 import { useTeachers } from '@/hooks/useTeachers';
 import {
@@ -15,11 +14,16 @@ import {
   LoadingState,
 } from '@/components/ui/AdminTable';
 import { SkeletonRows } from '@/components/ui/Skeleton';
+import { formatDelay } from '@/utils/delay';
 
-// Fase 5 (modelo definido com o stakeholder): a escola cria grupos de
-// professores com nome + tempo de espera. Quem está no grupo vê a vaga
-// após o delay do grupo; fora de grupo, após o delay padrão. O município
-// define para quais redes exibe as vagas e a escola pode restringir mais.
+// Grupos de prioridade (regra definida com o stakeholder):
+//  - a escola cria grupos com PRIORIDADE (0 = primeiro) e TEMPO DE ESPERA;
+//  - o professor do grupo de prioridade N vê a vaga a partir do tempo do
+//    grupo dele (prioridade 0 recebe primeiro);
+//  - escola SEM grupos: todo mundo vê a vaga na hora;
+//  - escola COM grupos: quem não está em grupo é o último a receber.
+// O município define para quais redes exibe as vagas e a escola pode
+// restringir mais.
 const Section = styled.section`
   background: ${({ theme }) => theme.colors.surface};
   border-radius: ${({ theme }) => theme.radius.lg};
@@ -100,7 +104,7 @@ const MemberOption = styled.label`
 const Button = styled.button`
   padding: 9px 16px;
   background: ${({ theme }) => theme.colors.primary};
-  color: white;
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: ${({ theme }) => theme.radius.lg};
   font-size: 14px;
@@ -112,7 +116,7 @@ const Button = styled.button`
   }
 
   &:disabled {
-    background: #ccc;
+    background: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
   }
 `;
@@ -127,6 +131,34 @@ const SecondaryButton = styled(Button)`
   }
 `;
 
+const Timeline = styled.ol`
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: ${({ theme }) => theme.colors.text};
+
+  li {
+    margin-bottom: 6px;
+  }
+`;
+
+const Badge = styled.span`
+  display: inline-block;
+  min-width: 28px;
+  padding: 2px 8px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+`;
+
+const SmallInput = styled(Input)`
+  width: 96px;
+`;
+
 const DangerButton = styled(SecondaryButton)`
   color: ${({ theme }) => theme.colors.danger};
   border-color: ${({ theme }) => theme.colors.danger};
@@ -134,6 +166,7 @@ const DangerButton = styled(SecondaryButton)`
 
 interface GroupDraft {
   name: string;
+  priority: number;
   delayMinutes: number;
   members: Set<number>;
 }
@@ -150,10 +183,10 @@ export default function PrioridadePage() {
     updateSettings,
   } = useTeacherGroups(activeSchoolId);
   const { linkedTeachers, fetchLinkedTeachers } = useTeachers(activeSchoolId ?? 0);
-  const { networks } = useNetworks();
 
   const [drafts, setDrafts] = useState<Record<number, GroupDraft>>({});
   const [newName, setNewName] = useState('');
+  const [newPriority, setNewPriority] = useState('');
   const [newDelay, setNewDelay] = useState(0);
   const [ungroupedDelay, setUngroupedDelay] = useState(0);
   const [accepted, setAccepted] = useState<Set<number>>(new Set());
@@ -169,6 +202,7 @@ export default function PrioridadePage() {
     for (const group of data.groups) {
       next[group.id] = {
         name: group.name,
+        priority: group.priority ?? 0,
         delayMinutes: group.delayMinutes,
         members: new Set(group.professorIds),
       };
@@ -189,15 +223,20 @@ export default function PrioridadePage() {
     }
   };
 
-  const toggleMember = (groupId: number, professorId: number) => {
+  const updateDraft = (groupId: number, patch: Partial<GroupDraft>) =>
     setDrafts((current) => {
       const draft = current[groupId];
       if (!draft) return current;
-      const members = new Set(draft.members);
-      if (members.has(professorId)) members.delete(professorId);
-      else members.add(professorId);
-      return { ...current, [groupId]: { ...draft, members } };
+      return { ...current, [groupId]: { ...draft, ...patch } };
     });
+
+  const toggleMember = (groupId: number, professorId: number) => {
+    const draft = drafts[groupId];
+    if (!draft) return;
+    const members = new Set(draft.members);
+    if (members.has(professorId)) members.delete(professorId);
+    else members.add(professorId);
+    updateDraft(groupId, { members });
   };
 
   const toggleAcceptedNetwork = (networkId: number) => {
@@ -209,9 +248,6 @@ export default function PrioridadePage() {
     });
   };
 
-  const networkName = (id: number) =>
-    networks.find((network) => network.id === id)?.name ?? `Rede #${id}`;
-
   if (!activeSchoolId) {
     return (
       <PageContainer>
@@ -221,7 +257,28 @@ export default function PrioridadePage() {
     );
   }
 
+  const groups = [...(data?.groups ?? [])].sort(
+    (a, b) => (a.priority ?? 0) - (b.priority ?? 0) || a.delayMinutes - b.delayMinutes,
+  );
+  const hasGroups = groups.length > 0;
   const allowedNetworkIds = data?.allowedNetworkIds ?? [];
+  const networkName = (id: number) =>
+    data?.allowedNetworks?.find((network) => network.id === id)?.name ?? `Rede #${id}`;
+
+  // Em quais grupos cada professor está (para avisar quando está em mais de
+  // um — vale o de MENOR prioridade).
+  const groupsOf = (professorId: number) =>
+    groups.filter((group) => group.professorIds.includes(professorId));
+
+  const ungroupedTeachers = hasGroups
+    ? linkedTeachers.filter((teacher) => groupsOf(teacher.id).length === 0)
+    : [];
+
+  const ungroupedWhen =
+    data?.ungroupedEffectiveDelayMinutes ??
+    (hasGroups
+      ? Math.max(ungroupedDelay, ...groups.map((group) => group.delayMinutes))
+      : 0);
 
   return (
     <PageContainer>
@@ -229,67 +286,94 @@ export default function PrioridadePage() {
         <div>
           <PageTitle>Prioridade de vagas</PageTitle>
           <PageSubtitle>
-            Grupos de professores da escola e o tempo de espera de cada um.
+            Quem recebe primeiro as vagas desta escola.
           </PageSubtitle>
         </div>
       </PageHeader>
 
       <Section>
+        <SectionTitle>Como funciona</SectionTitle>
+        <Hint>
+          Cada grupo tem uma prioridade (0 recebe primeiro) e um tempo de espera,
+          contado a partir da publicação da vaga. Sem grupos, todos os professores
+          veem a vaga na hora. Com grupos, quem não está em nenhum grupo é o último a
+          receber. Se um professor estiver em mais de um grupo, vale o de menor
+          prioridade.
+        </Hint>
+        {loading ? null : hasGroups ? (
+          <Timeline aria-label="Ordem de recebimento">
+            {groups.map((group) => (
+              <li key={group.id}>
+                <Badge>{group.priority ?? 0}</Badge>
+                <strong>{group.name}</strong> — vê {formatDelay(group.delayMinutes)}
+                {group.delayMinutes > 0 ? ' depois de publicada' : ''} (
+                {group.professorIds.length} professor(es))
+              </li>
+            ))}
+            <li>
+              <Badge>—</Badge>
+              <strong>Sem grupo</strong> — vê {formatDelay(ungroupedWhen)}
+              {ungroupedWhen > 0 ? ' depois de publicada' : ''} (
+              {ungroupedTeachers.length} professor(es) desta escola)
+            </li>
+          </Timeline>
+        ) : (
+          <Hint style={{ margin: 0 }}>
+            <strong>Esta escola não tem grupos:</strong> todos os professores veem
+            as vagas na hora.
+          </Hint>
+        )}
+      </Section>
+
+      <Section>
         <SectionTitle>Grupos de prioridade</SectionTitle>
         <Hint>
-          Quem está em um grupo vê a vaga depois do delay do grupo; quem não está em
-          nenhum grupo vê depois de {ungroupedDelay} minuto(s). Ex.: um grupo
-          &quot;Professores da casa&quot; com 0 minuto vê na hora; &quot;Menor
-          prioridade&quot; com 120 vê após 2h.
+          Um grupo de prioridade menor não pode esperar mais que um de prioridade
+          maior (ex.: prioridade 0 com 60 min e prioridade 1 com 30 min é recusado).
         </Hint>
 
         {loading ? (
           <LoadingState>
             <SkeletonRows />
           </LoadingState>
-        ) : (data?.groups.length ?? 0) === 0 ? (
-          <EmptyState>
-            Nenhum grupo criado — a escola está no modo de janela única
-            {data?.fallbackPriorityWindowHours != null
-              ? ` (${data.fallbackPriorityWindowHours}h)`
-              : ''}
-            .
-          </EmptyState>
+        ) : !hasGroups ? (
+          <EmptyState>Nenhum grupo criado — todos veem as vagas na hora.</EmptyState>
         ) : (
-          data?.groups.map((group) => {
+          groups.map((group) => {
             const draft = drafts[group.id];
             if (!draft) return null;
             return (
               <GroupCard key={group.id}>
                 <GroupHeader>
                   <FormGroup>
-                    <Label htmlFor={`name-${group.id}`}>Nome</Label>
-                    <Input
-                      id={`name-${group.id}`}
-                      value={draft.name}
+                    <Label htmlFor={`priority-${group.id}`}>Prioridade</Label>
+                    <SmallInput
+                      id={`priority-${group.id}`}
+                      type="number"
+                      min={0}
+                      value={draft.priority}
                       onChange={(e) =>
-                        setDrafts((current) => ({
-                          ...current,
-                          [group.id]: { ...draft, name: e.target.value },
-                        }))
+                        updateDraft(group.id, { priority: Number(e.target.value) })
                       }
                     />
                   </FormGroup>
                   <FormGroup>
-                    <Label htmlFor={`delay-${group.id}`}>Espera (minutos)</Label>
+                    <Label htmlFor={`name-${group.id}`}>Nome</Label>
                     <Input
+                      id={`name-${group.id}`}
+                      value={draft.name}
+                      onChange={(e) => updateDraft(group.id, { name: e.target.value })}
+                    />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label htmlFor={`delay-${group.id}`}>Espera (minutos)</Label>
+                    <SmallInput
                       id={`delay-${group.id}`}
                       type="number"
                       min={0}
                       value={draft.delayMinutes}
                       onChange={(e) =>
-                        setDrafts((current) => ({
-                          ...current,
-                          [group.id]: {
-                            ...draft,
-                            delayMinutes: Number(e.target.value),
-                          },
-                        }))
+                        updateDraft(group.id, { delayMinutes: Number(e.target.value) })
                       }
                     />
                   </FormGroup>
@@ -299,6 +383,7 @@ export default function PrioridadePage() {
                       run(() =>
                         updateGroup(group.id, {
                           name: draft.name,
+                          priority: draft.priority,
                           delayMinutes: draft.delayMinutes,
                         }),
                       )
@@ -319,16 +404,27 @@ export default function PrioridadePage() {
                   {linkedTeachers.length === 0 ? (
                     <Hint>Nenhum professor vinculado à escola ainda.</Hint>
                   ) : (
-                    linkedTeachers.map((teacher) => (
-                      <MemberOption key={teacher.id}>
-                        <input
-                          type="checkbox"
-                          checked={draft.members.has(teacher.id)}
-                          onChange={() => toggleMember(group.id, teacher.id)}
-                        />
-                        {teacher.name}
-                      </MemberOption>
-                    ))
+                    linkedTeachers.map((teacher) => {
+                      const others = groupsOf(teacher.id).filter(
+                        (other) => other.id !== group.id,
+                      );
+                      return (
+                        <MemberOption key={teacher.id}>
+                          <input
+                            type="checkbox"
+                            checked={draft.members.has(teacher.id)}
+                            onChange={() => toggleMember(group.id, teacher.id)}
+                          />
+                          {teacher.name}
+                          {others.length > 0 && (
+                            <small>
+                              {' '}
+                              (também em {others.map((other) => other.name).join(', ')})
+                            </small>
+                          )}
+                        </MemberOption>
+                      );
+                    })
                   )}
                 </MembersList>
                 <Row style={{ marginTop: 10, marginBottom: 0 }}>
@@ -358,8 +454,19 @@ export default function PrioridadePage() {
             />
           </FormGroup>
           <FormGroup>
+            <Label htmlFor="new-group-priority">Prioridade</Label>
+            <SmallInput
+              id="new-group-priority"
+              type="number"
+              min={0}
+              placeholder="próxima"
+              value={newPriority}
+              onChange={(e) => setNewPriority(e.target.value)}
+            />
+          </FormGroup>
+          <FormGroup>
             <Label htmlFor="new-group-delay">Espera (minutos)</Label>
-            <Input
+            <SmallInput
               id="new-group-delay"
               type="number"
               min={0}
@@ -371,8 +478,13 @@ export default function PrioridadePage() {
             disabled={busy || newName.trim().length === 0}
             onClick={() =>
               run(async () => {
-                await createGroup(newName.trim(), newDelay);
+                await createGroup(
+                  newName.trim(),
+                  newDelay,
+                  newPriority.trim() === '' ? undefined : Number(newPriority),
+                );
                 setNewName('');
+                setNewPriority('');
                 setNewDelay(0);
               })
             }
@@ -395,7 +507,7 @@ export default function PrioridadePage() {
         <Row>
           <FormGroup>
             <Label htmlFor="ungrouped-delay">
-              Espera de quem não está em grupo (minutos)
+              Espera mínima de quem não está em grupo (minutos)
             </Label>
             <Input
               id="ungrouped-delay"
@@ -406,6 +518,10 @@ export default function PrioridadePage() {
             />
           </FormGroup>
         </Row>
+        <Hint>
+          Só vale quando a escola tem grupos: quem está sem grupo recebe depois do
+          último grupo, ou depois desta espera, se ela for maior.
+        </Hint>
 
         {allowedNetworkIds.length > 0 && (
           <MembersList>

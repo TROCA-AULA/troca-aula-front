@@ -29,23 +29,23 @@ const FilterBar = styled.div`
 
 const FilterLabel = styled.label`
   font-size: 14px;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
   font-weight: 500;
 `;
 
 const Select = styled.select`
   padding: 8px 12px;
-  border: 1px solid #ddd;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
   border-radius: 6px;
   font-size: 14px;
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   min-width: 260px;
 `;
 
 const AddButton = styled.button`
   padding: 10px 20px;
-  background-color: #1e3a5f;
-  color: white;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -54,11 +54,11 @@ const AddButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #2a4a73;
+    background-color: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
@@ -70,15 +70,15 @@ const ActionButton = styled.button`
   font-size: 12px;
   cursor: pointer;
   margin-right: 8px;
-  background-color: #e3f2fd;
-  color: #1976d2;
+  background-color: ${({ theme }) => theme.colors.primarySoft};
+  color: ${({ theme }) => theme.colors.primary};
 
   &:hover {
-    background-color: #bbdefb;
+    background-color: ${({ theme }) => theme.colors.primarySoftHover};
   }
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;

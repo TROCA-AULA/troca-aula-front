@@ -53,9 +53,16 @@ export function useProfessorPreferences() {
     await refetch();
   };
 
+  const setResidence = async (userId: number, networkId: number | null) => {
+    await eligibilityService.setResidence(userId, networkId);
+    toast.success(networkId ? 'Município onde mora atualizado' : 'Município onde mora removido');
+    await refetch();
+  };
+
   return {
     preferences,
     loading,
+    setResidence,
     addNetworkInterest,
     removeNetworkInterest,
     addSchoolExclusion,
@@ -83,11 +90,17 @@ export function useTeacherGroups(schoolId: number | null) {
     refetch();
   }, [refetch]);
 
-  const createGroup = async (name: string, delayMinutes: number) => {
+  // priority omitido = o backend coloca o grupo depois do último.
+  const createGroup = async (
+    name: string,
+    delayMinutes: number,
+    priority?: number,
+  ) => {
     if (!schoolId) return;
     const updated = await eligibilityService.createTeacherGroup(schoolId, {
       name,
       delayMinutes,
+      ...(priority !== undefined ? { priority } : {}),
     });
     setData(updated);
     toast.success('Grupo criado');
@@ -96,7 +109,7 @@ export function useTeacherGroups(schoolId: number | null) {
 
   const updateGroup = async (
     groupId: number,
-    payload: { name?: string; delayMinutes?: number },
+    payload: { name?: string; delayMinutes?: number; priority?: number },
   ) => {
     if (!schoolId) return;
     const updated = await eligibilityService.updateTeacherGroup(

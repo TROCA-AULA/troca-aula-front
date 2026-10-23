@@ -80,6 +80,21 @@ describe('Login Page (Home)', () => {
         });
     });
 
+    it('backend fora do ar avisa que o serviço está indisponível', async () => {
+        (global.fetch as any).mockResolvedValue({ ok: false, status: 503 });
+
+        render(<Home />);
+
+        fireEvent.change(screen.getByPlaceholderText('e-mail'), { target: { value: 'test@example.com' } });
+        fireEvent.change(screen.getByPlaceholderText('senha'), { target: { value: 'password123' } });
+
+        fireEvent.click(screen.getByText('Entrar'));
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Serviço indisponível. Tente de novo em instantes.');
+        });
+    });
+
     it('login fetch throws error', async () => {
         (global.fetch as any).mockRejectedValue(new Error('Network error'));
 

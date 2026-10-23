@@ -86,7 +86,8 @@ describe('NetworkForm', () => {
     createNetwork.mockResolvedValue({ id: 1 });
     const onClose = vi.fn();
 
-    render(<NetworkForm open mode="create" onClose={onClose} />);
+    const onSaved = vi.fn();
+    render(<NetworkForm open mode="create" onClose={onClose} onSaved={onSaved} />);
 
     fireEvent.change(screen.getByLabelText('Nome *'), {
       target: { value: 'Rede Nova' },
@@ -96,6 +97,7 @@ describe('NetworkForm', () => {
     await waitFor(() => {
       expect(createNetwork).toHaveBeenCalledWith({ name: 'Rede Nova' });
       expect(onClose).toHaveBeenCalledTimes(1);
+      expect(onSaved).toHaveBeenCalledTimes(1);
     });
     expect(updateNetwork).not.toHaveBeenCalled();
   });

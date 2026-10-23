@@ -8,7 +8,7 @@ Interface web do **Troca Aula**, plataforma para gerenciamento de substituiçõe
 - **styled-components** (tema central em `src/styles/theme.ts`)
 - **axios** — chamadas do navegador via proxy interno (`/api/proxy/*`), que anexa o cookie `httpOnly` de sessão
 - **react-hook-form + yup**, **react-toastify**
-- **Vitest + Testing Library** (170 testes)
+- **Vitest + Testing Library** (619 testes, cobertura mínima de 90% no CI)
 
 ## Como rodar
 
@@ -16,14 +16,15 @@ Pré-requisito: backend rodando (ver `../troca-aula-backend/README.md`).
 
 ```bash
 pnpm install
-cp .env.example .env.local   # se aplicável; aponte para o backend
+echo "NEXT_PUBLIC_API_URL=http://localhost:5000" > .env.local   # aponta para o backend
 pnpm dev                     # http://localhost:3000
 ```
 
 Comandos úteis:
 
 ```bash
-pnpm test        # Vitest
+pnpm test        # Vitest (unitários)
+pnpm run e2e     # Playwright: telas + backend + banco reais (ver e2e/README.md)
 pnpm run lint    # ESLint (flat config do Next 16)
 pnpm run build   # build de produção
 ```

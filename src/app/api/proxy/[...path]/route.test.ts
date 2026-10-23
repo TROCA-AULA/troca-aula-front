@@ -147,6 +147,6 @@ describe('GET/POST/PATCH/PUT/DELETE /api/proxy/[...path]', () => {
 
     expect(res.status).toBe(502);
     await expect(res.json()).resolves.toEqual({ error: 'Erro ao comunicar com o backend.' });
-    expect(console.error).toHaveBeenCalledWith(expect.any(Error));
+    expect(console.error).toHaveBeenCalledWith('[proxy]', 'queda de rede');
   });
 });

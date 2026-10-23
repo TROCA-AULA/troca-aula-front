@@ -38,7 +38,7 @@ Lista consolidada de problemas identificados na análise do frontend.
 ### P15 — Módulo de vínculo/criação de professores fora de contrato com o backend atual — ✅ Corrigido
 - **Backend**: `GET /users` ganhou filtros reais opcionais `schoolId`/`profileId` (via `UsersProfilesSchools`, compatível retroativamente sem eles). Novo endpoint `POST /users/:id/unassign-profile` (contraparte de `assign-profile`, mesmas guardas `TenantGuard`+`RolesGuard`). **Bug adicional encontrado e corrigido**: `assign-profile` nunca setava `approvedAt`/`approvedById` — o vínculo criado nunca era considerado aprovado pelo `TenantContextService`, ou seja, o endpoint não concedia acesso nenhum na prática; agora o vínculo nasce aprovado com `approvedById` = quem chamou (validado end-to-end contra Postgres real).
 - **Frontend**: `masterService.createUser` virou dois passos (`POST /users` com senha temporária gerada no cliente → `POST /users/:id/assign-profile`); se o segundo passo falhar, o erro é explícito (usuário criado mas sem vínculo). `teacherService.linkTeacher`/`unlinkTeacher` chamam `assign-profile`/`unassign-profile`. `getLinkedTeachers`/`getAvailableTeachers`/`getUsers` agora usam os filtros reais do servidor e achatam o shape `upsUser: [...]` da API para os tipos `Teacher`/`User` (campos planos `schoolId`/`profileId`) que as telas esperam.
-- **Limitação aceita**: não há fluxo de convite/definição de senha por e-mail no backend — a senha temporária gerada precisa ser repassada manualmente pelo Master (mostrada em toast ao criar). Registrar como melhoria futura se o produto quiser um fluxo de convite de verdade.
+- **Atualização 23/10/2026**: a senha temporária agora é gerada no servidor (`reset-password`) e enviada por e-mail quando há SMTP; o toast avisa se o e-mail saiu e mostra a senha para repassar quando não sai.
 - **Arquivos**: `troca-aula-backend/src/modules/users/{users.controller,users.service,users.repository}.ts` (+specs), `src/services/teacher.service.tsx`, `src/services/master.service.tsx`, `src/hooks/useTeachers.ts`, `src/hooks/useUsers.ts`, `src/types/master.ts` (+specs).
 
 ### P16 — Janela de prioridade não era aplicada na tela real de "Aulas Disponíveis" — ✅ Corrigido
@@ -46,6 +46,35 @@ Lista consolidada de problemas identificados na análise do frontend.
 - **Corrigido**: `ClassesController.findAll` agora sempre injeta `req.user.id` como `userId`, nunca aceita do cliente — reproduzido e confirmado corrigido via `curl` real (professor vinculado vê a vaga, professor externo não vê mais, mesmo sem passar `userId` manualmente).
 - **Efeito colateral encontrado e também corrigido antes de subir**: como isso faz `ClassesService.findAll` passar a rodar para TODO chamador (antes só rodava quando `userId` calhava de vir na query), um bug latente separado apareceu — o ramo que existia ali tratava MASTER igual a um gestor comum (DIRETOR/AUXILIAR_ADMIN), escopando-o ao `schoolId` do primeiro vínculo dele. Isso teria feito o próprio MASTER (que tem um vínculo formal na escola do bootstrap) parar de ver aulas de qualquer outra escola/rede na listagem global. Corrigido: MASTER agora é tratado num ramo separado, sem nenhum escopo de escola forçado.
 - **Arquivos**: `troca-aula-backend/src/modules/classes/{classes.controller.ts,classes.service.ts,classes.service.spec.ts,classes.controller.spec.ts}`.
+
+### P17 — "Sair" escondido atrás do conteúdo no painel — ✅ Corrigido (23/10, achado pelo E2E)
+- **Achado pelo teste E2E de logout**: no `/dashboard` de diretor, auxiliar, coordenador e MASTER, os ~10 links do cabeçalho ficavam **em coluna** dentro de uma faixa fixa de 60px. Numa tela de 1280×720 a lista vazava para baixo do conteúdo e o "Sair" e o "Alterar senha" não recebiam o clique.
+- **Corrigido**: o cabeçalho agora é uma linha que quebra quando não cabe e cresce em altura (`src/app/dashboard/page.tsx`).
+
+### P18 — Diretor/administrador recém-criado não aparecia na tabela — ✅ Corrigido (23/10, achado pelo E2E)
+- **Achado pelo teste E2E**: em `/master/diretores` e `/master/administradores`, o `UserForm` usava uma instância própria do `useUsers`; a pessoa era criada (e a senha temporária aparecia), mas a tabela da página só mostrava depois de recarregar.
+- **Corrigido**: `UserForm` ganhou `onCreated`, e as duas páginas passam o `refetch` da própria lista.
+
+### P19 — Horas da jornada aparecem como "6.00h" — Aberto (cosmético)
+- Em `/escola/jornada-docente` e `/minha-jornada` as horas são mostradas como vêm do banco (decimal com duas casas: "6.00h", "20.00h"). Não afeta cálculo nenhum.
+
+### P20 — Telas sem menu e molduras diferentes por área — ✅ Corrigido (23/10)
+- As telas do professor (`/classes`, `/minhas-aulas`, `/minha-jornada`, `/minhas-preferencias`) e `/alterar-senha` não tinham menu nem cabeçalho; `/escola` tinha só a barra lateral (sem "Sair"), `/master` tinha barra e cabeçalho (sem "Sair") e o `/dashboard` um cabeçalho próprio com links soltos.
+- **Corrigido**: `src/components/app-shell/` é a moldura única — menu lateral montado pelo perfil (`app-shell.utils.tsx`) e cabeçalho com escola ativa, contador de substituições (professor), notificações, nome/perfil e "Sair". Cada rota logada usa via `layout.tsx`; `/escola` e `/master` mantêm só a checagem de acesso. `EscolaSidebar`, `MasterSidebar` e `MasterHeader` foram removidos. No celular (< 900px) o menu vira gaveta.
+- **Cores**: a moldura usa só os tokens de `src/styles/theme.ts`; trocar a paleta ali muda o menu e o cabeçalho de uma vez.
+
+### P21 — Cores sem padrão ("remendado") — ✅ Corrigido (23/10)
+- Havia ~60 tons fixos espalhados por 39 arquivos: dois azuis-marinho, três vermelhos, quatro verdes, etiquetas de status sólidas numa tela e claras em outra, tabelas com cabeçalho cinza, verde-água ou azul.
+- **Corrigido**: paleta única em `src/styles/theme.ts` — escala verde-água a partir do verde do logo (`#509BA1`), neutros puxados para o verde e quatro estados (sucesso, aviso, erro, informação). Os componentes usam só `theme.colors.*` (nome pelo papel: `primary`, `borderStrong`, `tableHeader`...) e `theme.tones.*` para etiquetas, via `toneCss()` (`src/styles/tones.ts`) e o mapa `src/constants/status-tones.ts` (mesma cor para o mesmo status em todas as telas).
+- Padrões: botão principal verde-água cheio; secundário com contorno; ações de linha em verde-água claro (e vermelho claro para excluir); campos brancos com borda `borderStrong` e destaque verde no foco; tabelas com cabeçalho verde-água claro; títulos em grafite.
+- Contraste conferido (WCAG AA): texto >= 4,5:1, contorno de campo e texto grande >= 3:1.
+- Única cor fora da paleta: o botão "Entrar com gov.br", que segue as cores oficiais do Gov.br.
+- Os prints do Relatório Final (`.docx`) mostram o visual anterior.
+
+### P22 — Senha e token no log do servidor — ✅ Corrigido (23/10)
+- A rota de login (`src/app/api/auth/login/route.ts`) fazia `console.error(e)` com o erro inteiro do axios, que traz o corpo da requisição: cada senha errada ia para o log em texto puro (visto no log dos testes E2E). As rotas `classes`, `classes/[id]`, `auth/me` e o proxy faziam o mesmo, e aí ia junto o header `Authorization: Bearer <token>`.
+- Além disso, o login respondia "Credenciais inválidas" para qualquer falha, até com o backend fora do ar.
+- **Corrigido**: `src/utils/describe-error.ts` resume o erro numa linha (`POST /auth/login → HTTP 401`), sem corpo nem headers; todas as rotas usam ele. O login agora responde 401 só quando o backend recusa (status < 500) e 503 ("Serviço indisponível") quando o backend cai ou dá erro interno; a tela de entrada mostra "Serviço indisponível. Tente de novo em instantes." nesse caso.
 
 ### P5 — Rota `/login` inexistente — ✅ Corrigido
 - 5 pontos redirecionavam para `/login` (rota que nunca existiu — o login vive em `/`), resultando em 404: `minhas-aulas/page.tsx`, `classes/page.tsx`, `escola/layout.tsx`, `useMaster.ts`, `master/layout.tsx`. Todos corrigidos para `router.push('/')`, consistente com o próprio `proxy.ts`, que já redireciona pra `/` quando não há sessão válida.
@@ -89,7 +118,7 @@ Lista consolidada de problemas identificados na análise do frontend.
 ### P13 — Sem biblioteca de componentes / theming — ✅ Corrigido
 - Tema central (`src/styles/theme.ts` + `src/components/ThemeProvider.tsx`, montado no layout raiz); primitivos de container/header/tabela/estados em `src/components/ui/AdminTable.tsx`; `Skeleton`/`SkeletonRows`; `ErrorBoundary` global.
 - Migradas para AdminTable/tema/skeleton: `master/dashboard`, `master/redes`, `master/diretores`, `master/administradores`, `master/escolas`, `master/professores`, `master/politicas-carga-horaria`.
-- Tokens de tema (accent/accentHover/surface/...) aplicados também nas telas antigas `/classes`, `/minhas-aulas`, `/dashboard` legado, `/` (login) e `/cadastro` — estas mantêm o layout próprio (não tabular), então só as cores passaram a vir do tema; os prints do relatório continuam válidos porque os tokens usam exatamente as cores anteriores.
+- Tokens de tema (accent/accentHover/surface/...) aplicados também nas telas antigas `/classes`, `/minhas-aulas`, `/dashboard` legado, `/` (login) e `/cadastro` — estas mantêm o layout próprio (não tabular), então só as cores passaram a vir do tema. (Em 23/10 a paleta mudou — ver P21 —, então os prints do Relatório Final mostram o visual anterior.)
 
 ### P14 — Cálculo de semestre client-side — ✅ Corrigido (backend + frontend)
 - Achado original: `useSubstitutionLimit` calculava o semestre com o relógio do navegador (`getCurrentSemester()`) e recontava aprovações no cliente via `GET /enrollment-requests?createdAfter=...`. Investigação revelou um bug mais sério: o gate real do backend (`EnrollmentRequestsService.countApprovedSubstitutions`, chamado em `create()`) contava candidaturas **APPROVED da carreira inteira** do professor contra `substitutionLimitPerSemester`, sem nenhum recorte de data — a mensagem de erro já dizia "para este semestre", mas a contagem nunca foi escopada assim.
@@ -118,6 +147,12 @@ Lista consolidada de problemas identificados na análise do frontend.
 | P14 | Baixo | Baixo | Limite | ✅ Corrigido (backend + frontend) |
 | P15 | Alto | Alto | Contrato API (master) | ✅ Corrigido |
 | P16 | Alto | Baixo | Janela de prioridade (listagem) | ✅ Corrigido |
+| P17 | Alto | Trivial | Layout do painel (Sair escondido) | ✅ Corrigido (achado pelo E2E) |
+| P18 | Médio | Trivial | Lista de diretores/administradores | ✅ Corrigido (achado pelo E2E) |
+| P19 | Baixo | Trivial | Formato das horas da jornada | Aberto (cosmético) |
+| P20 | Médio | Médio | Moldura (menu/cabeçalho) das telas | ✅ Corrigido |
+| P21 | Baixo | Médio | Paleta de cores única | ✅ Corrigido |
+| P22 | Alto | Trivial | Senha e token no log do servidor | ✅ Corrigido (achado no log do E2E) |
 
 ## Como rastrear
 

@@ -20,6 +20,7 @@ vi.mock('@/services/eligibility.service', () => ({
     removeNetworkInterest: vi.fn(),
     addSchoolExclusion: vi.fn(),
     removeSchoolExclusion: vi.fn(),
+    setResidence: vi.fn(),
     getTeacherGroups: vi.fn(),
     createTeacherGroup: vi.fn(),
     updateTeacherGroup: vi.fn(),
@@ -45,11 +46,11 @@ const teacherGroupsResponse = (
 ): TeacherGroupsResponse => ({
   schoolId: 6,
   ungroupedDelayMinutes: 60,
-  fallbackPriorityWindowHours: null,
+  ungroupedEffectiveDelayMinutes: 60,
   allowedNetworkIds: [5],
   acceptedNetworkIds: null,
   groups: [
-    { id: 1, name: 'Professores da casa', delayMinutes: 0, professorIds: [17] },
+    { id: 1, name: 'Professores da casa', priority: 0, delayMinutes: 0, professorIds: [17] },
   ],
   ...overrides,
 });
@@ -151,6 +152,26 @@ describe('useProfessorPreferences', () => {
     // 1 carga inicial + 1 refetch por mutação.
     expect(eligibilityService.getMyPreferences).toHaveBeenCalledTimes(5);
   });
+
+  it('salva e limpa o município onde mora', async () => {
+    vi.mocked(eligibilityService.getMyPreferences).mockResolvedValue(emptyPreferences);
+    vi.mocked(eligibilityService.setResidence).mockResolvedValue();
+
+    const { result } = renderHook(() => useProfessorPreferences());
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    await act(async () => {
+      await result.current.setResidence(7, 3);
+    });
+    expect(eligibilityService.setResidence).toHaveBeenCalledWith(7, 3);
+    expect(toast.success).toHaveBeenCalledWith('Município onde mora atualizado');
+
+    await act(async () => {
+      await result.current.setResidence(7, null);
+    });
+    expect(toast.success).toHaveBeenCalledWith('Município onde mora removido');
+    expect(eligibilityService.getMyPreferences).toHaveBeenCalledTimes(3);
+  });
 });
 
 describe('useTeacherGroups', () => {
@@ -224,7 +245,7 @@ describe('useTeacherGroups', () => {
     const created = teacherGroupsResponse({
       groups: [
         ...base.groups,
-        { id: 2, name: 'Novo grupo', delayMinutes: 30, professorIds: [] },
+        { id: 2, name: 'Novo grupo', priority: 1, delayMinutes: 30, professorIds: [] },
       ],
     });
     const updated = teacherGroupsResponse({

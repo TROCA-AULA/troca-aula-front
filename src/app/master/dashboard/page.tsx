@@ -4,6 +4,7 @@ import { useMasterDashboard } from '@/hooks/useMasterDashboard';
 import { StatCard } from '@/components/StatCard';
 import {
   PageContainer,
+  PageHeader,
   PageTitle,
   LoadingState,
   EmptyState,
@@ -25,7 +26,9 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <PageContainer>
+        <PageHeader>
         <PageTitle>Dashboard</PageTitle>
+      </PageHeader>
         <LoadingState>
           <SkeletonRows />
         </LoadingState>
@@ -36,7 +39,9 @@ export default function DashboardPage() {
   if (error) {
     return (
       <PageContainer>
+        <PageHeader>
         <PageTitle>Dashboard</PageTitle>
+      </PageHeader>
         <EmptyState>{error}</EmptyState>
       </PageContainer>
     );
@@ -44,7 +49,9 @@ export default function DashboardPage() {
 
   return (
     <PageContainer>
-      <PageTitle>Dashboard</PageTitle>
+      <PageHeader>
+        <PageTitle>Dashboard</PageTitle>
+      </PageHeader>
       <StatsGrid>
         <StatCard label="Total de Escolas" value={stats.totalSchools} />
         <StatCard label="Aulas Vagas" value={stats.totalClassesAvailable} />

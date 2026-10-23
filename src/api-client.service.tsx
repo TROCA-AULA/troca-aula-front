@@ -17,10 +17,36 @@ import { toast } from 'react-toastify';
 // precisa lê-lo.
 const apiClient = axios.create({ baseURL: '/api/proxy' });
 
+// D19: o token expira. Quando o servidor recusa o próprio login
+// ("Unauthorized", sem outra explicação), a sessão acabou: avisa e volta
+// para a tela de entrada. Um 401 com mensagem própria (ex.: "Senha atual
+// incorreta") é erro de negócio e segue o caminho normal.
+let sessionExpiredHandled = false;
+function handleExpiredSession(): boolean {
+  if (typeof window === 'undefined' || window.location.pathname === '/') {
+    return false;
+  }
+  if (!sessionExpiredHandled) {
+    sessionExpiredHandled = true;
+    toast.error('Sua sessão expirou. Entre de novo.');
+    // Fora de componente não há router; recarregar limpa o estado da sessão.
+    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+    window.location.assign('/');
+  }
+  return true;
+}
+
 apiClient.interceptors.response.use(
   (success) => success,
   (error) => {
     const message = error?.response?.data?.message;
+    if (
+      error?.response?.status === 401 &&
+      (message === undefined || message === 'Unauthorized') &&
+      handleExpiredSession()
+    ) {
+      throw error;
+    }
     if (Array.isArray(message)) {
       toast.error(message.join('\n'));
     } else if (typeof message === 'string') {

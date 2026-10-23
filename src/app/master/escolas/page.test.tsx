@@ -3,13 +3,26 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import EscolasPage from './page';
 import { useSchools } from '@/hooks/useSchools';
 import { useNetworks } from '@/hooks/useNetworks';
+import { useCoordinatorOnly } from '@/hooks/useCoordinatorOnly';
+
+vi.mock('@/hooks/useCoordinatorOnly', () => ({ useCoordinatorOnly: vi.fn(() => false) }));
 
 vi.mock('@/hooks/useSchools', () => ({ useSchools: vi.fn() }));
 vi.mock('@/hooks/useNetworks', () => ({ useNetworks: vi.fn() }));
 vi.mock('./components/SchoolForm', () => ({
-  SchoolForm: ({ open }: { open: boolean }) =>
-    open ? <div>form-escola</div> : null,
+  SchoolForm: ({ open, onSaved }: { open: boolean; onSaved?: () => void }) =>
+    open ? (
+      <div>
+        form-escola
+        <button onClick={onSaved}>salvou-escola</button>
+      </div>
+    ) : null,
 }));
+const refreshUserData = vi.fn();
+vi.mock('@/contexts/SchoolContext', () => ({
+  useOptionalSchoolContext: () => ({ refreshUserData }),
+}));
+const refetchSchools = vi.fn();
 
 const deleteSchool = vi.fn();
 
@@ -39,8 +52,18 @@ describe('EscolasPage', () => {
       updateSchool: vi.fn(),
       updatePriorityWindow: vi.fn(),
       deleteSchool,
-      refetch: vi.fn(),
+      refetch: refetchSchools,
     } as any);
+  });
+
+  it('depois de salvar, recarrega a lista e a sessão (D14)', () => {
+    render(<EscolasPage />);
+
+    fireEvent.click(screen.getByText('+ Nova Escola'));
+    fireEvent.click(screen.getByText('salvou-escola'));
+
+    expect(refetchSchools).toHaveBeenCalled();
+    expect(refreshUserData).toHaveBeenCalled();
   });
 
   it('lista escolas com a rede resolvida', () => {
@@ -86,5 +109,14 @@ describe('EscolasPage', () => {
 
     // P13: estado de carregamento agora é skeleton (não mais texto).
     expect(screen.getByLabelText('Carregando')).toBeInTheDocument();
+  });
+
+  it('coordenador municipal não vê o botão Excluir', () => {
+    vi.mocked(useCoordinatorOnly).mockReturnValueOnce(true);
+    render(<EscolasPage />);
+
+    expect(screen.queryByText('Excluir')).not.toBeInTheDocument();
+    expect(screen.getAllByText('Editar').length).toBeGreaterThan(0);
+    expect(screen.getByText('+ Nova Escola')).toBeInTheDocument();
   });
 });

@@ -3,6 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import RedesPage from './page';
 import { useNetworks } from '@/hooks/useNetworks';
 import { useInterconnections } from '@/hooks/useEligibility';
+import { useCoordinatorOnly } from '@/hooks/useCoordinatorOnly';
+
+vi.mock('@/hooks/useCoordinatorOnly', () => ({ useCoordinatorOnly: vi.fn(() => false) }));
 
 vi.mock('@/hooks/useNetworks', () => ({
   useNetworks: vi.fn(),
@@ -20,19 +23,24 @@ vi.mock('./components/NetworkForm', () => ({
     mode,
     initialData,
     onClose,
+    onSaved,
   }: {
     open: boolean;
     mode: 'create' | 'edit';
     initialData?: { id: number } | null;
     onClose: () => void;
+    onSaved?: () => void;
   }) =>
     open ? (
       <div>
         form-rede-{mode}-{initialData?.id ?? 'novo'}
         <button onClick={onClose}>fechar-form-rede</button>
+        <button onClick={onSaved}>salvou-rede</button>
       </div>
     ) : null,
 }));
+
+const refetchNetworks = vi.fn();
 
 describe('RedesPage', () => {
   beforeEach(() => {
@@ -46,13 +54,22 @@ describe('RedesPage', () => {
       error: null,
       createNetwork: vi.fn(),
       updateNetwork: vi.fn(),
-      refetch: vi.fn(),
+      refetch: refetchNetworks,
     } as any);
     vi.mocked(useInterconnections).mockReturnValue({
       data: { networkId: 1, interconnections: [{ networkId: 2, networkName: 'Rede B' }] },
       loading: false,
       save: vi.fn(),
     });
+  });
+
+  it('depois de salvar no formulário, recarrega a lista (D14)', () => {
+    render(<RedesPage />);
+
+    fireEvent.click(screen.getByText('+ Nova Rede'));
+    fireEvent.click(screen.getByText('salvou-rede'));
+
+    expect(refetchNetworks).toHaveBeenCalled();
   });
 
   it('lista as redes com ações', () => {
@@ -127,5 +144,13 @@ describe('RedesPage', () => {
     expect(
       screen.queryByText('Interconexões de Rede A'),
     ).not.toBeInTheDocument();
+  });
+
+  it('coordenador municipal só vê as interconexões', () => {
+    vi.mocked(useCoordinatorOnly).mockReturnValueOnce(true);
+    render(<RedesPage />);
+
+    expect(screen.queryByText('+ Nova Rede')).not.toBeInTheDocument();
+    expect(screen.queryByText('Editar')).not.toBeInTheDocument();
   });
 });
