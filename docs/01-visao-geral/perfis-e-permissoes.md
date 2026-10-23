@@ -65,6 +65,6 @@ flowchart TB
 | Guarda | Arquivo | Comportamento |
 |--------|---------|---------------|
 | Proxy global | `src/proxy.ts` | Valida o JWT do cookie `token`; ausente/inválido → `/` |
-| Área master | `src/app/master/layout.tsx` | MASTER: tudo. Coordenador: só `COORDINATOR_MASTER_ROUTES` (fora delas → `/master/escolas`), com o menu "Coordenação Municipal". Demais → `/dashboard` |
+| Área master | `src/app/master/layout.tsx` | MASTER: tudo. Coordenador: só `COORDINATOR_MASTER_ROUTES` (fora delas → `/master/escolas`), com a seção "Rede (município)" no menu do AppShell. Demais → `/dashboard` |
 | Área da escola | `src/app/escola/layout.tsx` | MASTER ou gestão de escola (inclui o coordenador); professor → `/dashboard` |
 | Aulas / minhas aulas | `src/app/classes/page.tsx`, `src/app/minhas-aulas/page.tsx` | Sem sessão → `/`; MASTER → `/master` |
