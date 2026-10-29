@@ -37,6 +37,23 @@ OWNER_PW="${E2E_PG_OWNER_PASSWORD:-my_password}"
 APP_PW="${E2E_APP_PASSWORD:-app_password_local}"
 CONTAINER="${E2E_PG_CONTAINER:-postgres_container}"
 
+# Sem container/porta informados: acha sozinho o Postgres que estiver ligado
+# no Docker — o do backend (postgres_container) ou o do docker-compose da
+# pasta raiz (troca-aula-db-1) — e lê a porta dele na máquina.
+if [ -z "${E2E_PG_CONTAINER:-}" ] && command -v docker >/dev/null 2>&1; then
+  for c in postgres_container troca-aula-db-1; do
+    if [ "$(docker inspect -f '{{.State.Running}}' "$c" 2>/dev/null)" = "true" ]; then
+      CONTAINER="$c"
+      if [ -z "${E2E_PG_PORT:-}" ]; then
+        porta=$(docker port "$c" 5432/tcp 2>/dev/null | head -1 | sed 's/.*://')
+        [ -n "$porta" ] && PG_PORT="$porta"
+      fi
+      echo >&2 "[e2e] usando o Postgres do container $CONTAINER (porta $PG_PORT)"
+      break
+    fi
+  done
+fi
+
 case "$DB" in
   *_e2e|*_ci) ;;
   *) echo "E2E_DB='$DB' não termina em _e2e/_ci — recusado para não apagar um banco de verdade." >&2; exit 1 ;;
