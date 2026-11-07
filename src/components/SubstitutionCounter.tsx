@@ -1,5 +1,6 @@
 'use client';
 import styled from 'styled-components';
+import { toneCss } from '@/styles/tones';
 
 interface SubstitutionCounterProps {
   current: number;
@@ -16,27 +17,8 @@ const Container = styled.div<{ $status: 'normal' | 'warning' | 'blocked' }>`
   border-radius: 8px;
   font-size: 14px;
   font-weight: 500;
-  background-color: ${({ $status }) => {
-    switch ($status) {
-      case 'blocked': return '#fee';
-      case 'warning': return '#fef3cd';
-      default: return '#d4edda';
-    }
-  }};
-  color: ${({ $status }) => {
-    switch ($status) {
-      case 'blocked': return '#721c24';
-      case 'warning': return '#856404';
-      default: return '#155724';
-    }
-  }};
-  border: 1px solid ${({ $status }) => {
-    switch ($status) {
-      case 'blocked': return '#f5c6cb';
-      case 'warning': return '#ffeeba';
-      default: return '#c3e6cb';
-    }
-  }};
+  ${({ $status }) =>
+    toneCss($status === 'blocked' ? 'danger' : $status === 'warning' ? 'warning' : 'success')}
 `;
 
 const Icon = styled.span`
@@ -48,7 +30,7 @@ const Message = styled.span`
 `;
 
 const LoadingText = styled.span`
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
   font-style: italic;
 `;
 

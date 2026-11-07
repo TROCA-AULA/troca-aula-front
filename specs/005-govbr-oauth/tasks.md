@@ -40,7 +40,7 @@ description: "Task list for Gov.br OAuth2 Integration feature"
 - [x] T003 [P] Define TypeScript interfaces for auth API responses in src/types/auth.ts
 - [x] T004 [P] Create auth service for API calls in src/services/auth.service.tsx (depends on T003)
 - [x] T005 [P] Create auth hook for login logic in src/hooks/useGovbrAuth.ts (depends on T004)
-- [x] T006 Verify existing middleware.ts supports JWT authentication
+- [x] T006 Verify existing middleware.ts supports JWT authentication (arquivo hoje `src/proxy.ts`, renomeado no Next 16)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 

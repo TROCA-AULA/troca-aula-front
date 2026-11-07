@@ -1,45 +1,47 @@
+// EnrollmentStatus/EnrollmentRequest: fonte única em `types/enrollment.ts`
+// (backend real, ids numéricos — ver P7 em problemas-conhecidos.md).
+export type { EnrollmentStatus, EnrollmentRequest } from './enrollment';
+export type { EnrollmentCandidate as TeacherCandidate } from './enrollment';
+
 export interface Subject {
-  id: string;
+  id: number;
   name: string;
 }
 
 export interface Teacher {
-  id: string;
+  id: number;
   name: string;
   email: string;
-  schoolId?: string | null;
+  schoolId?: number | null;
   profileId: number;
   subject?: Subject | null;
+  /** Disciplina do professor (Users.subjectId). */
+  subjectId?: number | null;
+  phone?: string | null;
+  /** Limite de substituições por semestre; null = sem limite. */
+  substitutionLimitPerSemester?: number | null;
   totalSubstitutions: number;
 }
 
-export type EnrollmentStatus = 'PENDING' | 'APPROVED' | 'REJECTED' | string;
-
-export interface TeacherCandidate {
-  id: string;
+/** Resultado da busca por e-mail (fora da escola vem só o básico). */
+export interface TeacherSearchResult {
+  id: number;
   name: string;
   email: string;
-  subject?: Subject | null;
-  totalSubstitutions: number;
+  subjectId: number | null;
+  /** Escolas em que a pessoa já tem vínculo (quando o backend devolve). */
+  schoolIds?: number[];
 }
 
-export interface EnrollmentRequest {
-  id: string;
-  professorId?: string;
-  classId?: string;
-  userId?: string;
-  schoolId?: string;
-  status: EnrollmentStatus;
-  createdAt?: string;
-  appliedAt?: string;
-  professor?: TeacherCandidate;
-  user?: TeacherCandidate;
+export interface UpdateTeacherRequest {
+  subjectId?: number;
+  substitutionLimitPerSemester?: number | null;
 }
 
 export interface LinkTeacherRequest {
-  schoolId: string | null;
+  schoolId: number | null;
 }
 
 export interface UpdateEnrollmentStatusRequest {
-  status: EnrollmentStatus;
+  status: import('./enrollment').EnrollmentStatus;
 }

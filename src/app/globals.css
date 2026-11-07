@@ -1,6 +1,7 @@
 :root {
-  --background: #f4f4f4;
-  --foreground: #171717;
+  /* Iguais a theme.colors.background / theme.colors.text (src/styles/theme.ts). */
+  --background: #F4F7F7;
+  --foreground: #1F2B2D;
 }
 
 html,

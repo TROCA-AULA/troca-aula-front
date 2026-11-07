@@ -3,8 +3,6 @@ import styled from 'styled-components'
 import Logo from "@/app/components/Logo";
 import {useForm} from "react-hook-form";
 import {yupResolver} from "@hookform/resolvers/yup";
-import Base64 from "crypto-js/enc-base64";
-import sha1 from "crypto-js/sha1";
 import {toast} from "react-toastify";
 import * as Yup from "yup";
 import {useRouter} from "next/navigation";
@@ -35,21 +33,21 @@ const Content = styled.div`
         width: 100%;
     }
     p {
-        color: #993535;
+        color: ${({ theme }) => theme.colors.danger};
         text-transform: uppercase;
     }
 
     dt {
         margin-top: 20px;
         margin-bottom: 10px;
-        color: #509BA1;
+        color: ${({ theme }) => theme.colors.primary};
         font-weight: bold;
         text-transform: uppercase;
     }
 
     dd {
         text-align: justify;
-        color: #959595;
+        color: ${({ theme }) => theme.colors.textMuted};
     }
 
     input {
@@ -58,18 +56,19 @@ const Content = styled.div`
         padding: 5px 10px;
         border-radius: 5px;
 
-        background-color: #336367;
-        border: 2px solid #336367;
-        color: #fff;
+        /* Um tom abaixo do painel verde, para o campo aparecer. */
+        background-color: ${({ theme }) => theme.colors.primaryHover};
+        border: 2px solid ${({ theme }) => theme.colors.primaryHover};
+        color: ${({ theme }) => theme.colors.onPrimary};
         box-sizing: border-box;
 
         &:focus {
             outline: none;
-            border: 2px solid #6bcdd5;
+            border: 2px solid ${({ theme }) => theme.colors.sidebarSection};
         }
 
         &::placeholder {
-            color: #6bcdd5;
+            color: ${({ theme }) => theme.colors.sidebarText};
             text-transform: uppercase;
             opacity: 1; /* Garante visibilidade total, especialmente no Firefox */
         }
@@ -81,14 +80,14 @@ const Content = styled.div`
         height: 40px;
         border-radius: 5px;
         border: none;
-        color: #336367;
+        color: ${({ theme }) => theme.colors.primary};
         text-transform: uppercase;
         cursor: pointer;
-        background-color: #fff;
+        background-color: ${({ theme }) => theme.colors.surface};
         transition: background-color 0.2s;
 
         &:hover {
-            background-color: #daf3f3;
+            background-color: ${({ theme }) => theme.colors.primarySoft};
         }
 
     }
@@ -96,7 +95,7 @@ const Content = styled.div`
     a {
         background: transparent;
         height: auto;
-        color: #ffffff;
+        color: ${({ theme }) => theme.colors.surface};
         text-transform: uppercase;
         text-decoration: none;
 
@@ -107,7 +106,7 @@ const Content = styled.div`
 `
 const Card = styled.div`
     display: flex;
-    background-color: #fff;
+    background-color: ${({ theme }) => theme.colors.surface};
     max-width: 1024px;
     flex-direction: row;
     margin: 20px;
@@ -116,7 +115,7 @@ const Card = styled.div`
 
     ${Content} {
         &:nth-child(2) {
-            background-color: #509BA1;
+            background-color: ${({ theme }) => theme.colors.primary};
             max-width: 400px;
         }
     }
@@ -134,8 +133,13 @@ export default function Home() {
 
 
         const submidt = handleSubmit(async (data) => {
+            // P3 (problemas-conhecidos.md): senha vai em texto puro sobre
+            // TLS, sem pré-hash no cliente — bcrypt no servidor (com salt)
+            // já é a defesa real; o hash client-side não adicionava
+            // segurança e causava um bug real (contas criadas pelo painel
+            // Master nunca conseguiam logar). Ver AuthService.signIn.
             const payload = {
-                password: Base64.stringify(sha1(data.password)),
+                password: data.password,
                 email: data.email,
             }
 
@@ -150,8 +154,10 @@ export default function Home() {
                 if (response.ok) {
                     router.push('/dashboard');
                     toast.success('Login realizado com sucesso');
+                } else if (response.status === 503) {
+                    toast.error('Serviço indisponível. Tente de novo em instantes.');
                 } else {
-                    toast.error( 'Erro ao fazer login');
+                    toast.error('Erro ao fazer login');
                 }
             } catch (error) {
                 toast.error('Erro ao fazer login');

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import styled from 'styled-components';
 
 const Overlay = styled.div`
@@ -8,7 +9,7 @@ const Overlay = styled.div`
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: ${({ theme }) => theme.colors.overlay};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -16,24 +17,24 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-  background: white;
+  background: ${({ theme }) => theme.colors.surface};
   border-radius: 12px;
   padding: 24px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: ${({ theme }) => theme.shadow.modal};
 `;
 
 const Title = styled.h2`
   font-size: 18px;
   font-weight: 600;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
   margin: 0 0 16px 0;
 `;
 
 const Message = styled.p`
   font-size: 14px;
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
   margin: 0 0 24px 0;
   line-height: 1.5;
 `;
@@ -53,28 +54,28 @@ const Button = styled.button`
   transition: all 0.2s;
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
 
 const CancelButton = styled(Button)`
-  background: white;
-  border: 1px solid #ddd;
-  color: #666;
+  background: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  color: ${({ theme }) => theme.colors.textMuted};
 
   &:hover {
-    background: #f5f5f5;
+    background: ${({ theme }) => theme.colors.surfaceAlt};
   }
 `;
 
 const ConfirmButton = styled(Button)`
-  background: #c62828;
+  background: ${({ theme }) => theme.colors.danger};
   border: none;
-  color: white;
+  color: ${({ theme }) => theme.colors.onPrimary};
 
   &:hover {
-    background: #d32f2f;
+    background: ${({ theme }) => theme.colors.danger};
   }
 `;
 
@@ -86,6 +87,8 @@ interface ConfirmModalProps {
   onCancel: () => void;
   confirmText?: string;
   cancelText?: string;
+  /** Conteúdo extra entre a mensagem e os botões (ex.: um campo de texto). */
+  children?: ReactNode;
 }
 
 export function ConfirmModal({
@@ -96,6 +99,7 @@ export function ConfirmModal({
   onCancel,
   confirmText = 'Confirmar',
   cancelText = 'Cancelar',
+  children,
 }: ConfirmModalProps) {
   if (!open) return null;
 
@@ -104,6 +108,7 @@ export function ConfirmModal({
       <Modal onClick={(e) => e.stopPropagation()} role="alertdialog" aria-labelledby="modal-title" aria-describedby="modal-message">
         <Title id="modal-title">{title}</Title>
         <Message id="modal-message">{message}</Message>
+        {children}
         <ButtonGroup>
           <CancelButton onClick={onCancel}>{cancelText}</CancelButton>
           <ConfirmButton onClick={onConfirm}>{confirmText}</ConfirmButton>

@@ -69,7 +69,7 @@ src/
 │   └── teacher.service.tsx   # NEW: Teachers API service
 ├── hooks/
 │   └── useTeachers.ts        # NEW: Teachers logic hook
-├── middleware.ts              # Existing
+├── proxy.ts                  # Existing (auth guard; renomeado de middleware.ts no Next 16)
 └── api.service.tsx           # Existing
 
 tests/

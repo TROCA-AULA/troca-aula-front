@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Home from './page';
 import { useRouter } from 'next/navigation';
@@ -77,6 +77,21 @@ describe('Login Page (Home)', () => {
 
         await waitFor(() => {
             expect(toast.error).toHaveBeenCalledWith('Erro ao fazer login');
+        });
+    });
+
+    it('backend fora do ar avisa que o serviço está indisponível', async () => {
+        (global.fetch as any).mockResolvedValue({ ok: false, status: 503 });
+
+        render(<Home />);
+
+        fireEvent.change(screen.getByPlaceholderText('e-mail'), { target: { value: 'test@example.com' } });
+        fireEvent.change(screen.getByPlaceholderText('senha'), { target: { value: 'password123' } });
+
+        fireEvent.click(screen.getByText('Entrar'));
+
+        await waitFor(() => {
+            expect(toast.error).toHaveBeenCalledWith('Serviço indisponível. Tente de novo em instantes.');
         });
     });
 

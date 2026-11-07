@@ -23,8 +23,19 @@ export function useGovbrAuth(): UseGovbrAuthReturn {
       const redirectUri = `${window.location.origin}/auth/govbr-callback`;
       const response = await authService.loginWithGovbr(code, redirectUri);
 
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      // Grava o JWT como cookie httpOnly (mesmo mecanismo do login
+      // tradicional), em vez de localStorage — corrige o achado P2:
+      // antes, o middleware não reconhecia a sessão Gov.br.
+      const sessionRes = await fetch('/api/auth/govbr-session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ token: response.token }),
+      });
+
+      if (!sessionRes.ok) {
+        throw new Error('Não foi possível iniciar a sessão.');
+      }
 
       return { user: response.user, token: response.token };
     } catch (err: unknown) {
@@ -39,9 +50,15 @@ export function useGovbrAuth(): UseGovbrAuthReturn {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
-    window.location.href = '/';
+    // Mesma rota usada pelo logout do login tradicional (useUserHook) —
+    // a sessão agora vive só no cookie httpOnly, não há mais localStorage
+    // de auth para limpar.
+    fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).finally(() => {
+      // Reload completo de propósito após o logout (limpa qualquer estado
+      // em memória da SPA) — por isso não é router.push.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = '/';
+    });
   }, []);
 
   return { isLoading, error, loginWithGovbr, logout };

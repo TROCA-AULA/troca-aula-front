@@ -1,35 +1,22 @@
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Home from './page';
-import { useUserHook } from '@/user/useUserHook';
-import api from '@/api.service';
-import axios from 'axios';
+import { useSchoolContext } from '@/contexts/SchoolContext';
+import { PROFILE } from '@/constants/profile';
+import api from '@/api-client.service';
 import { toast } from 'react-toastify';
 
-vi.mock('@/user/useUserHook', () => ({
-    useUserHook: vi.fn(),
+vi.mock('@/contexts/SchoolContext', () => ({
+    useSchoolContext: vi.fn(),
 }));
 
-vi.mock('@/api.service', () => ({
+vi.mock('@/api-client.service', () => ({
     default: {
         get: vi.fn(),
         post: vi.fn(),
+        delete: vi.fn(),
     },
 }));
-
-vi.mock('axios', () => {
-    const mockAxios = {
-        get: vi.fn(),
-        patch: vi.fn(),
-        delete: vi.fn(),
-        interceptors: {
-            request: { use: vi.fn() },
-            response: { use: vi.fn() },
-        },
-    };
-    mockAxios.create = vi.fn().mockReturnValue(mockAxios);
-    return { default: mockAxios };
-});
 
 vi.mock('react-toastify', () => ({
     toast: {
@@ -39,7 +26,11 @@ vi.mock('react-toastify', () => ({
 }));
 
 describe('Dashboard Page', () => {
-    const mockUser = { id: 1, name: 'Test User', profileId: 1 };
+    // profileId: PROFILE.MASTER porque vários testes abaixo esperam o
+    // comportamento "vê todas as escolas" (chamada a GET /schools), que
+    // agora corretamente exige MASTER (4) em vez do valor antigo (1, que é
+    // DIRETOR — ver src/constants/profile.ts).
+    const mockUser = { id: 1, name: 'Test User', profileId: PROFILE.MASTER };
     const mockLogout = vi.fn();
     const mockRefreshUserData = vi.fn();
 
@@ -65,13 +56,13 @@ describe('Dashboard Page', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useUserHook as any).mockReturnValue({
+        (useSchoolContext as any).mockReturnValue({
             user: mockUser,
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
         });
-        (axios.get as any).mockResolvedValue({ data: mockClasses });
         (api.get as any).mockImplementation((url: string) => {
+            if (url === '/classes') return Promise.resolve({ data: mockClasses });
             if (url === '/schools/1') return Promise.resolve({ data: { id: 1, name: 'School A' } });
             if (url === '/schools') return Promise.resolve({ data: [{ id: 1, name: 'School A' }] });
             if (url === '/subjects') return Promise.resolve({ data: [{ id: 1, name: 'Math' }] });
@@ -82,10 +73,8 @@ describe('Dashboard Page', () => {
     it('renders and loads data', async () => {
         render(<Home />);
 
-        expect(screen.getByText(/Olá, Test User/)).toBeInTheDocument();
-
         await waitFor(() => {
-            expect(axios.get).toHaveBeenCalledWith('/api/classes', expect.any(Object));
+            expect(api.get).toHaveBeenCalledWith('/classes');
             expect(api.get).toHaveBeenCalledWith('/schools');
             expect(api.get).toHaveBeenCalledWith('/subjects');
         });
@@ -104,7 +93,16 @@ describe('Dashboard Page', () => {
             expect(screen.getByRole('cell', { name: 'Science' })).toBeInTheDocument();
             expect(screen.queryByRole('cell', { name: 'Math' })).not.toBeInTheDocument();
         });
+
+        // Voltar para a aba de aulas disponíveis mostra as vagas de novo.
+        fireEvent.click(screen.getByText('Aulas Disponiveis'));
+
+        await waitFor(() => expect(screen.getByRole('cell', { name: 'Math' })).toBeInTheDocument());
+        expect(screen.getByText('Aulas Disponiveis')).toHaveClass('active');
     });
+
+    // Links por perfil (D12, coordenador) e "Sair" ficam no AppShell:
+    // src/components/app-shell/app-shell.test.tsx.
 
     it('handles search', async () => {
         render(<Home />);
@@ -158,7 +156,7 @@ describe('Dashboard Page', () => {
     });
 
     it('deletes a class', async () => {
-        (axios.delete as any).mockResolvedValue({});
+        (api.delete as any).mockResolvedValue({});
         render(<Home />);
 
         await waitFor(() => expect(screen.getByRole('cell', { name: 'Math' })).toBeInTheDocument());
@@ -167,13 +165,13 @@ describe('Dashboard Page', () => {
         fireEvent.click(deleteButton);
 
         await waitFor(() => {
-            expect(axios.delete).toHaveBeenCalledWith('/api/classes/1');
+            expect(api.delete).toHaveBeenCalledWith('/classes/1');
             expect(toast.success).toHaveBeenCalledWith('Aula removida com sucesso');
         });
     });
 
     it('handles delete error', async () => {
-        (axios.delete as any).mockRejectedValue(new Error('Fail'));
+        (api.delete as any).mockRejectedValue(new Error('Fail'));
         render(<Home />);
 
         await waitFor(() => expect(screen.getByRole('cell', { name: 'Math' })).toBeInTheDocument());
@@ -186,8 +184,7 @@ describe('Dashboard Page', () => {
         });
     });
 
-    it('approves a class', async () => {
-        (axios.patch as any).mockResolvedValue({});
+    it('shows the enrolled professor name and no action buttons on accepted classes', async () => {
         render(<Home />);
 
         const myClassesButton = screen.getByText('Aulas aceitas');
@@ -195,42 +192,26 @@ describe('Dashboard Page', () => {
 
         await waitFor(() => expect(screen.getByRole('cell', { name: 'Science' })).toBeInTheDocument());
 
-        const approveButton = screen.getByText('aprovar');
-        fireEvent.click(approveButton);
-
-        await waitFor(() => {
-            expect(axios.patch).toHaveBeenCalledWith('/api/classes/2', expect.any(Object), expect.any(Object));
-            expect(toast.success).toHaveBeenCalledWith('Aula aprovada com sucesso');
-        });
+        // `enrolledBy` agora vem populado do backend (ClassesRepository) - a
+        // tabela mostra o nome do professor e nada de aceitar/deletar.
+        expect(screen.getByRole('cell', { name: 'Test User' })).toBeInTheDocument();
+        expect(screen.queryByText('aceitar')).not.toBeInTheDocument();
+        expect(screen.queryByText('deletar')).not.toBeInTheDocument();
     });
 
-    it('handles approve error', async () => {
-        (axios.patch as any).mockRejectedValue(new Error('Fail'));
-        console.log = vi.fn();
+    it('does not render the accept button for managers', async () => {
         render(<Home />);
 
-        const myClassesButton = screen.getByText('Aulas aceitas');
-        fireEvent.click(myClassesButton);
+        await waitFor(() => expect(screen.getByRole('cell', { name: 'Math' })).toBeInTheDocument());
 
-        await waitFor(() => expect(screen.getByRole('cell', { name: 'Science' })).toBeInTheDocument());
-
-        const approveButton = screen.getByText('aprovar');
-        fireEvent.click(approveButton);
-
-        await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith('Erro ao aprovar aula');
-            expect(console.log).toHaveBeenCalled();
-        });
-    });
-
-    it('calls logout when button clicked', () => {
-        render(<Home />);
-        fireEvent.click(screen.getByText('Sair'));
-        expect(mockLogout).toHaveBeenCalled();
+        // Aprovar candidatura vive em /master/professores (aba Candidaturas);
+        // o dashboard legado so mostra "deletar" para aula vaga.
+        expect(screen.queryByText('aceitar')).not.toBeInTheDocument();
+        expect(screen.getByText('deletar')).toBeInTheDocument();
     });
 
     it('refreshes user data if no user', () => {
-        (useUserHook as any).mockReturnValue({
+        (useSchoolContext as any).mockReturnValue({
             user: null,
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
@@ -239,13 +220,13 @@ describe('Dashboard Page', () => {
         expect(mockRefreshUserData).toHaveBeenCalled();
     });
 
-    it('allows teacher to accept a class', async () => {
-        (useUserHook as any).mockReturnValue({
-            user: { ...mockUser, profileId: 3 },
+    it('allows teacher to apply to an available class', async () => {
+        (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.PROFESSOR, schoolId: 1 },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
         });
-        (axios.patch as any).mockResolvedValue({});
+        (api.post as any).mockResolvedValue({});
 
         render(<Home />);
 
@@ -255,18 +236,39 @@ describe('Dashboard Page', () => {
         fireEvent.click(acceptButton);
 
         await waitFor(() => {
-            expect(axios.patch).toHaveBeenCalledWith('/api/classes/1', expect.any(Object), expect.any(Object));
-            expect(toast.success).toHaveBeenCalledWith('Aula aprovada com sucesso');
+            // Candidatura via EnrollmentRequests (fluxo real), nao mais
+            // PATCH /api/classes/:id da era do swap-request.
+            expect(api.post).toHaveBeenCalledWith('/enrollment-requests/request/1');
+            expect(toast.success).toHaveBeenCalledWith('Candidatura enviada com sucesso');
         });
     });
 
-    it('handles accept error for teacher', async () => {
-        (useUserHook as any).mockReturnValue({
-            user: { ...mockUser, profileId: 3 },
+    it('avisa o professor sem disciplina (D9) e some quando ele tem disciplina', async () => {
+        (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.PROFESSOR, schoolId: 1, subjectId: null },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
         });
-        (axios.patch as any).mockRejectedValue(new Error('Fail'));
+        const { unmount } = render(<Home />);
+        expect(screen.getByRole('alert')).toHaveTextContent('Sua disciplina não está cadastrada');
+        unmount();
+
+        (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.PROFESSOR, schoolId: 1, subjectId: 2 },
+            logout: mockLogout,
+            refreshUserData: mockRefreshUserData,
+        });
+        render(<Home />);
+        expect(screen.queryByText(/Sua disciplina não está cadastrada/)).not.toBeInTheDocument();
+    });
+
+    it('handles apply error for teacher', async () => {
+        (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.PROFESSOR, schoolId: 1 },
+            logout: mockLogout,
+            refreshUserData: mockRefreshUserData,
+        });
+        (api.post as any).mockRejectedValue(new Error('Fail'));
 
         render(<Home />);
 
@@ -276,12 +278,13 @@ describe('Dashboard Page', () => {
         fireEvent.click(acceptButton);
 
         await waitFor(() => {
-            expect(toast.error).toHaveBeenCalledWith('Erro ao aprovar aula');
+            expect(toast.error).toHaveBeenCalledWith('Erro ao enviar candidatura');
         });
     });
 
     it('handles subjects and school fetch error', async () => {
         (api.get as any).mockImplementation((url: string) => {
+             if (url === '/classes') return Promise.resolve({ data: mockClasses });
              return Promise.reject(new Error('Network error'));
         });
         render(<Home />);
@@ -292,7 +295,7 @@ describe('Dashboard Page', () => {
     });
 
     it('renders "Minhas Aulas" tab for teachers', async () => {
-        (useUserHook as any).mockReturnValue({
+        (useSchoolContext as any).mockReturnValue({
             user: { ...mockUser, profileId: 3 },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
@@ -306,7 +309,7 @@ describe('Dashboard Page', () => {
     });
 
     it('filters correctly for teachers in "Minhas Aulas"', async () => {
-        (useUserHook as any).mockReturnValue({
+        (useSchoolContext as any).mockReturnValue({
             user: { ...mockUser, profileId: 3 },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
@@ -333,8 +336,8 @@ describe('Dashboard Page', () => {
     });
 
     it('shows classes when profileId is not 3 and not "all"', async () => {
-         (useUserHook as any).mockReturnValue({
-            user: { ...mockUser, profileId: 1 },
+         (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.MASTER },
             logout: mockLogout,
             refreshUserData: mockRefreshUserData,
         });
@@ -344,5 +347,133 @@ describe('Dashboard Page', () => {
         fireEvent.click(acceptedButton);
 
         await waitFor(() => expect(screen.getByRole('cell', { name: 'Science' })).toBeInTheDocument());
+    });
+
+    it('recarrega as aulas ao trocar de aba (D14)', async () => {
+        render(<Home />);
+        const classCalls = () =>
+            (api.get as any).mock.calls.filter(([url]: [string]) =>
+                String(url).startsWith('/classes'),
+            ).length;
+        await waitFor(() => expect(classCalls()).toBeGreaterThan(0));
+        const before = classCalls();
+
+        fireEvent.click(screen.getByText('Aulas aceitas'));
+
+        await waitFor(() => expect(classCalls()).toBeGreaterThan(before));
+    });
+
+    it('abre a aba Candidaturas para a equipe', async () => {
+        render(<Home />);
+
+        fireEvent.click(screen.getByText('Candidaturas'));
+
+        await waitFor(() =>
+            expect(screen.getByText('Nenhuma candidatura pending encontrada.')).toBeInTheDocument(),
+        );
+    });
+
+    it('permite ao MASTER trocar a escola do formulário', async () => {
+        (api.get as any).mockImplementation((url: string) => {
+            if (url === '/classes') return Promise.resolve({ data: mockClasses });
+            if (url === '/schools') {
+                return Promise.resolve({
+                    data: [
+                        { id: 1, name: 'School A' },
+                        { id: 2, name: 'School B' },
+                    ],
+                });
+            }
+            return Promise.resolve({ data: [] });
+        });
+        render(<Home />);
+
+        const schoolSelect = (await screen.findAllByRole('combobox'))[0];
+        await waitFor(() => expect(schoolSelect).toHaveValue('1'));
+
+        fireEvent.change(schoolSelect, { target: { value: '2' } });
+
+        expect(schoolSelect).toHaveValue('2');
+    });
+
+    it('carrega a escola do diretor e mostra o nome no formulário', async () => {
+        (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.DIRETOR, schoolId: 1 },
+            logout: mockLogout,
+            refreshUserData: mockRefreshUserData,
+        });
+        render(<Home />);
+
+        expect(await screen.findByDisplayValue('School A')).toBeInTheDocument();
+        expect(api.get).toHaveBeenCalledWith('/schools/1');
+    });
+
+    it('lida com MASTER sem escolas cadastradas', async () => {
+        (api.get as any).mockImplementation((url: string) => {
+            if (url === '/classes') return Promise.resolve({ data: mockClasses });
+            if (url === '/schools') return Promise.resolve({ data: null });
+            return Promise.resolve({ data: [] });
+        });
+        render(<Home />);
+
+        const schoolSelect = (await screen.findAllByRole('combobox'))[0];
+        await waitFor(() => expect(api.get).toHaveBeenCalledWith('/schools'));
+        expect(schoolSelect).toHaveValue('');
+    });
+
+    it('mostra "-" quando a aula não tem datas preenchidas', async () => {
+        (api.get as any).mockImplementation((url: string) => {
+            if (url === '/classes') {
+                return Promise.resolve({
+                    data: [
+                        {
+                            id: 9,
+                            subject: { name: 'História' },
+                            school: { name: 'School A' },
+                            statededAt: null,
+                            finishedAt: null,
+                            enrolledById: null,
+                        },
+                    ],
+                });
+            }
+            if (url === '/schools') return Promise.resolve({ data: [{ id: 1, name: 'School A' }] });
+            return Promise.resolve({ data: [] });
+        });
+        render(<Home />);
+
+        await waitFor(() => expect(screen.getByRole('cell', { name: 'História' })).toBeInTheDocument());
+        expect(screen.getAllByRole('cell', { name: '-' }).length).toBeGreaterThanOrEqual(2);
+    });
+
+    it('mostra os erros de validação ao cadastrar sem preencher', async () => {
+        render(<Home />);
+
+        await waitFor(() => expect(screen.getByRole('cell', { name: 'Math' })).toBeInTheDocument());
+        fireEvent.click(screen.getByText('Cadastrar'));
+
+        await waitFor(() => {
+            expect(screen.getByText('Materia é obrigatório')).toBeInTheDocument();
+            expect(screen.getByText('Inicio é obrigatório')).toBeInTheDocument();
+            expect(screen.getByText('Termino é obrigatório')).toBeInTheDocument();
+        });
+        expect(api.post).not.toHaveBeenCalled();
+    });
+
+    it('lida com falha ao carregar a escola do diretor', async () => {
+        (useSchoolContext as any).mockReturnValue({
+            user: { ...mockUser, profileId: PROFILE.DIRETOR, schoolId: 1 },
+            logout: mockLogout,
+            refreshUserData: mockRefreshUserData,
+        });
+        (api.get as any).mockImplementation((url: string) => {
+            if (url === '/classes') return Promise.resolve({ data: mockClasses });
+            if (url === '/schools/1') return Promise.reject(new Error('fail'));
+            return Promise.resolve({ data: [] });
+        });
+        render(<Home />);
+
+        await waitFor(() => expect(api.get).toHaveBeenCalledWith('/schools/1'));
+        expect(screen.getByDisplayValue('Nome da Escola')).toBeInTheDocument();
     });
 });

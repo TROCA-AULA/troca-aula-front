@@ -5,7 +5,10 @@ import { useEnrollmentMutations } from '@/hooks/useEnrollment';
 import { toast } from 'react-toastify';
 import { format } from 'date-fns';
 import { useState } from 'react';
-import type { EnrollmentStatus } from '@/types/enrollment';
+import type { EnrollmentRequest, EnrollmentStatus } from '@/types/enrollment';
+import { ConfirmModal } from '@/components/ConfirmModal';
+import { toneCss } from '@/styles/tones';
+import { ENROLLMENT_TONE, toneOf } from '@/constants/status-tones';
 
 const Container = styled.div`
   display: flex;
@@ -15,7 +18,7 @@ const Container = styled.div`
 
 const TabHeader = styled.div`
   display: flex;
-  background-color: #f4f4f4;
+  background-color: ${({ theme }) => theme.colors.surfaceAlt};
   width: 100%;
   height: 50px;
   border-radius: 5px 5px 0 0;
@@ -28,17 +31,17 @@ const TabHeader = styled.div`
     border-top-right-radius: 10px;
     text-transform: uppercase;
     cursor: pointer;
-    color: #989a9a;
+    color: ${({ theme }) => theme.colors.textMuted};
     font-size: 12px;
 
     &:hover {
-      background-color: #dff4f4;
-      color: #509BA1;
+      background-color: ${({ theme }) => theme.colors.primarySoft};
+      color: ${({ theme }) => theme.colors.primary};
     }
 
     &.active {
-      background-color: #fff;
-      color: #509BA1;
+      background-color: ${({ theme }) => theme.colors.surface};
+      color: ${({ theme }) => theme.colors.primary};
     }
   }
 `;
@@ -48,22 +51,22 @@ const EnrollmentsTable = styled.table`
   text-align: left;
   border-radius: 5px;
   overflow: hidden;
-  background: #fff;
+  background: ${({ theme }) => theme.colors.surface};
 
   thead {
-    background-color: #6EC3C9;
+    background-color: ${({ theme }) => theme.colors.tableHeader};
   }
 
   th {
     padding: 10px;
-    color: #fff;
+    color: ${({ theme }) => theme.colors.tableHeaderText};
     text-transform: uppercase;
     font-size: 12px;
   }
 
   tbody {
     tr:nth-child(even) {
-      background-color: #f4f4f4;
+      background-color: ${({ theme }) => theme.colors.surfaceAlt};
     }
   }
 
@@ -78,47 +81,41 @@ const StatusBadge = styled.span<{ $status: EnrollmentStatus }>`
   border-radius: 3px;
   font-size: 12px;
   text-transform: uppercase;
-  background-color: ${({ $status }) => {
-    switch ($status) {
-      case 'PENDING': return '#f0ad4e';
-      case 'APPROVED': return '#5cb85c';
-      case 'REJECTED': return '#d9534f';
-      case 'CANCELLED': return '#999';
-      default: return '#ccc';
-    }
-  }};
-  color: #fff;
+  font-weight: 600;
+  ${({ $status }) => toneCss(toneOf(ENROLLMENT_TONE, $status))}
 `;
 
 const ActionButton = styled.button<{ $variant?: 'approve' | 'reject' }>`
   border: none;
   padding: 5px 10px;
   border-radius: 3px;
-  color: #fff;
+  color: ${({ theme }) => theme.colors.onPrimary};
   cursor: pointer;
   font-size: 12px;
   text-transform: uppercase;
   margin-right: 5px;
-  background-color: ${({ $variant }) => $variant === 'approve' ? '#5cb85c' : '#d9534f'};
+  background-color: ${({ $variant, theme }) =>
+    $variant === 'approve' ? theme.colors.success : theme.colors.danger};
 
   &:hover {
-    background-color: ${({ $variant }) => $variant === 'approve' ? '#449d44' : '#c9302c'};
+    background-color: ${({ $variant, theme }) =>
+      $variant === 'approve' ? theme.colors.successHover : theme.colors.dangerHover};
   }
 
   &:disabled {
-    background-color: #ccc;
+    background-color: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
   }
 `;
 
 const Loading = styled.div`
-  color: #509BA1;
+  color: ${({ theme }) => theme.colors.primary};
   text-align: center;
   padding: 40px;
 `;
 
 const ErrorMessage = styled.div`
-  color: #f00;
+  color: ${({ theme }) => theme.colors.danger};
   text-align: center;
   padding: 20px;
 `;
@@ -126,8 +123,42 @@ const ErrorMessage = styled.div`
 const EmptyState = styled.div`
   text-align: center;
   padding: 40px;
-  color: #989a9a;
+  color: ${({ theme }) => theme.colors.textMuted};
 `;
+
+const ReasonInput = styled.textarea`
+  width: 100%;
+  min-height: 72px;
+  margin: 0 0 16px;
+  padding: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.borderStrong};
+  border-radius: 6px;
+  font: inherit;
+  box-sizing: border-box;
+`;
+
+const Muted = styled.span`
+  display: block;
+  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textMuted};
+`;
+
+// D15: nome do professor e dados da aula em vez de "Professor #26" / "#8".
+function professorLabel(enrollment: EnrollmentRequest) {
+  return enrollment.user?.name ?? `Professor #${enrollment.professorId}`;
+}
+
+function classLabel(enrollment: EnrollmentRequest) {
+  const info = enrollment.class;
+  if (!info?.statededAt) return { main: `Aula #${enrollment.classId}`, extra: null };
+  const start = new Date(info.statededAt);
+  const end = info.finishedAt ? format(new Date(info.finishedAt), 'HH:mm') : null;
+  const when = `${format(start, 'dd/MM/yyyy HH:mm')}${end ? `–${end}` : ''}`;
+  return {
+    main: info.subjectName ? `${info.subjectName} · ${when}` : when,
+    extra: info.schoolName,
+  };
+}
 
 const FILTER_OPTIONS: { label: string; value: EnrollmentStatus | 'ALL' }[] = [
   { label: 'Pendentes', value: 'PENDING' },
@@ -146,6 +177,8 @@ export function EnrollmentsList({ schoolId }: EnrollmentsListProps) {
     { status: filter === 'ALL' ? undefined : filter, schoolId }
   );
   const { approveEnrollment, rejectEnrollment, loading: processing } = useEnrollmentMutations();
+  const [rejecting, setRejecting] = useState<EnrollmentRequest | null>(null);
+  const [reason, setReason] = useState('');
 
   const handleApprove = async (enrollmentId: number) => {
     try {
@@ -158,10 +191,17 @@ export function EnrollmentsList({ schoolId }: EnrollmentsListProps) {
     }
   };
 
-  const handleReject = async (enrollmentId: number) => {
-    const reason = prompt('Motivo da rejeição (opcional):');
+  const openReject = (enrollment: EnrollmentRequest) => {
+    setReason('');
+    setRejecting(enrollment);
+  };
+
+  const confirmReject = async () => {
+    const enrollment = rejecting;
+    setRejecting(null);
+    if (!enrollment) return;
     try {
-      await rejectEnrollment(enrollmentId, reason || undefined);
+      await rejectEnrollment(enrollment.id, reason.trim() || undefined);
       toast.success('Candidatura rejeitada!');
       refetch();
     } catch (err) {
@@ -202,7 +242,7 @@ export function EnrollmentsList({ schoolId }: EnrollmentsListProps) {
             <tr>
               <th>ID</th>
               <th>Professor</th>
-              <th>Aula ID</th>
+              <th>Aula</th>
               <th>Status</th>
               <th>Data</th>
               <th>Ações</th>
@@ -212,8 +252,13 @@ export function EnrollmentsList({ schoolId }: EnrollmentsListProps) {
             {enrollments.map((enrollment) => (
               <tr key={enrollment.id}>
                 <td>#{enrollment.id}</td>
-                <td>Professor #{enrollment.professorId}</td>
-                <td>#{enrollment.classId}</td>
+                <td>{professorLabel(enrollment)}</td>
+                <td>
+                  {classLabel(enrollment).main}
+                  {classLabel(enrollment).extra && (
+                    <Muted>{classLabel(enrollment).extra}</Muted>
+                  )}
+                </td>
                 <td>
                   <StatusBadge $status={enrollment.status}>
                     {enrollment.status === 'PENDING' && 'Pendente'}
@@ -235,7 +280,7 @@ export function EnrollmentsList({ schoolId }: EnrollmentsListProps) {
                       </ActionButton>
                       <ActionButton
                         $variant="reject"
-                        onClick={() => handleReject(enrollment.id)}
+                        onClick={() => openReject(enrollment)}
                         disabled={processing}
                       >
                         Rejeitar
@@ -248,6 +293,23 @@ export function EnrollmentsList({ schoolId }: EnrollmentsListProps) {
           </tbody>
         </EnrollmentsTable>
       )}
+
+      <ConfirmModal
+        open={rejecting != null}
+        title="Rejeitar candidatura"
+        message={`Rejeitar a candidatura de ${rejecting ? professorLabel(rejecting) : ''}? O motivo aparece para o professor em "Minhas aulas".`}
+        confirmText="Rejeitar"
+        onConfirm={confirmReject}
+        onCancel={() => setRejecting(null)}
+      >
+        <ReasonInput
+          aria-label="Motivo da rejeição (opcional)"
+          placeholder="Motivo (opcional)"
+          maxLength={500}
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
+      </ConfirmModal>
     </Container>
   );
 }

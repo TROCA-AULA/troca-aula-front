@@ -68,7 +68,7 @@ src/
 │   └── auth.service.tsx            # NEW: Auth API service
 ├── hooks/
 │   └── useGovbrAuth.ts             # NEW: Auth logic hook
-├── middleware.ts                   # Existing (auth middleware)
+├── proxy.ts                       # Existing (auth guard; renomeado de middleware.ts no Next 16)
 └── api.service.tsx                # Existing (API client)
 
 tests/

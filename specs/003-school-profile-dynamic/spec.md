@@ -6,6 +6,8 @@
 
 **Status**: Draft
 
+> **Nota (2026-09):** esta spec é histórica — foi escrita assumindo um mapeamento de perfis (`1=Master, 2=Diretor, 3=Professor`) que **não** corresponde ao backend real (`1=DIRETOR, 2=AUXILIAR_ADMIN, 3=PROFESSOR, 4=MASTER`, ver `src/constants/profile.ts`). A implementação final seguiu o valor real; mantenha o documento como registro, sem usá-lo como referência de contrato.
+
 **Input**: User description: "O formulário de criação de aula usa schoolId = 1 hardcoded. Precisa ser dinâmico baseado no perfil do usuário logado."
 
 ## User Scenarios & Testing *(mandatory)*

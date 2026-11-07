@@ -4,17 +4,18 @@ describe('Schools CRUD - Integration', () => {
   const mockSchool = {
     id: 1,
     name: 'Escola Teste',
+    networkId: 1,
     substitutionLimitPerSemester: 10,
     createdAt: '2026-01-01',
   };
 
   it('should create school with valid data', async () => {
-    const createData = { name: 'Escola Nova', substitutionLimitPerSemester: 5 };
+    const createData = { name: 'Escola Nova', networkId: 1 };
 
     const result = { ...createData, id: 1, createdAt: '2026-01-01' };
 
     expect(result.name).toBe('Escola Nova');
-    expect(result.substitutionLimitPerSemester).toBe(5);
+    expect(result.networkId).toBe(1);
   });
 
   it('should fail validation when name is empty', () => {

@@ -3,13 +3,17 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:ver": "SLOWMO=500 playwright test --headed --workers=1",
+    "e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -21,9 +25,10 @@
     "date-fns": "^4.1.0",
     "jose": "^6.0.11",
     "jsonwebtoken": "^9.0.2",
-    "next": "15.3.2",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "jspdf": "^4.2.1",
+    "next": "16.3.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "react-hook-form": "^7.56.4",
     "react-toastify": "^11.0.5",
     "styled-components": "^6.1.18",
@@ -33,16 +38,17 @@
     "@commitlint/cli": "^19.8.0",
     "@commitlint/config-conventional": "^19.8.0",
     "@eslint/eslintrc": "^3",
+    "@playwright/test": "^1.64.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/coverage-v8": "^4.1.2",
-    "eslint": "^9",
-    "eslint-config-next": "15.3.2",
+    "eslint": "9.26.0",
+    "eslint-config-next": "16.3.6",
     "jsdom": "^29.0.1",
     "msw": "^2.12.14",
     "typescript": "^5",
@@ -52,5 +58,9 @@
   "resolutions": {
     "styled-components": "^6"
   },
-  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977"
+  "packageManager": "pnpm@12.16.1+sha512.091d1dee7927575661b25dab3c2ae31cafc1c54d6b71ed6a6600cf0c1cb10434a447eae14015f1b23e2e6bedeed79df94a932e2164d2832280dce3fb32f656d1",
+  "overrides": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0"
+  }
 }

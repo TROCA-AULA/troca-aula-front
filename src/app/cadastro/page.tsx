@@ -4,11 +4,15 @@ import Logo from "@/app/components/Logo";
 import {useForm} from "react-hook-form";
 import * as Yup from "yup";
 import {yupResolver} from "@hookform/resolvers/yup"
-import sha1 from 'crypto-js/sha1';
-import Base64 from 'crypto-js/enc-base64';
-import {redirect} from 'next/navigation'
+import {useRouter} from 'next/navigation'
 import {toast} from "react-toastify";
-import api from "@/api.service";
+// P9 (problemas-conhecidos.md): api.service.tsx é uso exclusivamente
+// server-side (Route Handlers) - este é um componente client. O cadastro
+// público não precisa de Authorization (rota sem guarda), então "funcionava"
+// mesmo assim, mas violava a arquitetura documentada; api-client.service é
+// o cliente certo para chamadas do navegador.
+import api from "@/api-client.service";
+import {useSubjects} from "@/hooks/useSubjects";
 
 const Wrapper = styled.div`
     display: flex;
@@ -35,41 +39,42 @@ const Content = styled.div`
     }
 
     p {
-        color: #993535;
+        color: ${({ theme }) => theme.colors.danger};
         text-transform: uppercase;
     }
 
     dt {
         margin-top: 20px;
         margin-bottom: 10px;
-        color: #509BA1;
+        color: ${({ theme }) => theme.colors.primary};
         font-weight: bold;
         text-transform: uppercase;
     }
 
     dd {
         text-align: justify;
-        color: #959595;
+        color: ${({ theme }) => theme.colors.textMuted};
     }
 
-    input {
+    input, select {
         height: 40px;
         width: 100%;
         padding: 5px 10px;
         border-radius: 5px;
 
-        background-color: #336367;
-        border: 2px solid #336367;
-        color: #fff;
+        /* Um tom abaixo do painel verde, para o campo aparecer. */
+        background-color: ${({ theme }) => theme.colors.primaryHover};
+        border: 2px solid ${({ theme }) => theme.colors.primaryHover};
+        color: ${({ theme }) => theme.colors.onPrimary};
         box-sizing: border-box;
 
         &:focus {
             outline: none;
-            border: 2px solid #6bcdd5;
+            border: 2px solid ${({ theme }) => theme.colors.sidebarSection};
         }
 
         &::placeholder {
-            color: #6bcdd5;
+            color: ${({ theme }) => theme.colors.sidebarText};
             text-transform: uppercase;
             opacity: 1; /* Garante visibilidade total, especialmente no Firefox */
         }
@@ -81,20 +86,20 @@ const Content = styled.div`
         height: 40px;
         border-radius: 5px;
         border: none;
-        color: #336367;
+        color: ${({ theme }) => theme.colors.primary};
         text-transform: uppercase;
         cursor: pointer;
-        background-color: #fff;
+        background-color: ${({ theme }) => theme.colors.surface};
         transition: background-color 0.2s;
 
         &:hover {
-            background-color: #daf3f3;
+            background-color: ${({ theme }) => theme.colors.primarySoft};
         }
 
         &.clear {
             background: transparent;
             height: auto;
-            color: #fff;
+            color: ${({ theme }) => theme.colors.surface};
 
             &:hover {
                 text-decoration: underline;
@@ -102,9 +107,14 @@ const Content = styled.div`
         }
     }
 `
+// Dica sobre o painel verde (cor do tema, sem estilo inline).
+const Hint = styled.small`
+    color: ${({ theme }) => theme.colors.sidebarText};
+`
+
 const Card = styled.div`
     display: flex;
-    background-color: #fff;
+    background-color: ${({ theme }) => theme.colors.surface};
     max-width: 1024px;
     flex-direction: row;
     margin: 20px;
@@ -113,7 +123,7 @@ const Card = styled.div`
 
     ${Content} {
         &:nth-child(2) {
-            background-color: #509BA1;
+            background-color: ${({ theme }) => theme.colors.primary};
             max-width: 400px;
         }
     }
@@ -123,34 +133,56 @@ const validationSchema = Yup.object({
     name: Yup.string().required('Nome é obrigatório'),
     email: Yup.string().required('E-mail é obrigatório'),
     phone: Yup.string().required('Telefone é obrigatório'),
-    password: Yup.string().required('Senha é obrigatório'),
+    // Defeito D10: o backend exige pelo menos 8 caracteres.
+    password: Yup.string()
+        .required('Senha é obrigatório')
+        .min(8, 'A senha precisa ter pelo menos 8 caracteres'),
+    // Defeito D9: sem disciplina o professor não vê nenhuma vaga (a lista
+    // de aulas filtra pela disciplina dele). Opcional porque diretor e
+    // auxiliar também se cadastram por aqui.
+    subjectId: Yup.string().optional(),
     confirmpPass: Yup.string()
-        // @ts-ignore
-        .oneOf([Yup.ref('password'), null], 'As senhas não conferem')
+        // Tipagem do Yup para .oneOf() não aceita bem misturar Ref com
+        // null no array (o "null" aqui é proposital: permite deixar o
+        // campo em branco sem disparar o erro de "senhas não conferem",
+        // já que este campo não tem .required() próprio).
+        .oneOf([Yup.ref('password'), null] as unknown as (string | undefined)[], 'As senhas não conferem')
 });
 
 export default function Home() {
     const {register, handleSubmit, formState} = useForm({
         resolver: yupResolver(validationSchema)
     });
+    const router = useRouter();
+    const {subjects} = useSubjects();
 
     const submidt = handleSubmit(async (data) => {
 
+        // Correção: o backend (CreateUserDto) não aceita profileId/schoolId na
+        // criação pública de usuário (ValidationPipe com forbidNonWhitelisted
+        // rejeita propriedades extras com 400) — o vínculo escola/perfil é
+        // feito depois, por quem tem permissão, via POST /users/:id/assign-profile.
+        // P3 (problemas-conhecidos.md): senha em texto puro sobre TLS, sem
+        // pré-hash no cliente — ver AuthService.signIn no backend.
         const payload = {
-            password: Base64.stringify(sha1(data.password)),
-            profileId: 3,
-            schoolId: 1,
+            password: data.password,
             name: data.name,
             email: data.email,
             phone: data.phone,
+            ...(data.subjectId ? {subjectId: Number(data.subjectId)} : {}),
         }
         try {
             await api.post('/users', payload);
-            toast.success('Usuário cadastrado com sucesso')
-            redirect('/')
         } catch (e) {
+            // A mensagem do backend (ex.: "E-mail já cadastrado") já aparece
+            // no toast do api-client.
             console.error(e);
+            return;
         }
+        toast.success('Usuário cadastrado com sucesso')
+        // redirect() do next/navigation não funciona dentro de um clique
+        // (ele lança uma exceção que o try/catch engolia) — usa o router.
+        router.push('/')
 
 
     })
@@ -197,7 +229,19 @@ export default function Home() {
                         {formState.errors?.phone && (<p>{formState.errors.phone.message}</p>)}
                     </label>
                     <label>
-                        <input {...register("password")} placeholder={'senha'} type={'password'}/>
+                        <select {...register("subjectId")} aria-label={'disciplina'} defaultValue={''}>
+                            <option value={''}>Disciplina (professor)</option>
+                            {subjects.map((subject) => (
+                                <option key={subject.id} value={subject.id}>{subject.name}</option>
+                            ))}
+                        </select>
+                        <Hint>
+                            Professor: escolha a disciplina que você leciona — só aparecem
+                            vagas dela.
+                        </Hint>
+                    </label>
+                    <label>
+                        <input {...register("password")} placeholder={'senha (mínimo 8 caracteres)'} type={'password'}/>
                         {formState.errors?.password && (<p>{formState.errors.password.message}</p>)}
                     </label>
                     <label>

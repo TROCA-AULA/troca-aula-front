@@ -1,6 +1,7 @@
 import {NextRequest, NextResponse} from 'next/server';
 import {cookies} from 'next/headers';
 import api from "@/api.service";
+import { describeError } from '@/utils/describe-error';
 
 export async function GET(req: NextRequest) {
     try {
@@ -8,9 +9,8 @@ export async function GET(req: NextRequest) {
 
         const tokenCookie = cookie.get('token');      // retorna { value, name, ... } ou undefined
         const searchParams = req.nextUrl.searchParams;
-        const params = {};
+        const params: Record<string, string> = {};
         for (const [key, value] of searchParams.entries()) {
-            // @ts-ignore
             params[key] = value;
         }
         const config = {
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
         const reponse = await api.get('/classes', config)
         return NextResponse.json(reponse.data, {status: 200});
     } catch (error) {
-        console.error(error); // Para log, nunca envie detalhes completos para o cliente
+        console.error('[classes]', describeError(error));
         return NextResponse.json(
             {error: 'Ocorreu um erro ao buscar as classes.'},
             {status: 500}

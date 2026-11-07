@@ -13,15 +13,15 @@ interface UseTeachersReturn {
   fetchLinkedTeachers: () => Promise<void>;
   fetchAvailableTeachers: () => Promise<void>;
   fetchEnrollmentRequests: (status?: string) => Promise<void>;
-  linkTeacher: (userId: string, schoolId: string) => Promise<void>;
-  unlinkTeacher: (userId: string) => Promise<void>;
+  linkTeacher: (userId: number, schoolId: number) => Promise<void>;
+  unlinkTeacher: (userId: number) => Promise<void>;
   updateEnrollmentStatus: (
-    enrollmentId: string,
+    enrollmentId: number,
     status: 'APPROVED' | 'REJECTED'
   ) => Promise<void>;
 }
 
-export function useTeachers(schoolId: string): UseTeachersReturn {
+export function useTeachers(schoolId: number): UseTeachersReturn {
   const [linkedTeachers, setLinkedTeachers] = useState<Teacher[]>([]);
   const [availableTeachers, setAvailableTeachers] = useState<Teacher[]>([]);
   const [enrollmentRequests, setEnrollmentRequests] = useState<
@@ -49,7 +49,7 @@ export function useTeachers(schoolId: string): UseTeachersReturn {
     setLoading(true);
     setError(null);
     try {
-      const data = await teacherService.getAvailableTeachers();
+      const data = await teacherService.getAvailableTeachers(schoolId);
       setAvailableTeachers(data);
     } catch (err: unknown) {
       const message =
@@ -60,7 +60,7 @@ export function useTeachers(schoolId: string): UseTeachersReturn {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [schoolId]);
 
   const fetchEnrollmentRequests = useCallback(
     async (status?: string) => {
@@ -86,7 +86,7 @@ export function useTeachers(schoolId: string): UseTeachersReturn {
   );
 
   const linkTeacher = useCallback(
-    async (userId: string, schoolId: string) => {
+    async (userId: number, schoolId: number) => {
       setLoading(true);
       setError(null);
       try {
@@ -105,11 +105,11 @@ export function useTeachers(schoolId: string): UseTeachersReturn {
   );
 
   const unlinkTeacher = useCallback(
-    async (userId: string) => {
+    async (userId: number) => {
       setLoading(true);
       setError(null);
       try {
-        await teacherService.unlinkTeacher(userId);
+        await teacherService.unlinkTeacher(userId, schoolId);
         await fetchLinkedTeachers();
         await fetchAvailableTeachers();
       } catch (err: unknown) {
@@ -120,12 +120,12 @@ export function useTeachers(schoolId: string): UseTeachersReturn {
         setLoading(false);
       }
     },
-    [fetchLinkedTeachers, fetchAvailableTeachers]
+    [schoolId, fetchLinkedTeachers, fetchAvailableTeachers]
   );
 
   const updateEnrollmentStatus = useCallback(
     async (
-      enrollmentId: string,
+      enrollmentId: number,
       status: 'APPROVED' | 'REJECTED'
     ) => {
       setLoading(true);

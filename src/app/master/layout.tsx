@@ -1,25 +1,15 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUserHook } from '@/user/useUserHook';
-import { MasterSidebar } from './components/MasterSidebar';
+import { usePathname, useRouter } from 'next/navigation';
+import { useSchoolContext } from '@/contexts/SchoolContext';
+import {
+  COORDINATOR_MASTER_ROUTES,
+  PROFILE,
+  isCoordinatorOnly,
+} from '@/constants/profile';
+import { AppShell } from '@/components/app-shell';
 import styled from 'styled-components';
-
-const LayoutContainer = styled.div`
-  display: flex;
-  min-height: 100vh;
-`;
-
-const SidebarWrapper = styled.div`
-  flex-shrink: 0;
-`;
-
-const MainContent = styled.main`
-  flex: 1;
-  padding: 24px;
-  background-color: #f5f5f5;
-`;
 
 export default function MasterLayout({
   children,
@@ -27,21 +17,36 @@ export default function MasterLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isLoading } = useUserHook();
+  const pathname = usePathname() ?? '';
+  const { user, isLoading, schoolLinks } = useSchoolContext();
+
+  // Coordenador municipal entra só nas telas de rede (escolas, redes,
+  // políticas e auditoria) — o backend limita tudo à rede dele.
+  const coordinator = isCoordinatorOnly(schoolLinks);
+  const routeAllowedForCoordinator = COORDINATOR_MASTER_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(route + '/'),
+  );
+  const isMaster = user?.profileId === PROFILE.MASTER;
+  const hasAccess =
+    !!user && (isMaster || (coordinator && routeAllowedForCoordinator));
 
   useEffect(() => {
     if (!isLoading) {
       if (!user) {
-        router.push('/login');
+        // P5 (problemas-conhecidos.md): '/login' nunca existiu como rota —
+        // o login vive em '/' (ver src/app/page.tsx).
+        router.push('/');
         return;
       }
-      if (user.profileId !== 1) {
-        router.push('/dashboard');
+      // Correção: MASTER é profileId=4 (o valor antigo, 1, é DIRETOR —
+      // bug real de autorização, ver src/constants/profile.ts).
+      if (!hasAccess) {
+        router.push(coordinator ? '/master/escolas' : '/dashboard');
       }
     }
-  }, [user, isLoading, router]);
+  }, [user, isLoading, router, hasAccess, coordinator]);
 
-  if (isLoading || !user || user.profileId !== 1) {
+  if (isLoading || !user || !hasAccess) {
     return (
       <LoadingContainer>
         <LoadingText>Carregando...</LoadingText>
@@ -49,14 +54,8 @@ export default function MasterLayout({
     );
   }
 
-  return (
-    <LayoutContainer>
-      <SidebarWrapper>
-        <MasterSidebar />
-      </SidebarWrapper>
-      <MainContent>{children}</MainContent>
-    </LayoutContainer>
-  );
+  // Menu (com as telas de rede para o coordenador) e cabeçalho: AppShell.
+  return <AppShell>{children}</AppShell>;
 }
 
 const LoadingContainer = styled.div`
@@ -67,6 +66,6 @@ const LoadingContainer = styled.div`
 `;
 
 const LoadingText = styled.p`
-  color: #666;
+  color: ${({ theme }) => theme.colors.textMuted};
   font-size: 16px;
 `;

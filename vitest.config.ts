@@ -15,6 +15,7 @@ export default defineConfig({
       exclude: [
         'src/**/*.test.{ts,tsx}',
         'src/test-setup.ts',
+        'src/test-utils.tsx',
         'src/app/layout.tsx', // Boilerplate de layout é difícil de testar no JSDOM (html/body)
         'src/app/api/auth/me/route.ts', // Exemplo: rotas de API podem ser difíceis se não houver um bom mocking do NextRequest
         'src/app/api/auth/logout/route.ts',
@@ -24,10 +25,12 @@ export default defineConfig({
         'src/lib/registry.tsx', // Boilerplate para styled-components no Next.js
       ],
       thresholds: {
-        lines: 100,
-        functions: 100,
-        branches: 100,
-        statements: 100,
+        // Mínimo acordado com o usuário: 90% (buscando o máximo possível
+        // perto de 100% por arquivo, sem travar o desenvolvimento).
+        lines: 90,
+        functions: 90,
+        branches: 90,
+        statements: 90,
       },
     },
   },

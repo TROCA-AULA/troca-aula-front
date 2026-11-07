@@ -1,40 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Troca Aula — Frontend
 
-## Getting Started
+Interface web do **Troca Aula**, plataforma para gerenciamento de substituições de professores em redes municipais de ensino (evitando aulas vagas). Faz parte da evolução multi-tenant do projeto — contexto completo em [`../docs/design-doc-evolucao-multi-tenant.md`](../docs/design-doc-evolucao-multi-tenant.md).
 
-First, run the development server:
+## Stack
+
+- **Next.js 16** (App Router) + React 19 + TypeScript
+- **styled-components** (tema central em `src/styles/theme.ts`)
+- **axios** — chamadas do navegador via proxy interno (`/api/proxy/*`), que anexa o cookie `httpOnly` de sessão
+- **react-hook-form + yup**, **react-toastify**
+- **Vitest + Testing Library** (619 testes, cobertura mínima de 90% no CI)
+
+## Como rodar
+
+Pré-requisito: backend rodando (ver `../troca-aula-backend/README.md`).
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+echo "NEXT_PUBLIC_API_URL=http://localhost:5000" > .env.local   # aponta para o backend
+pnpm dev                     # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Comandos úteis:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm test        # Vitest (unitários)
+pnpm run e2e     # Playwright: telas + backend + banco reais (ver e2e/README.md)
+pnpm run lint    # ESLint (flat config do Next 16)
+pnpm run build   # build de produção
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Estrutura
 
-## Learn More
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out the [Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Pasta | Conteúdo |
+|---|---|
+| `src/app` | Rotas (App Router): `/` (login), `/cadastro`, `/dashboard`, `/classes`, `/minhas-aulas`, `/escola/*` (jornada, fechamento de ponto, indicadores), `/master/*` (redes, escolas, políticas, professores, auditoria), `/minha-jornada`, `/alterar-senha` |
+| `src/contexts` | `SchoolContext` — sessão única, escola/perfil/rede ativos |
+| `src/hooks` / `src/services` | Acesso a dados (hooks de tela e services por domínio) |
+| `src/components` | Componentes compartilhados (`ui/AdminTable`, `NotificationBell`, `ErrorBoundary`, …) |
+| `src/types` | Contratos da API |
 
 ## Documentação
+
 Consulte a documentação completa na pasta `docs/`:
-- [docs/documentacao-central-troca-aula.md](docs/documentacao-central-troca-aula.md) - Documentação central
-- [docs/tutorial-teste-local-fluxos.md](docs/tutorial-teste-local-fluxos.md) - Tutorial de teste local
-- [docs/checklist-qa-fluxos-locais.md](docs/checklist-qa-fluxos-locais.md) - Checklist QA
+
+- [docs/README.md](docs/README.md) - Índice da documentação
+- [docs/01-visao-geral/](docs/01-visao-geral/) - Visão do produto, regras de negócio e perfis
+- [docs/02-guia-desenvolvimento/](docs/02-guia-desenvolvimento/) - Setup, convenções e testes
+- [docs/03-arquitetura/](docs/03-arquitetura/) - Arquitetura, autenticação e integração
+- [docs/04-modulos/](docs/04-modulos/) - Módulos do sistema
+- [docs/05-referencia/](docs/05-referencia/) - Referência de código (serviços, hooks, componentes, tipos, rotas, env)
+- [docs/06-status/](docs/06-status/) - Estado atual, roadmap e problemas conhecidos

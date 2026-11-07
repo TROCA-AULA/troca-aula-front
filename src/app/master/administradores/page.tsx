@@ -4,32 +4,26 @@ import { useState } from 'react';
 import styled from 'styled-components';
 import { useUsers } from '@/hooks/useUsers';
 import { useSchools } from '@/hooks/useSchools';
-import { UserForm } from './components/UserForm';
+import { PROFILE } from '@/constants/profile';
+import { UserForm } from '../components/UserForm';
 import { ConfirmModal } from '@/components/ConfirmModal';
 import type { User } from '@/types/master';
-
-const PageContainer = styled.div`
-  padding: 24px;
-`;
-
-const PageHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 600;
-  color: #333;
-  margin: 0;
-`;
+import {
+  PageContainer,
+  PageHeader,
+  PageTitle,
+  Table,
+  Th,
+  Td,
+  EmptyState,
+  LoadingState,
+} from '@/components/ui/AdminTable';
+import { SkeletonRows } from '@/components/ui/Skeleton';
 
 const AddButton = styled.button`
   padding: 10px 20px;
-  background-color: #1e3a5f;
-  color: white;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.onPrimary};
   border: none;
   border-radius: 8px;
   font-size: 14px;
@@ -38,38 +32,13 @@ const AddButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #2a4a73;
+    background-color: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  background: white;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-`;
-
-const Th = styled.th`
-  text-align: left;
-  padding: 16px;
-  background-color: #f8f9fa;
-  font-weight: 600;
-  color: #333;
-  font-size: 14px;
-`;
-
-const Td = styled.td`
-  padding: 16px;
-  border-bottom: 1px solid #eee;
-  color: #666;
-  font-size: 14px;
 `;
 
 const ActionButton = styled.button`
@@ -80,34 +49,22 @@ const ActionButton = styled.button`
   cursor: margin-right: 8px;
 
   &:focus {
-    outline: 2px solid #4a90d9;
+    outline: 2px solid ${({ theme }) => theme.colors.focus};
     outline-offset: 2px;
   }
 `;
 
 const UnlinkButton = styled(ActionButton)`
-  background-color: #fff3e0;
-  color: #e65100;
+  background-color: ${({ theme }) => theme.colors.warningBg};
+  color: ${({ theme }) => theme.colors.warning};
 
   &:hover {
-    background-color: #ffe0b2;
+    background-color: ${({ theme }) => theme.colors.warningBorder};
   }
 `;
 
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 48px;
-  color: #666;
-`;
-
-const LoadingState = styled.div`
-  text-align: center;
-  padding: 48px;
-  color: #666;
-`;
-
 export default function AdministradoresPage() {
-  const { users, loading, unlinkUser } = useUsers(3);
+  const { users, loading, unlinkUser, refetch } = useUsers(PROFILE.AUXILIAR_ADMIN);
   const { schools } = useSchools();
   const [formOpen, setFormOpen] = useState(false);
   const [unlinkConfirm, setUnlinkConfirm] = useState<User | null>(null);
@@ -122,7 +79,7 @@ export default function AdministradoresPage() {
 
   const confirmUnlink = async () => {
     if (unlinkConfirm) {
-      await unlinkUser(unlinkConfirm.id);
+      await unlinkUser(unlinkConfirm.id, unlinkConfirm.profileId, unlinkConfirm.schoolId!);
       setUnlinkConfirm(null);
     }
   };
@@ -130,7 +87,7 @@ export default function AdministradoresPage() {
   if (loading) {
     return (
       <PageContainer>
-        <LoadingState>Carregando...</LoadingState>
+        <LoadingState><SkeletonRows /></LoadingState>
       </PageContainer>
     );
   }
@@ -180,9 +137,10 @@ export default function AdministradoresPage() {
 
       <UserForm
         open={formOpen}
-        profileId={3}
+        profileId={PROFILE.AUXILIAR_ADMIN}
         schools={schools}
         onClose={() => setFormOpen(false)}
+        onCreated={refetch}
       />
 
       <ConfirmModal

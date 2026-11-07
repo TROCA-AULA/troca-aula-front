@@ -1,127 +1,42 @@
-import { renderHook, waitFor, act } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useUserHook } from './useUserHook';
-import { useRouter } from 'next/navigation';
+import { useSchoolContext } from '@/contexts/SchoolContext';
 
-vi.mock('next/navigation', () => ({
-    useRouter: vi.fn(),
+vi.mock('@/contexts/SchoolContext', () => ({
+    useSchoolContext: vi.fn(),
 }));
 
-describe('useUserHook', () => {
-    const mockRouter = {
-        push: vi.fn(),
-    };
+// A partir da Fase 3 o SchoolContext é a fonte única de sessão; o
+// useUserHook virou um wrapper de compatibilidade (mesma assinatura
+// UserContextType). O comportamento em si (buscar /api/auth/me, logout)
+// é testado no SchoolContext.test.tsx — aqui só garantimos a delegação.
+describe('useUserHook (wrapper do SchoolContext)', () => {
+    const logout = vi.fn();
+    const refreshUserData = vi.fn();
+    const user = { id: 1, name: 'Test User', email: 't@t.com' };
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useRouter as any).mockReturnValue(mockRouter);
-        global.fetch = vi.fn();
+        vi.mocked(useSchoolContext).mockReturnValue({
+            user,
+            isLoading: false,
+            logout,
+            refreshUserData,
+            schoolLinks: [],
+            activeSchoolId: null,
+            activeProfileId: null,
+            activeNetworkId: null,
+            setActiveSchoolId: vi.fn(),
+        } as any);
     });
 
-    it('fetches user data on mount successfully', async () => {
-        const mockUser = { id: 1, name: 'Test User' };
-        (global.fetch as any).mockResolvedValue({
-            ok: true,
-            json: async () => mockUser,
-        });
-
+    it('delega para o SchoolContext (fonte única de sessão)', () => {
         const { result } = renderHook(() => useUserHook());
 
-        expect(result.current.isLoading).toBe(true);
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-
-        expect(result.current.user).toEqual(mockUser);
-        expect(global.fetch).toHaveBeenCalledWith('/api/auth/me', { credentials: 'include' });
-    });
-
-    it('sets user to null if fetch fails', async () => {
-        (global.fetch as any).mockResolvedValue({
-            ok: false,
-        });
-
-        const { result } = renderHook(() => useUserHook());
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-
-        expect(result.current.user).toBeNull();
-    });
-
-    it('sets user to null if fetch throws error', async () => {
-        (global.fetch as any).mockRejectedValue(new Error('Fetch error'));
-        console.error = vi.fn();
-
-        const { result } = renderHook(() => useUserHook());
-
-        await waitFor(() => {
-            expect(result.current.isLoading).toBe(false);
-        });
-
-        expect(result.current.user).toBeNull();
-        expect(console.error).toHaveBeenCalled();
-    });
-
-    it('logs out successfully', async () => {
-        (global.fetch as any).mockResolvedValue({ ok: true, json: async () => ({}) });
-
-        const { result } = renderHook(() => useUserHook());
-        
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
-
-        await act(async () => {
-            await result.current.logout();
-        });
-
-        expect(global.fetch).toHaveBeenCalledWith('/api/auth/logout', {
-            method: 'POST',
-            credentials: 'include',
-        });
-        expect(result.current.user).toBeNull();
-        expect(mockRouter.push).toHaveBeenCalledWith('/');
-    });
-
-    it('handles logout error', async () => {
-        (global.fetch as any).mockImplementation((url: string) => {
-            if (url === '/api/auth/logout') {
-                return Promise.reject(new Error('Logout failed'));
-            }
-            return Promise.resolve({ ok: true, json: async () => ({}) });
-        });
-        console.error = vi.fn();
-
-        const { result } = renderHook(() => useUserHook());
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
-
-        await act(async () => {
-            await result.current.logout();
-        });
-
-        expect(console.error).toHaveBeenCalledWith('Erro ao fazer logout:', expect.any(Error));
-    });
-
-    it('can refresh user data', async () => {
-        const mockUser = { id: 1, name: 'Test User' };
-        (global.fetch as any).mockResolvedValue({
-            ok: true,
-            json: async () => mockUser,
-        });
-
-        const { result } = renderHook(() => useUserHook());
-        await waitFor(() => expect(result.current.isLoading).toBe(false));
-
-        (global.fetch as any).mockResolvedValue({
-            ok: true,
-            json: async () => ({ ...mockUser, refreshed: true }),
-        });
-
-        await act(async () => {
-            await result.current.refreshUserData();
-        });
-
-        expect(result.current.user).toEqual({ ...mockUser, refreshed: true });
+        expect(result.current.user).toEqual(user);
+        expect(result.current.isLoading).toBe(false);
+        expect(result.current.logout).toBe(logout);
+        expect(result.current.refreshUserData).toBe(refreshUserData);
     });
 });

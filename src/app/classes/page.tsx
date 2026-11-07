@@ -1,6 +1,7 @@
 'use client';
 import styled from 'styled-components';
-import { useUserHook } from '@/user/useUserHook';
+import { useSchoolContext } from '@/contexts/SchoolContext';
+import { PROFILE } from '@/constants/profile';
 import { useEnrollments } from '@/hooks/useEnrollments';
 import { useEnrollmentMutations } from '@/hooks/useEnrollment';
 import { useSubstitutionLimit } from '@/hooks/useSubstitutionLimit';
@@ -13,13 +14,13 @@ const Wrapper = styled.div`
   flex: 1;
   flex-direction: column;
   width: 100%;
-  min-height: calc(100vh - 60px);
-  padding: 20px;
+  padding: 24px;
 `;
 
 const Title = styled.h1`
-  color: #509BA1;
+  color: ${({ theme }) => theme.colors.text};
   font-size: 24px;
+  font-weight: 600;
   margin-bottom: 20px;
 `;
 
@@ -30,8 +31,8 @@ const ClassesGrid = styled.div`
 `;
 
 const ClassCard = styled.div`
-  background: #fff;
-  border: 1px solid #f4f4f4;
+  background: ${({ theme }) => theme.colors.surface};
+  border: 1px solid ${({ theme }) => theme.colors.borderLight};
   border-radius: 8px;
   padding: 16px;
   display: flex;
@@ -47,18 +48,18 @@ const ClassInfo = styled.div`
 
 const ClassLabel = styled.span`
   font-size: 12px;
-  color: #989a9a;
+  color: ${({ theme }) => theme.colors.textMuted};
   text-transform: uppercase;
 `;
 
 const ClassValue = styled.span`
   font-size: 16px;
-  color: #333;
+  color: ${({ theme }) => theme.colors.text};
 `;
 
 const ApplyButton = styled.button`
-  background-color: #509BA1;
-  color: #fff;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.surface};
   border: none;
   padding: 10px 20px;
   border-radius: 5px;
@@ -68,29 +69,29 @@ const ApplyButton = styled.button`
   transition: background-color 0.2s;
 
   &:hover {
-    background-color: #6EC3C9;
+    background-color: ${({ theme }) => theme.colors.primaryHover};
   }
 
   &:disabled {
-    background-color: #ccc;
+    background-color: ${({ theme }) => theme.colors.disabled};
     cursor: not-allowed;
   }
 `;
 
 const Loading = styled.div`
-  color: #509BA1;
+  color: ${({ theme }) => theme.colors.primary};
   text-align: center;
   padding: 40px;
 `;
 
 const ErrorMessage = styled.div`
-  color: #f00;
+  color: ${({ theme }) => theme.colors.danger};
   text-align: center;
   padding: 20px;
 `;
 
 export default function ClassesPage() {
-  const { user, isLoading: userLoading } = useUserHook();
+  const { user, isLoading: userLoading } = useSchoolContext();
   const router = useRouter();
   const { classes, loading, error, refetch } = useEnrollments();
   const { createEnrollment, loading: creating } = useEnrollmentMutations();
@@ -104,11 +105,15 @@ export default function ClassesPage() {
   }
 
   if (!user) {
-    router.push('/login');
+    // P5 (problemas-conhecidos.md): '/login' nunca existiu como rota — o
+    // login vive em '/' (ver src/app/page.tsx).
+    router.push('/');
     return null;
   }
 
-  if (user.profileId === 1) {
+  // Correção: MASTER é profileId=4 (o valor antigo, 1, é DIRETOR — bug real
+  // de autorização, ver src/constants/profile.ts).
+  if (user.profileId === PROFILE.MASTER) {
     router.push('/master');
     return null;
   }
@@ -147,12 +152,14 @@ export default function ClassesPage() {
             <ClassCard key={classItem.id}>
               <ClassInfo>
                 <ClassLabel>Disciplina</ClassLabel>
-                <ClassValue>{classItem.subjectName || `Aula #${classItem.id}`}</ClassValue>
+                <ClassValue>{classItem.subjectName || classItem.subject?.name || `Aula #${classItem.id}`}</ClassValue>
               </ClassInfo>
               <ClassInfo>
                 <ClassLabel>Data</ClassLabel>
                 <ClassValue>
-                  {format(new Date((classItem as any).statededAt || classItem.date), 'dd/MM/yyyy HH:mm')}
+                  {classItem.statededAt
+                    ? format(new Date(classItem.statededAt), 'dd/MM/yyyy HH:mm')
+                    : '-'}
                 </ClassValue>
               </ClassInfo>
               <ApplyButton

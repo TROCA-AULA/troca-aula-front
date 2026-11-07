@@ -1,36 +1,23 @@
 'use client';
 
-import styled from 'styled-components';
 import { useMasterDashboard } from '@/hooks/useMasterDashboard';
 import { StatCard } from '@/components/StatCard';
+import {
+  PageContainer,
+  PageHeader,
+  PageTitle,
+  LoadingState,
+  EmptyState,
+} from '@/components/ui/AdminTable';
+import { SkeletonRows } from '@/components/ui/Skeleton';
+import styled from 'styled-components';
 
-const PageContainer = styled.div`
-  padding: 24px;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 24px;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 24px;
-`;
-
+// P13: estilos locais trocados pelos componentes/tokens compartilhados
+// (AdminTable + theme); a página era uma das que repetiam cores hardcoded.
 const StatsGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 24px;
-`;
-
-const LoadingState = styled.div`
-  text-align: center;
-  padding: 48px;
-  color: #666;
-`;
-
-const ErrorState = styled.div`
-  text-align: center;
-  padding: 48px;
-  color: #c62828;
 `;
 
 export default function DashboardPage() {
@@ -39,8 +26,12 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <PageContainer>
+        <PageHeader>
         <PageTitle>Dashboard</PageTitle>
-        <LoadingState>Carregando estatísticas...</LoadingState>
+      </PageHeader>
+        <LoadingState>
+          <SkeletonRows />
+        </LoadingState>
       </PageContainer>
     );
   }
@@ -48,15 +39,19 @@ export default function DashboardPage() {
   if (error) {
     return (
       <PageContainer>
+        <PageHeader>
         <PageTitle>Dashboard</PageTitle>
-        <ErrorState>{error}</ErrorState>
+      </PageHeader>
+        <EmptyState>{error}</EmptyState>
       </PageContainer>
     );
   }
 
   return (
     <PageContainer>
-      <PageTitle>Dashboard</PageTitle>
+      <PageHeader>
+        <PageTitle>Dashboard</PageTitle>
+      </PageHeader>
       <StatsGrid>
         <StatCard label="Total de Escolas" value={stats.totalSchools} />
         <StatCard label="Aulas Vagas" value={stats.totalClassesAvailable} />
